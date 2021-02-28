@@ -1,0 +1,14 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{c+c1}{// 将数据流转换成只包含f1字段的动态表}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// 将数据流转换成包含f0和f1字段的动态表，在动态表中f0和f1位置交换}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f0\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// 命名别名}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myInt\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f0\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myLong\PYGZdq{}}\PYG{p}{));}
+\end{Verbatim}

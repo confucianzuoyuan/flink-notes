@@ -1,0 +1,59 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{UpdateWindowResultWithLateEvent} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStreamSource}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{socketTextStream}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}localhost\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{9999}\PYG{p}{);}
+
+        \PYG{n}{stream}
+            \PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{map}\PYG{p}{(}\PYG{n}{String} \PYG{n}{s}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{n}{String}\PYG{o}{[]} \PYG{n}{arr} \PYG{o}{=} \PYG{n}{s}\PYG{p}{.}\PYG{n+na}{split}\PYG{p}{(}\PYG{l+s}{\PYGZdq{} \PYGZdq{}}\PYG{p}{);}
+                    \PYG{k}{return} \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{0}\PYG{o}{]}\PYG{p}{,} \PYG{n}{Long}\PYG{p}{.}\PYG{n+na}{parseLong}\PYG{p}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{1}\PYG{o}{]}\PYG{p}{)} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                \PYG{n}{WatermarkStrategy}\PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{n}{forBoundedOutOfOrderness}\PYG{p}{(}\PYG{n}{Duration}\PYG{p}{.}\PYG{n+na}{ofSeconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{))}
+                \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                    \PYG{n+nd}{@Override}
+                    \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{stringLongTuple2}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{l}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                        \PYG{k}{return} \PYG{n}{stringLongTuple2}\PYG{p}{.}\PYG{n+na}{f1}\PYG{p}{;}
+                    \PYG{p}{\PYGZcb{}}
+                \PYG{p}{\PYGZcb{})}
+            \PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingEventTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
+            \PYG{p}{.}\PYG{n+na}{allowedLateness}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{))}
+            \PYG{p}{.}\PYG{n+na}{process}\PYG{p}{(}\PYG{k}{new} \PYG{n}{UpdateWindowResult}\PYG{p}{())}
+            \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{UpdateWindowResult} \PYG{k+kd}{extends} \PYG{n}{ProcessWindowFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{TimeWindow}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{process}\PYG{p}{(}\PYG{n}{String} \PYG{n}{s}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{p}{,} \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{iterable}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{collector}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k+kt}{long} \PYG{n}{count} \PYG{o}{=} \PYG{l+m+mi}{0}\PYG{n}{L}\PYG{p}{;}
+            \PYG{k}{for} \PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{i} \PYG{p}{:} \PYG{n}{iterable}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{count} \PYG{o}{+=} \PYG{l+m+mi}{1}\PYG{p}{;}
+            \PYG{p}{\PYGZcb{}}
+
+            \PYG{c+c1}{// 可见范围比getRuntimeContext.getState更小，只对当前key、当前window可见}
+            \PYG{c+c1}{// 基于窗口的状态变量，只能当前key和当前窗口访问}
+            \PYG{n}{ValueState}\PYG{o}{\PYGZlt{}}\PYG{n}{Boolean}\PYG{o}{\PYGZgt{}} \PYG{n}{isUpdate} \PYG{o}{=} \PYG{n}{context}\PYG{p}{.}\PYG{n+na}{windowState}\PYG{p}{().}\PYG{n+na}{getState}\PYG{p}{(}
+                    \PYG{k}{new} \PYG{n}{ValueStateDescriptor}\PYG{o}{\PYGZlt{}}\PYG{n}{Boolean}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}isUpdate\PYGZdq{}}\PYG{p}{,} \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{BOOLEAN}\PYG{p}{)}
+            \PYG{p}{);}
+
+            \PYG{c+c1}{// 当水位线超过窗口结束时间时，触发窗口的第一次计算！}
+            \PYG{k}{if} \PYG{p}{(}\PYG{n}{isUpdate}\PYG{p}{.}\PYG{n+na}{value}\PYG{p}{()} \PYG{o}{==} \PYG{k+kc}{null}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{collector}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}窗口第一次触发计算！一共有 \PYGZdq{}} \PYG{o}{+} \PYG{n}{count} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} 条数据！\PYGZdq{}}\PYG{p}{);}
+                \PYG{n}{isUpdate}\PYG{p}{.}\PYG{n+na}{update}\PYG{p}{(}\PYG{k+kc}{true}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}} \PYG{k}{else} \PYG{p}{\PYGZob{}}
+                \PYG{n}{collector}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}窗口更新了！一共有 \PYGZdq{}} \PYG{o}{+} \PYG{n}{count} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} 条数据！\PYGZdq{}}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

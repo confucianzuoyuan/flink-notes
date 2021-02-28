@@ -1,0 +1,14 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{CREATE} \PYG{k}{TABLE} \PYG{n}{KafkaTable} \PYG{p}{(}
+  \PYG{o}{`}\PYG{k}{user}\PYG{o}{`} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{o}{`}\PYG{n}{url}\PYG{o}{`} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{o}{`}\PYG{n}{ts}\PYG{o}{`} \PYG{k}{TIMESTAMP}\PYG{p}{(}\PYG{l+m+mi}{3}\PYG{p}{)} \PYG{n}{METADATA} \PYG{k}{FROM} \PYG{l+s+s1}{\PYGZsq{}timestamp\PYGZsq{}}
+\PYG{p}{)} \PYG{k}{WITH} \PYG{p}{(}
+  \PYG{l+s+s1}{\PYGZsq{}connector\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}kafka\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}topic\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}clicks\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}properties.bootstrap.servers\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}localhost:9092\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}properties.group.id\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}testGroup\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}scan.startup.mode\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}earliest\PYGZhy{}offset\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}format\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}csv\PYGZsq{}}
+\PYG{p}{)}
+\end{Verbatim}

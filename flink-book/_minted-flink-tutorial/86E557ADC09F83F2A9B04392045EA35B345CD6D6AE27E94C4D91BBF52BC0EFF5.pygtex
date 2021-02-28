@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+(true,Mary,1970\PYGZhy{}01\PYGZhy{}01T13:00,3)
+(true,Bob,1970\PYGZhy{}01\PYGZhy{}01T13:00,1)
+(true,Liz,1970\PYGZhy{}01\PYGZhy{}01T14:00,2)
+(true,Bob,1970\PYGZhy{}01\PYGZhy{}01T14:00,1)
+(true,Bob,1970\PYGZhy{}01\PYGZhy{}01T15:00,2)
+(true,Mary,1970\PYGZhy{}01\PYGZhy{}01T15:00,1)
+(true,Liz,1970\PYGZhy{}01\PYGZhy{}01T15:00,1)
+\end{Verbatim}

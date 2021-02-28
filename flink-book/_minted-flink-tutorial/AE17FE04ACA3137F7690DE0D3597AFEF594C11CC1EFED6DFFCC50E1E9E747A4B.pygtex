@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}userId\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myUserId\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}itemId\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myItemId\PYGZdq{}}\PYG{p}{));}
+
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}userId\PYGZdq{}}\PYG{p}{));}
+
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}name\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myName\PYGZdq{}}\PYG{p}{));}
+\end{Verbatim}

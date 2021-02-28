@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{env}\PYG{o}{.}\PYG{n+na}{socketTextStream}\PYG{o}{(}\PYG{n}{host}\PYG{o}{,} \PYG{n}{port}\PYG{o}{);}
+\end{Verbatim}

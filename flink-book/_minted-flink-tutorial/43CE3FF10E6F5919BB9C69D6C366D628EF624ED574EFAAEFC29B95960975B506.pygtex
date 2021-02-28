@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZdl{} ./bin/flink savepoint \PYGZhy{}d \PYG{l+s+se}{\PYGZbs{}}
+hdfs:///xxx:50070/savepoints/savepoint\PYGZhy{}bc0b2a\PYGZhy{}63cf5d5ccef8
+Disposing savepoint \PYG{l+s+s1}{\PYGZsq{}hdfs:///xxx:50070/savepoints/savepoint\PYGZhy{}bc0b2a\PYGZhy{}63cf5d5ccef8\PYGZsq{}}.
+Waiting \PYG{k}{for} response...
+​Savepoint \PYG{l+s+s1}{\PYGZsq{}hdfs:///xxx:50070/savepoints/savepoint\PYGZhy{}bc0b2a\PYGZhy{}63cf5d5ccef8\PYGZsq{}} disposed.
+\end{Verbatim}

@@ -1,0 +1,13 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{Properties} \PYG{n}{properties} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Properties}\PYG{o}{();}
+\PYG{n}{properties}\PYG{o}{.}\PYG{n+na}{put}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}bootstrap.servers\PYGZdq{}}\PYG{o}{,} \PYG{l+s}{\PYGZdq{}localhost:9092\PYGZdq{}}\PYG{o}{);}
+
+\PYG{n}{DataStreamSource}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{addSource}\PYG{o}{(}\PYG{k}{new} \PYG{n}{UserBehaviorSource}\PYG{o}{());}
+
+\PYG{n}{stream}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{addSink}\PYG{o}{(}\PYG{k}{new} \PYG{n}{FlinkKafkaProducer}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}(}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{l+s}{\PYGZdq{}userbehavior\PYGZdq{}}\PYG{o}{,}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Inew} \PYG{n+nf}{SimpleStringSchema}\PYG{o}{(),}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Iproperties}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{));}
+\end{Verbatim}

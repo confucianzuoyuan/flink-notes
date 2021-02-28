@@ -42,3 +42,7 @@
 *.sty
 doc/metropolistheme.pdf
 demo/demo.pdf
+
+.DS_Store
+
+_minted*

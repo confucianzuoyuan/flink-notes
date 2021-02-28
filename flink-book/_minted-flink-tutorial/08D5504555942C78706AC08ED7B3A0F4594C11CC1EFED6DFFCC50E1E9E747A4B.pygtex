@@ -1,0 +1,30 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStreamSource}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{fromElements}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}white\PYGZdq{}}\PYG{o}{,} \PYG{l+s}{\PYGZdq{}black\PYGZdq{}}\PYG{o}{,} \PYG{l+s}{\PYGZdq{}gray\PYGZdq{}}\PYG{o}{);}
+
+\PYG{n}{stream}
+    \PYG{o}{.}\PYG{n+na}{flatMap}\PYG{o}{(}
+        \PYG{o}{(}\PYG{n}{FlatMapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{})(}\PYG{n}{s}\PYG{o}{,} \PYG{n}{out}\PYG{o}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{o}{\PYGZob{}}
+            \PYG{k}{if} \PYG{o}{(}\PYG{n}{s}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}white\PYGZdq{}}\PYG{o}{))} \PYG{o}{\PYGZob{}}
+                \PYG{n}{out}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{n}{s}\PYG{o}{);}
+            \PYG{o}{\PYGZcb{}} \PYG{k}{else} \PYG{k}{if} \PYG{o}{(}\PYG{n}{s}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}black\PYGZdq{}}\PYG{o}{))} \PYG{o}{\PYGZob{}}
+                \PYG{n}{out}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{n}{s}\PYG{o}{);}
+                \PYG{n}{out}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{n}{s}\PYG{o}{);}
+            \PYG{o}{\PYGZcb{}}
+    \PYG{o}{\PYGZcb{})}
+    \PYG{o}{.}\PYG{n+na}{returns}\PYG{o}{(}\PYG{n}{Types}\PYG{o}{.}\PYG{n+na}{STRING}\PYG{o}{)}
+    \PYG{o}{.}\PYG{n+na}{print}\PYG{o}{();}
+
+\PYG{n}{stream}\PYG{o}{.}\PYG{n+na}{flatMap}\PYG{o}{(}\PYG{k}{new} \PYG{n}{MyFlatMap}\PYG{o}{()).}\PYG{n+na}{print}\PYG{o}{();}
+
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{MyFlatMap} \PYG{k+kd}{implements} \PYG{n}{FlatMapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZob{}}
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{flatMap}\PYG{o}{(}\PYG{n}{String} \PYG{n}{value}\PYG{o}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+        \PYG{k}{if} \PYG{o}{(}\PYG{n}{value}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}white\PYGZdq{}}\PYG{o}{))} \PYG{o}{\PYGZob{}}
+            \PYG{n}{out}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{n}{value}\PYG{o}{);}
+        \PYG{o}{\PYGZcb{}} \PYG{k}{else} \PYG{k}{if} \PYG{o}{(}\PYG{n}{value}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}black\PYGZdq{}}\PYG{o}{))} \PYG{o}{\PYGZob{}}
+            \PYG{n}{out}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{n}{value}\PYG{o}{);}
+            \PYG{n}{out}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{n}{value}\PYG{o}{);}
+        \PYG{o}{\PYGZcb{}}
+    \PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

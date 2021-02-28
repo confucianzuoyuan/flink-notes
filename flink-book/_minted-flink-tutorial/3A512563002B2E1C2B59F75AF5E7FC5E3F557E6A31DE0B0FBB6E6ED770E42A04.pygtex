@@ -1,0 +1,13 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{CREATE} \PYG{k}{TABLE} \PYG{n}{MyUserTable} \PYG{p}{(}
+  \PYG{n}{column\PYGZus{}name1} \PYG{n+nb}{INT}\PYG{p}{,}
+  \PYG{n}{column\PYGZus{}name2} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{p}{...}
+  \PYG{n}{part\PYGZus{}name1} \PYG{n+nb}{INT}\PYG{p}{,}
+  \PYG{n}{part\PYGZus{}name2} \PYG{n}{STRING}
+\PYG{p}{)} \PYG{n}{PARTITIONED} \PYG{k}{BY} \PYG{p}{(}\PYG{n}{part\PYGZus{}name1}\PYG{p}{,} \PYG{n}{part\PYGZus{}name2}\PYG{p}{)} \PYG{k}{WITH} \PYG{p}{(}
+  \PYG{l+s+s1}{\PYGZsq{}connector\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}filesystem\PYGZsq{}}\PYG{p}{,}           \PYG{c+c1}{\PYGZhy{}\PYGZhy{} 连接器类型}
+  \PYG{l+s+s1}{\PYGZsq{}path\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}file:///path/to/whatever\PYGZsq{}}\PYG{p}{,}  \PYG{c+c1}{\PYGZhy{}\PYGZhy{} 文件路径}
+  \PYG{l+s+s1}{\PYGZsq{}format\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}...\PYGZsq{}}                      \PYG{c+c1}{\PYGZhy{}\PYGZhy{} 文件格式}
+\PYG{p}{)}
+\end{Verbatim}

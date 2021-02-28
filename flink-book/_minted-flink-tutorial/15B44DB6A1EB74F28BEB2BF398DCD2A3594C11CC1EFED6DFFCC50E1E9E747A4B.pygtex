@@ -1,0 +1,31 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{env}
+    \PYG{o}{.}\PYG{n+na}{addSource}\PYG{o}{(}\PYG{k}{new} \PYG{n}{UserBehaviorSource}\PYG{o}{())}
+    \PYG{o}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{o}{(}
+            \PYG{n}{WatermarkStrategy}\PYG{o}{.\PYGZlt{}}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{o}{()}
+            \PYG{o}{.}\PYG{n+na}{withTimestampAssigner}\PYG{o}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{o}{(}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior} \PYG{n}{element}\PYG{o}{,} \PYG{k+kt}{long} \PYG{n}{recordTimestamp}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{element}\PYG{o}{.}\PYG{n+na}{timestamp}\PYG{o}{;}
+                \PYG{o}{\PYGZcb{}}
+            \PYG{o}{\PYGZcb{})}
+    \PYG{o}{)}
+    \PYG{o}{.}\PYG{n+na}{keyBy}\PYG{o}{(}\PYG{k}{new} \PYG{n}{KeySelector}\PYG{o}{\PYGZlt{}}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior}\PYG{o}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{getKey}\PYG{o}{(}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior} \PYG{n}{value}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+            \PYG{k}{return} \PYG{l+s}{\PYGZdq{}key\PYGZdq{}}\PYG{o}{;}
+        \PYG{o}{\PYGZcb{}}
+    \PYG{o}{\PYGZcb{})}
+    \PYG{o}{.}\PYG{n+na}{window}\PYG{o}{(}\PYG{n}{TumblingEventTimeWindows}\PYG{o}{.}\PYG{n+na}{of}\PYG{o}{(}\PYG{n}{Time}\PYG{o}{.}\PYG{n+na}{hours}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{)))}
+    \PYG{o}{.}\PYG{n+na}{apply}\PYG{o}{(}\PYG{k}{new} \PYG{n}{WindowFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior}\PYG{o}{,} \PYG{n}{String}\PYG{o}{,} \PYG{n}{String}\PYG{o}{,} \PYG{n}{TimeWindow}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{apply}\PYG{o}{(}\PYG{n}{String} \PYG{n}{s}\PYG{o}{,} \PYG{n}{TimeWindow} \PYG{n}{timeWindow}\PYG{o}{,} \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{iterable}\PYG{o}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{collector}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+            \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{set} \PYG{o}{=} \PYG{k}{new} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}\PYGZgt{}();}
+            \PYG{k}{for} \PYG{o}{(}\PYG{n}{Example1}\PYG{o}{.}\PYG{n+na}{UserBehavior} \PYG{n}{e} \PYG{o}{:} \PYG{n}{iterable}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+                \PYG{n}{set}\PYG{o}{.}\PYG{n+na}{add}\PYG{o}{(}\PYG{n}{e}\PYG{o}{.}\PYG{n+na}{userId}\PYG{o}{);}
+            \PYG{o}{\PYGZcb{}}
+            \PYG{n}{collector}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{n}{set}\PYG{o}{.}\PYG{n+na}{size}\PYG{o}{()} \PYG{o}{+} \PYG{l+s}{\PYGZdq{}\PYGZdq{}}\PYG{o}{);}
+        \PYG{o}{\PYGZcb{}}
+    \PYG{o}{\PYGZcb{})}
+    \PYG{o}{.}\PYG{n+na}{print}\PYG{o}{();}
+\end{Verbatim}

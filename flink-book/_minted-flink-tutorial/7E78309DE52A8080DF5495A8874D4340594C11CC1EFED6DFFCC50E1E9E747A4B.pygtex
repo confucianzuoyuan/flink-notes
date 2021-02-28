@@ -1,0 +1,53 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.environment.StreamExecutionEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.EnvironmentSettings}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.bridge.java.StreamTableEnvironment}\PYG{p}{;}
+
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{SetWatermark} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{c+c1}{// set up execution environment}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{EnvironmentSettings} \PYG{n}{settings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{inStreamingMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+        \PYG{n}{StreamTableEnvironment} \PYG{n}{tEnv} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{env}\PYG{p}{,} \PYG{n}{settings}\PYG{p}{);}
+
+        \PYG{n}{String} \PYG{n}{ddl} \PYG{o}{=}
+                \PYG{l+s}{\PYGZdq{}CREATE TABLE clicks (\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}  `user` STRING,\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}  url STRING,\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}  cTime TIMESTAMP(3),\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}  WATERMARK FOR cTime AS cTime \PYGZhy{} INTERVAL \PYGZsq{}3\PYGZsq{} SECOND\PYGZbs{}n\PYGZdq{}} \PYG{c+c1}{// 最大延迟时间设置为3秒}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}) WITH (\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}  \PYGZsq{}connector.type\PYGZsq{} = \PYGZsq{}filesystem\PYGZsq{},\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}  \PYGZsq{}connector.path\PYGZsq{} = \PYGZsq{}\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}file.csv\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}\PYGZsq{},\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{}  \PYGZsq{}format.type\PYGZsq{} = \PYGZsq{}csv\PYGZsq{}\PYGZbs{}n\PYGZdq{}}
+                        \PYG{o}{+} \PYG{l+s}{\PYGZdq{})\PYGZdq{}}\PYG{p}{;}
+        \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{n}{ddl}\PYG{p}{);}
+
+        \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}CREATE TABLE ResultTable (\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}`user` STRING, \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}endT TIMESTAMP(3), \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}cnt BIGINT) WITH (\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}\PYGZsq{}connector\PYGZsq{} = \PYGZsq{}print\PYGZsq{})\PYGZdq{}}\PYG{p}{);}
+
+        \PYG{c+c1}{// 每个用户在每个一小时滚动窗口中的访问次数}
+        \PYG{n}{String} \PYG{n}{query} \PYG{o}{=} \PYG{l+s}{\PYGZdq{}SELECT \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}user, \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}TUMBLE\PYGZus{}END(\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}cTime,\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}INTERVAL \PYGZsq{}1\PYGZsq{} HOUR)\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}AS endT,\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}COUNT(url) AS cnt \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}FROM clicks \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}GROUP BY \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}user, \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}TUMBLE(\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}cTime, \PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}INTERVAL \PYGZsq{}1\PYGZsq{} HOUR)\PYGZdq{}}\PYG{p}{;}
+
+        \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}INSERT INTO ResultTable \PYGZdq{}} \PYG{o}{+} \PYG{n}{query}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

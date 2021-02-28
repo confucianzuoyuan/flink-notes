@@ -1,0 +1,13 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStreamSource}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple3}\PYG{o}{\PYGZlt{}}\PYG{n}{Integer}\PYG{p}{,} \PYG{n}{Integer}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{inputStream} \PYG{o}{=} \PYG{n}{env}
+    \PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{),}
+        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,} \PYG{l+m+mi}{3}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{),}
+        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,} \PYG{l+m+mi}{2}\PYG{p}{,} \PYG{l+m+mi}{4}\PYG{p}{),}
+        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,} \PYG{l+m+mi}{5}\PYG{p}{,} \PYG{l+m+mi}{3}\PYG{p}{)}
+    \PYG{p}{);}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple3}\PYG{o}{\PYGZlt{}}\PYG{n}{Integer}\PYG{p}{,} \PYG{n}{Integer}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{resultStream} \PYG{o}{=} \PYG{n}{inputStream}
+  \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)} \PYG{c+c1}{// key on first field of the tuple}
+  \PYG{p}{.}\PYG{n+na}{sum}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}   \PYG{c+c1}{// sum the second field of the tuple in place}
+\end{Verbatim}

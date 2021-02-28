@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(...)}
+\PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{SlidingEventTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{),} \PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
+\PYG{p}{.}\PYG{n+na}{aggregate}\PYG{p}{(...)}
+\end{Verbatim}

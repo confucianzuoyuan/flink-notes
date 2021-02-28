@@ -1,0 +1,67 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.common.eventtime.SerializableTimestampAssigner}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.common.eventtime.WatermarkStrategy}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.java.tuple.Tuple3}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.environment.StreamExecutionEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.EnvironmentSettings}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.Table}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.bridge.java.StreamTableEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.types.Row}\PYG{p}{;}
+
+\PYG{k+kn}{import static} \PYG{n+nn}{org.apache.flink.table.api.Expressions.}\PYG{n}{\PYGZdl{}}\PYG{p}{;}
+
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{DataStreamToDynamicTable} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{c+c1}{// 获取流环境}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{c+c1}{// 数据源，且设置水位线}
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple3}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}
+                \PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+                        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Mary\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./home\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{12} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Bob\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./cart\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{12} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Mary\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./prod?id=1\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{12} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{1000L} \PYG{o}{+} \PYG{l+m+mi}{5} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Liz\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./home\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{12} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{1000L} \PYG{o}{+} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Bob\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./prod?id=3\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{12} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{1000L} \PYG{o}{+} \PYG{l+m+mi}{90} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                        \PYG{n}{Tuple3}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Mary\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./prod?id=7\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{12} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{60} \PYG{o}{*} \PYG{l+m+mi}{1000L} \PYG{o}{+} \PYG{l+m+mi}{105} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{)}
+                \PYG{p}{)}
+                \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                        \PYG{n}{WatermarkStrategy}\PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple3}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                                \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple3}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                                    \PYG{n+nd}{@Override}
+                                    \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{Tuple3}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{element}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{recordTimestamp}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                                        \PYG{k}{return} \PYG{n}{element}\PYG{p}{.}\PYG{n+na}{f2}\PYG{p}{;}
+                                    \PYG{p}{\PYGZcb{}}
+                                \PYG{p}{\PYGZcb{})}
+                \PYG{p}{);}
+
+        \PYG{c+c1}{// 表环境配置}
+        \PYG{n}{EnvironmentSettings} \PYG{n}{settings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{inStreamingMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+
+        \PYG{c+c1}{// 获取表环境}
+        \PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnvironment} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{env}\PYG{p}{,} \PYG{n}{settings}\PYG{p}{);}
+
+        \PYG{c+c1}{// 将数据源转换成动态表}
+        \PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnvironment}
+                \PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}
+                        \PYG{n}{stream}\PYG{p}{,}
+                        \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f0\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZdq{}}\PYG{p}{),}
+                        \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}url\PYGZdq{}}\PYG{p}{),}
+                        \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f2\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{rowtime}\PYG{p}{().}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}cTime\PYGZdq{}}\PYG{p}{)}
+                \PYG{p}{);}
+
+        \PYG{c+c1}{// 将动态表转换成数据流}
+        \PYG{n}{tableEnvironment}
+                \PYG{p}{.}\PYG{n+na}{toAppendStream}\PYG{p}{(}
+                        \PYG{n}{table}\PYG{p}{,}
+                        \PYG{n}{Row}\PYG{p}{.}\PYG{n+na}{class} \PYG{c+c1}{// 动态表中每一行的泛型}
+                \PYG{p}{)}
+                \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{c+c1}{// 执行程序}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

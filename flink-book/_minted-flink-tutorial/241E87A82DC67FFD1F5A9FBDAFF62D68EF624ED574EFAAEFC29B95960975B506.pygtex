@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZdl{} ./bin/flink modify bc0b2ad61ecd4a615d92ce25390f61ad \PYGZhy{}p \PYG{l+m}{16}
+Modify job bc0b2ad61ecd4a615d92ce25390f61ad.
+​Rescaled job bc0b2ad61ecd4a615d92ce25390f61ad. Its new parallelism is \PYG{l+m}{16}.
+\end{Verbatim}

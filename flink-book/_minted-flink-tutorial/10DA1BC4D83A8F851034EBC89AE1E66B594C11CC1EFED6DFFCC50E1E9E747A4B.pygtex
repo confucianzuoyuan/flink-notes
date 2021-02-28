@@ -1,0 +1,27 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{DDLExample} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{c+c1}{// 以下三行，获取流环境}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{EnvironmentSettings} \PYG{n}{settings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{inStreamingMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+        \PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnvironment} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{env}\PYG{p}{,} \PYG{n}{settings}\PYG{p}{);}
+
+        \PYG{c+c1}{// 定义输入表，WITH定义了连接器，连接到文件file.csv}
+        \PYG{n}{tableEnvironment}
+                \PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}CREATE TABLE clicks (`user` STRING, `url` STRING) \PYGZdq{}} \PYG{o}{+}
+                        \PYG{l+s}{\PYGZdq{}WITH (\PYGZdq{}} \PYG{o}{+}
+                        \PYG{l+s}{\PYGZdq{}\PYGZsq{}connector\PYGZsq{} = \PYGZsq{}filesystem\PYGZsq{},\PYGZdq{}} \PYG{o}{+}
+                        \PYG{l+s}{\PYGZdq{}\PYGZsq{}path\PYGZsq{} = \PYGZsq{}file.csv\PYGZsq{},\PYGZdq{}} \PYG{o}{+}
+                        \PYG{l+s}{\PYGZdq{}\PYGZsq{}format\PYGZsq{} = \PYGZsq{}csv\PYGZsq{})\PYGZdq{}}\PYG{p}{);}
+
+        \PYG{c+c1}{// 定义输出表，连接到标准输出}
+        \PYG{n}{tableEnvironment}
+                \PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}CREATE TABLE ResultTable (`user` STRING, `cnt` BIGINT) \PYGZdq{}} \PYG{o}{+}
+                        \PYG{l+s}{\PYGZdq{}WITH (\PYGZsq{}connector\PYGZsq{} = \PYGZsq{}print\PYGZsq{})\PYGZdq{}}\PYG{p}{);}
+
+        \PYG{c+c1}{// 在输出表上进行查询，查询结果写入输出表}
+        \PYG{n}{tableEnvironment}
+                \PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}INSERT INTO ResultTable SELECT user, COUNT(url) as cnt FROM clicks GROUP BY user\PYGZdq{}}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

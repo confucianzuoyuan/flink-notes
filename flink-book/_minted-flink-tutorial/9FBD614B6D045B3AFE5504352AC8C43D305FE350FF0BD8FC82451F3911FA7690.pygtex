@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n+nt}{\PYGZlt{}dependency\PYGZgt{}}
+  \PYG{n+nt}{\PYGZlt{}groupId\PYGZgt{}}mysql\PYG{n+nt}{\PYGZlt{}/groupId\PYGZgt{}}
+  \PYG{n+nt}{\PYGZlt{}artifactId\PYGZgt{}}mysql\PYGZhy{}connector\PYGZhy{}java\PYG{n+nt}{\PYGZlt{}/artifactId\PYGZgt{}}
+  \PYG{n+nt}{\PYGZlt{}version\PYGZgt{}}5.1.47\PYG{n+nt}{\PYGZlt{}/version\PYGZgt{}}
+\PYG{n+nt}{\PYGZlt{}/dependency\PYGZgt{}}
+\end{Verbatim}

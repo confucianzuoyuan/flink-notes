@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{SELECT} \PYG{o}{*}
+\PYG{k}{FROM} \PYG{n}{Orders}
+\PYG{k}{LEFT} \PYG{k}{JOIN} \PYG{n}{Product}
+\PYG{k}{ON} \PYG{n}{Orders}\PYG{p}{.}\PYG{n}{product\PYGZus{}id} \PYG{o}{=} \PYG{n}{Product}\PYG{p}{.}\PYG{n}{id}
+
+\PYG{k}{SELECT} \PYG{o}{*}
+\PYG{k}{FROM} \PYG{n}{Orders}
+\PYG{k}{RIGHT} \PYG{k}{JOIN} \PYG{n}{Product}
+\PYG{k}{ON} \PYG{n}{Orders}\PYG{p}{.}\PYG{n}{product\PYGZus{}id} \PYG{o}{=} \PYG{n}{Product}\PYG{p}{.}\PYG{n}{id}
+
+\PYG{k}{SELECT} \PYG{o}{*}
+\PYG{k}{FROM} \PYG{n}{Orders}
+\PYG{k}{FULL} \PYG{k}{OUTER} \PYG{k}{JOIN} \PYG{n}{Product}
+\PYG{k}{ON} \PYG{n}{Orders}\PYG{p}{.}\PYG{n}{product\PYGZus{}id} \PYG{o}{=} \PYG{n}{Product}\PYG{p}{.}\PYG{n}{id}
+\end{Verbatim}

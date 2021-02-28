@@ -1,0 +1,20 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.common.serialization.SimpleStringEncoder}\PYG{o}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.core.fs.Path}\PYG{o}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink}\PYG{o}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.DefaultRollingPolicy}\PYG{o}{;}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{input} \PYG{o}{=} \PYG{o}{...;}
+
+\PYG{k+kd}{final} \PYG{n}{StreamingFileSink}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{sink} \PYG{o}{=} \PYG{n}{StreamingFileSink}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{forRowFormat}\PYG{o}{(}\PYG{k}{new} \PYG{n}{Path}\PYG{o}{(}\PYG{n}{outputPath}\PYG{o}{),} \PYG{k}{new} \PYG{n}{SimpleStringEncoder}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}(}\PYG{l+s}{\PYGZdq{}UTF\PYGZhy{}8\PYGZdq{}}\PYG{o}{))}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{withRollingPolicy}\PYG{o}{(}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IDefaultRollingPolicy}\PYG{o}{.}\PYG{n+na}{builder}\PYG{o}{()}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{withRolloverInterval}\PYG{o}{(}\PYG{n}{TimeUnit}\PYG{o}{.}\PYG{n+na}{MINUTES}\PYG{o}{.}\PYG{n+na}{toMillis}\PYG{o}{(}\PYG{l+m+mi}{15}\PYG{o}{))}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{withInactivityInterval}\PYG{o}{(}\PYG{n}{TimeUnit}\PYG{o}{.}\PYG{n+na}{MINUTES}\PYG{o}{.}\PYG{n+na}{toMillis}\PYG{o}{(}\PYG{l+m+mi}{5}\PYG{o}{))}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{withMaxPartSize}\PYG{o}{(}\PYG{l+m+mi}{1024} \PYG{o}{*} \PYG{l+m+mi}{1024} \PYG{o}{*} \PYG{l+m+mi}{1024}\PYG{o}{)}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{build}\PYG{o}{())}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{.}\PYG{n+na}{build}\PYG{o}{();}
+
+\PYG{n}{input}\PYG{o}{.}\PYG{n+na}{addSink}\PYG{o}{(}\PYG{n}{sink}\PYG{o}{);}
+\end{Verbatim}

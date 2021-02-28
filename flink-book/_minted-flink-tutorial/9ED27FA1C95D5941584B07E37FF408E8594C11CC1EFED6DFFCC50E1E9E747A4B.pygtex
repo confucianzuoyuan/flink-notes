@@ -1,0 +1,19 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{c+c1}{// 声明一个额外的字段作为时间属性字段}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}url\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}action\PYGZus{}time\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{proctime}\PYG{p}{());}
+
+\PYG{c+c1}{// 注册临时视图}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}clicks\PYGZdq{}}\PYG{p}{,} \PYG{n}{table}\PYG{p}{);}
+
+\PYG{c+c1}{// 定义窗口}
+\PYG{c+c1}{// 一小时的滚动窗口，时间戳使用处理时间user\PYGZus{}action\PYGZus{}time}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT user, COUNT(url), TUMBLE\PYGZus{}START(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS), TUMBLE\PYGZus{}END(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS) FROM clicks GROUP BY user, TUMBLE(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS)\PYGZdq{}}\PYG{p}{);}
+
+\PYG{c+c1}{// 滑动窗口长度1小时，滑动距离30分钟}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT user, COUNT(url), HOP\PYGZus{}START(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}30\PYGZsq{} MINUTES, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS), HOP\PYGZus{}END(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}30\PYGZsq{} MINUTES, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS) FROM clicks GROUP BY user, HOP(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}30\PYGZsq{} MINUTES, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS)\PYGZdq{}}\PYG{p}{);}
+
+\PYG{c+c1}{// 会话窗口，超时时间是1小时}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT user, COUNT(url), SESSION\PYGZus{}START(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS), SESSION\PYGZus{}END(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS) FROM clicks GROUP BY user, SESSION(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS)\PYGZdq{}}\PYG{p}{);}
+\end{Verbatim}

@@ -1,0 +1,49 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{RedirectLateEvent} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{private} \PYG{k+kd}{static} \PYG{n}{OutputTag}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{output} \PYG{o}{=} \PYG{k}{new} \PYG{n}{OutputTag}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}late\PYGZhy{}readings\PYGZdq{}}\PYG{p}{)\PYGZob{}\PYGZcb{};}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}
+            \PYG{p}{.}\PYG{n+na}{socketTextStream}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}localhost\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{9999}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{map}\PYG{p}{(}\PYG{n}{String} \PYG{n}{s}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{n}{String}\PYG{o}{[]} \PYG{n}{arr} \PYG{o}{=} \PYG{n}{s}\PYG{p}{.}\PYG{n+na}{split}\PYG{p}{(}\PYG{l+s}{\PYGZdq{} \PYGZdq{}}\PYG{p}{);}
+                    \PYG{k}{return} \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{0}\PYG{o}{]}\PYG{p}{,} \PYG{n}{Long}\PYG{p}{.}\PYG{n+na}{parseLong}\PYG{p}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{1}\PYG{o}{]}\PYG{p}{)} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                \PYG{n}{WatermarkStrategy}\PYG{p}{.}
+                    \PYG{c+c1}{// like scala: assignAscendingTimestamps(\PYGZus{}.\PYGZus{}2)}
+                    \PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                    \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                        \PYG{n+nd}{@Override}
+                        \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{value}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{l}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                            \PYG{k}{return} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{f1}\PYG{p}{;}
+                        \PYG{p}{\PYGZcb{}}
+                    \PYG{p}{\PYGZcb{})}
+            \PYG{p}{);}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{lateReadings} \PYG{o}{=} \PYG{n}{stream}
+            \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingEventTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
+            \PYG{p}{.}\PYG{n+na}{sideOutputLateData}\PYG{p}{(}\PYG{n}{output}\PYG{p}{)} \PYG{c+c1}{// use after keyBy and timeWindow}
+            \PYG{p}{.}\PYG{n+na}{process}\PYG{p}{(}\PYG{k}{new} \PYG{n}{ProcessWindowFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{TimeWindow}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{process}\PYG{p}{(}\PYG{n}{String} \PYG{n}{s}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{p}{,} \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{iterable}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{collector}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k+kt}{long} \PYG{n}{exactSizeIfKnown} \PYG{o}{=} \PYG{n}{iterable}\PYG{p}{.}\PYG{n+na}{spliterator}\PYG{p}{().}\PYG{n+na}{getExactSizeIfKnown}\PYG{p}{();}
+                    \PYG{n}{collector}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{n}{exactSizeIfKnown} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} of elements\PYGZdq{}}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{});}
+
+        \PYG{n}{lateReadings}\PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+        \PYG{n}{lateReadings}\PYG{p}{.}\PYG{n+na}{getSideOutput}\PYG{p}{(}\PYG{n}{output}\PYG{p}{).}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

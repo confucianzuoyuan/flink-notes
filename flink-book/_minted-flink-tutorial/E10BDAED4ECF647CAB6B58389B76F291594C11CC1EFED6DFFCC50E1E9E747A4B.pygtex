@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{input1}\PYG{p}{.}\PYG{n+na}{join}\PYG{p}{(}\PYG{n}{input2}\PYG{p}{)}
+  \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(...)}       \PYG{c+c1}{// 为input1指定键值属性}
+  \PYG{p}{.}\PYG{n+na}{equalTo}\PYG{p}{(...)}     \PYG{c+c1}{// 为input2指定键值属性}
+  \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(...)}      \PYG{c+c1}{// 指定WindowAssigner}
+  \PYG{o}{[}\PYG{p}{.}\PYG{n+na}{trigger}\PYG{p}{(...)}\PYG{o}{]}   \PYG{c+c1}{// 选择性的指定Trigger}
+  \PYG{o}{[}\PYG{p}{.}\PYG{n+na}{evictor}\PYG{p}{(...)}\PYG{o}{]}   \PYG{c+c1}{// 选择性的指定Evictor}
+  \PYG{p}{.}\PYG{n+na}{apply}\PYG{p}{(...)}       \PYG{c+c1}{// 指定JoinFunction}
+\end{Verbatim}

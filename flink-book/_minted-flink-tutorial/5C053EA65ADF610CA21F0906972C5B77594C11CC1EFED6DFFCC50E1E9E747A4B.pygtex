@@ -1,0 +1,29 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{SideOutputExample} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{private} \PYG{k+kd}{static} \PYG{n}{OutputTag}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{output} \PYG{o}{=} \PYG{k}{new} \PYG{n}{OutputTag}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}side\PYGZhy{}output\PYGZdq{}}\PYG{p}{)\PYGZob{}\PYGZcb{};}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{warnings} \PYG{o}{=} \PYG{n}{stream}
+                \PYG{p}{.}\PYG{n+na}{process}\PYG{p}{(}\PYG{k}{new} \PYG{n}{ProcessFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{p}{,} \PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                    \PYG{n+nd}{@Override}
+                    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{processElement}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{value}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                        \PYG{k}{if} \PYG{p}{(}\PYG{n}{value}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{\PYGZlt{}} \PYG{l+m+mi}{32}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                            \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{output}\PYG{p}{(}\PYG{n}{output}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}温度小于32度！\PYGZdq{}}\PYG{p}{);}
+                        \PYG{p}{\PYGZcb{}}
+                        \PYG{n}{out}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{n}{value}\PYG{p}{);}
+                    \PYG{p}{\PYGZcb{}}
+                \PYG{p}{\PYGZcb{});}
+
+        \PYG{n}{warnings}\PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+        \PYG{n}{warnings}\PYG{p}{.}\PYG{n+na}{getSideOutput}\PYG{p}{(}\PYG{n}{output}\PYG{p}{).}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

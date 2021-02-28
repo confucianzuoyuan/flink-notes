@@ -1,0 +1,55 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{TempIncreaseAlertFunction} \PYG{k+kd}{extends} \PYG{n}{KeyedProcessFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{SensorReading}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{private} \PYG{n}{ValueState}\PYG{o}{\PYGZlt{}}\PYG{n}{Double}\PYG{o}{\PYGZgt{}} \PYG{n}{lastTemp}\PYG{p}{;}
+    \PYG{k+kd}{private} \PYG{n}{ValueState}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{currentTimer}\PYG{p}{;}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{open}\PYG{p}{(}\PYG{n}{Configuration} \PYG{n}{parameters}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{open}\PYG{p}{(}\PYG{n}{parameters}\PYG{p}{);}
+        \PYG{n}{lastTemp} \PYG{o}{=} \PYG{n}{getRuntimeContext}\PYG{p}{().}\PYG{n+na}{getState}\PYG{p}{(}
+                \PYG{k}{new} \PYG{n}{ValueStateDescriptor}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}last\PYGZhy{}temp\PYGZdq{}}\PYG{p}{,} \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{DOUBLE}\PYG{p}{)}
+        \PYG{p}{);}
+        \PYG{n}{currentTimer} \PYG{o}{=} \PYG{n}{getRuntimeContext}\PYG{p}{().}\PYG{n+na}{getState}\PYG{p}{(}
+                \PYG{k}{new} \PYG{n}{ValueStateDescriptor}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}current\PYGZhy{}timer\PYGZdq{}}\PYG{p}{,} \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{LONG}\PYG{p}{)}
+        \PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{processElement}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{r}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{c+c1}{// 取出上一次的温度}
+        \PYG{n}{Double} \PYG{n}{prevTemp} \PYG{o}{=} \PYG{l+m+mf}{0.0}\PYG{p}{;}
+        \PYG{k}{if} \PYG{p}{(}\PYG{n}{lastTemp}\PYG{p}{.}\PYG{n+na}{value}\PYG{p}{()} \PYG{o}{!=} \PYG{k+kc}{null}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{n}{prevTemp} \PYG{o}{=} \PYG{n}{lastTemp}\PYG{p}{.}\PYG{n+na}{value}\PYG{p}{();}
+        \PYG{p}{\PYGZcb{}}
+        \PYG{c+c1}{// 将当前温度更新到上一次的温度这个变量中}
+        \PYG{n}{lastTemp}\PYG{p}{.}\PYG{n+na}{update}\PYG{p}{(}\PYG{n}{r}\PYG{p}{.}\PYG{n+na}{temperature}\PYG{p}{);}
+
+        \PYG{n}{Long} \PYG{n}{curTimerTimestamp} \PYG{o}{=} \PYG{l+m+mi}{0}\PYG{n}{L}\PYG{p}{;}
+        \PYG{k}{if} \PYG{p}{(}\PYG{n}{currentTimer}\PYG{p}{.}\PYG{n+na}{value}\PYG{p}{()} \PYG{o}{!=} \PYG{k+kc}{null}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{n}{curTimerTimestamp} \PYG{o}{=} \PYG{n}{currentTimer}\PYG{p}{.}\PYG{n+na}{value}\PYG{p}{();}
+        \PYG{p}{\PYGZcb{}}
+        \PYG{k}{if} \PYG{p}{(}\PYG{n}{prevTemp} \PYG{o}{==} \PYG{l+m+mf}{0.0} \PYG{o}{||} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{\PYGZlt{}} \PYG{n}{prevTemp}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{c+c1}{// 温度下降或者是第一个温度值，删除定时器}
+            \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{timerService}\PYG{p}{().}\PYG{n+na}{deleteProcessingTimeTimer}\PYG{p}{(}\PYG{n}{curTimerTimestamp}\PYG{p}{);}
+            \PYG{c+c1}{// 清空状态变量}
+            \PYG{n}{currentTimer}\PYG{p}{.}\PYG{n+na}{clear}\PYG{p}{();}
+        \PYG{p}{\PYGZcb{}} \PYG{k}{else} \PYG{k}{if} \PYG{p}{(}\PYG{n}{r}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{\PYGZgt{}} \PYG{n}{prevTemp} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{n}{curTimerTimestamp} \PYG{o}{==} \PYG{l+m+mi}{0}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{c+c1}{// 温度上升且我们并没有设置定时器}
+            \PYG{k+kt}{long} \PYG{n}{timerTs} \PYG{o}{=} \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{timerService}\PYG{p}{().}\PYG{n+na}{currentProcessingTime}\PYG{p}{()} \PYG{o}{+} \PYG{l+m+mi}{1000L}\PYG{p}{;}
+            \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{timerService}\PYG{p}{().}\PYG{n+na}{registerProcessingTimeTimer}\PYG{p}{(}\PYG{n}{timerTs}\PYG{p}{);}
+            \PYG{c+c1}{// 保存定时器时间戳}
+            \PYG{n}{currentTimer}\PYG{p}{.}\PYG{n+na}{update}\PYG{p}{(}\PYG{n}{timerTs}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{onTimer}\PYG{p}{(}\PYG{k+kt}{long} \PYG{n}{timestamp}\PYG{p}{,} \PYG{n}{OnTimerContext} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{onTimer}\PYG{p}{(}\PYG{n}{timestamp}\PYG{p}{,} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{out}\PYG{p}{);}
+        \PYG{n}{out}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}传感器id为: \PYGZdq{}}
+                \PYG{o}{+} \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{getCurrentKey}\PYG{p}{()}
+                \PYG{o}{+} \PYG{l+s}{\PYGZdq{}的传感器温度值已经连续1s上升了。\PYGZdq{}}\PYG{p}{);}
+        \PYG{n}{currentTimer}\PYG{p}{.}\PYG{n+na}{clear}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,36 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{CREATE} \PYG{k}{TABLE} \PYG{n}{pageviews\PYGZus{}per\PYGZus{}region} \PYG{p}{(}
+  \PYG{n}{user\PYGZus{}region} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{n}{pv} \PYG{n+nb}{BIGINT}\PYG{p}{,}
+  \PYG{n}{uv} \PYG{n+nb}{BIGINT}\PYG{p}{,}
+  \PYG{k}{PRIMARY} \PYG{k}{KEY} \PYG{p}{(}\PYG{n}{user\PYGZus{}region}\PYG{p}{)} \PYG{k}{NOT} \PYG{n}{ENFORCED}
+\PYG{p}{)} \PYG{k}{WITH} \PYG{p}{(}
+  \PYG{l+s+s1}{\PYGZsq{}connector\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}upsert\PYGZhy{}kafka\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}topic\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}pageviews\PYGZus{}per\PYGZus{}region\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}properties.bootstrap.servers\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}...\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}key.format\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}avro\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}value.format\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}avro\PYGZsq{}}
+\PYG{p}{);}
+
+\PYG{k}{CREATE} \PYG{k}{TABLE} \PYG{n}{pageviews} \PYG{p}{(}
+  \PYG{n}{user\PYGZus{}id} \PYG{n+nb}{BIGINT}\PYG{p}{,}
+  \PYG{n}{page\PYGZus{}id} \PYG{n+nb}{BIGINT}\PYG{p}{,}
+  \PYG{n}{viewtime} \PYG{k}{TIMESTAMP}\PYG{p}{,}
+  \PYG{n}{user\PYGZus{}region} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{n}{WATERMARK} \PYG{k}{FOR} \PYG{n}{viewtime} \PYG{k}{AS} \PYG{n}{viewtime} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{INTERVAL} \PYG{l+s+s1}{\PYGZsq{}2\PYGZsq{}} \PYG{k}{SECOND}
+\PYG{p}{)} \PYG{k}{WITH} \PYG{p}{(}
+  \PYG{l+s+s1}{\PYGZsq{}connector\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}kafka\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}topic\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}pageviews\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}properties.bootstrap.servers\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}...\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}format\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}json\PYGZsq{}}
+\PYG{p}{);}
+
+\PYG{c+c1}{\PYGZhy{}\PYGZhy{} 计算 pv、uv 并插入到 upsert\PYGZhy{}kafka sink}
+\PYG{k}{INSERT} \PYG{k}{INTO} \PYG{n}{pageviews\PYGZus{}per\PYGZus{}region}
+\PYG{k}{SELECT}
+  \PYG{n}{user\PYGZus{}region}\PYG{p}{,}
+  \PYG{k}{COUNT}\PYG{p}{(}\PYG{o}{*}\PYG{p}{),}
+  \PYG{k}{COUNT}\PYG{p}{(}\PYG{k}{DISTINCT} \PYG{n}{user\PYGZus{}id}\PYG{p}{)}
+\PYG{k}{FROM} \PYG{n}{pageviews}
+\PYG{k}{GROUP} \PYG{k}{BY} \PYG{n}{user\PYGZus{}region}\PYG{p}{;}
+\end{Verbatim}

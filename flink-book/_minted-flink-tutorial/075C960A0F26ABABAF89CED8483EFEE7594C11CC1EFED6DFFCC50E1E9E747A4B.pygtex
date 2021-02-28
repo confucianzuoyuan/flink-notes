@@ -1,0 +1,75 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{UVImproved} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{env}
+            \PYG{p}{.}\PYG{n+na}{readTextFile}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}UserBehavior.csv\PYGZdq{}}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{n}{UserBehavior} \PYG{n+nf}{map}\PYG{p}{(}\PYG{n}{String} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{n}{String}\PYG{o}{[]} \PYG{n}{arr} \PYG{o}{=} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{split}\PYG{p}{(}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{p}{);}
+                    \PYG{k}{return} \PYG{k}{new} \PYG{n}{UserBehavior}\PYG{p}{(}
+                            \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{0}\PYG{o}{]}\PYG{p}{,}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{1}\PYG{o}{]}\PYG{p}{,}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{2}\PYG{o}{]}\PYG{p}{,}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{3}\PYG{o}{]}\PYG{p}{,}
+                            \PYG{n}{Long}\PYG{p}{.}\PYG{n+na}{parseLong}\PYG{p}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{4}\PYG{o}{]}\PYG{p}{)} \PYG{o}{*} \PYG{l+m+mi}{1000L}
+                    \PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{filter}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{behaviorType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{p}{))}
+            \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                \PYG{n}{WatermarkStrategy}\PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                    \PYG{n+nd}{@Override}
+                    \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{UserBehavior} \PYG{n}{element}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{recordTimestamp}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                        \PYG{k}{return} \PYG{n}{element}\PYG{p}{.}\PYG{n+na}{timestamp}\PYG{p}{;}
+                    \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{}))}
+            \PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{p}{,} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{map}\PYG{p}{(}\PYG{n}{UserBehavior} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}key\PYGZdq{}}\PYG{p}{,} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{userId}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingEventTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{hours}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)))}
+            \PYG{p}{.}\PYG{n+na}{aggregate}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Agg}\PYG{p}{(),} \PYG{k}{new} \PYG{n}{WindowResult}\PYG{p}{())}
+            \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{Agg} \PYG{k+kd}{implements} \PYG{n}{AggregateFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{createAccumulator}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{k}{new} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{();}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{add}\PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{value}\PYG{p}{,} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{accumulator}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{n}{accumulator}\PYG{p}{.}\PYG{n+na}{add}\PYG{p}{(}\PYG{n}{value}\PYG{p}{.}\PYG{n+na}{f1}\PYG{p}{);}
+            \PYG{k}{return} \PYG{n}{accumulator}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{getResult}\PYG{p}{(}\PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{accumulator}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{p}{(}\PYG{k+kt}{long}\PYG{p}{)} \PYG{n}{accumulator}\PYG{p}{.}\PYG{n+na}{size}\PYG{p}{();}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{merge}\PYG{p}{(}\PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{a}\PYG{p}{,} \PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{b}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{k+kc}{null}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{WindowResult} \PYG{k+kd}{extends} \PYG{n}{ProcessWindowFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{TimeWindow}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{process}\PYG{p}{(}\PYG{n}{String} \PYG{n}{s}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{p}{,} \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{elements}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{n}{String} \PYG{n}{start} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{p}{(}\PYG{n}{context}\PYG{p}{.}\PYG{n+na}{window}\PYG{p}{().}\PYG{n+na}{getStart}\PYG{p}{()).}\PYG{n+na}{toString}\PYG{p}{();}
+            \PYG{n}{String} \PYG{n}{end} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{p}{(}\PYG{n}{context}\PYG{p}{.}\PYG{n+na}{window}\PYG{p}{().}\PYG{n+na}{getEnd}\PYG{p}{()).}\PYG{n+na}{toString}\PYG{p}{();}
+
+            \PYG{n}{out}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}窗口 \PYGZdq{}} \PYG{o}{+} \PYG{n}{start} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} \PYGZti{}\PYGZti{}\PYGZti{} \PYGZdq{}} \PYG{o}{+} \PYG{n}{end} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} 的UV数据是：\PYGZdq{}} \PYG{o}{+} \PYG{n}{elements}\PYG{p}{.}\PYG{n+na}{iterator}\PYG{p}{().}\PYG{n+na}{next}\PYG{p}{());}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

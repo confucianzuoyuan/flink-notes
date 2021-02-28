@@ -1,0 +1,28 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    size="8,5"
+    node [shape = doublecircle]; 1, 4, 7, 8;
+    node [shape = circle];
+    start [shape = plaintext];
+    start -> 0;
+    0 -> 0 [label = "空格"];
+    0 -> 1 [label = "数字"];
+    0 -> 2 [label = "点"];
+    0 -> 3 [label = "+/-"];
+    1 -> 1 [label = "数字"];
+    1 -> 4 [label = "点"];
+    1 -> 5 [label = "e/E"];
+    1 -> 8 [label = "空格"];
+    2 -> 4 [label = "数字"];
+    3 -> 1 [label = "数字"];
+    3 -> 2 [label = "点"];
+    4 -> 4 [label = "数字"];
+    4 -> 5 [label = "e/E"];
+    4 -> 8 [label = "空格"];
+    5 -> 6 [label = "+/-"];
+    5 -> 7 [label = "数字"];
+    6 -> 7 [label = "数字"];
+    7 -> 7 [label = "数字"];
+    7 -> 8 [label = "空格"];
+    8 -> 8 [label = "空格"];
+}

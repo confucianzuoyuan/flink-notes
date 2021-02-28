@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{create} \PYG{k}{database} \PYG{n}{sensor}\PYG{p}{;}
+\PYG{k}{create} \PYG{k}{table} \PYG{n}{temps}\PYG{p}{(}\PYG{n}{id} \PYG{n+nb}{varchar}\PYG{p}{(}\PYG{l+m+mi}{20}\PYG{p}{),} \PYG{n}{temp} \PYG{n+nb}{float}\PYG{p}{);}
+\end{Verbatim}

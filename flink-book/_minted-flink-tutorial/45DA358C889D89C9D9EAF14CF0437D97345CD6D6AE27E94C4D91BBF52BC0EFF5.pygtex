@@ -1,0 +1,8 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+Mary,./home,1970\PYGZhy{}01\PYGZhy{}01T12:00
+Bob,./cart,1970\PYGZhy{}01\PYGZhy{}01T12:00
+Mary,./prod?id=1,1970\PYGZhy{}01\PYGZhy{}01T12:00:05
+Liz,./home,1970\PYGZhy{}01\PYGZhy{}01T12:01
+Bob,./prod?id=3,1970\PYGZhy{}01\PYGZhy{}01T12:01:30
+Mary,./prod?id=7,1970\PYGZhy{}01\PYGZhy{}01T12:01:45
+\end{Verbatim}

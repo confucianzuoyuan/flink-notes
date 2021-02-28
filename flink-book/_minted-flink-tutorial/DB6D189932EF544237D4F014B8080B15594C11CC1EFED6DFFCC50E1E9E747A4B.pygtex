@@ -1,0 +1,51 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{TopNSQL} \PYG{o}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{o}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{o}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{o}{();}
+        \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{setParallelism}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{);}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}
+                \PYG{o}{.}\PYG{n+na}{readTextFile}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}UserBehavior.csv\PYGZdq{}}\PYG{o}{)}
+                \PYG{o}{.}\PYG{n+na}{map}\PYG{o}{(}\PYG{k}{new} \PYG{n}{MapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{,} \PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+                    \PYG{n+nd}{@Override}
+                    \PYG{k+kd}{public} \PYG{n}{UserBehavior} \PYG{n+nf}{map}\PYG{o}{(}\PYG{n}{String} \PYG{n}{value}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+                        \PYG{n}{String}\PYG{o}{[]} \PYG{n}{arr} \PYG{o}{=} \PYG{n}{value}\PYG{o}{.}\PYG{n+na}{split}\PYG{o}{(}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{o}{);}
+                        \PYG{k}{return} \PYG{k}{new} \PYG{n}{UserBehavior}\PYG{o}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{0}\PYG{o}{],} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{1}\PYG{o}{],} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{2}\PYG{o}{],} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{3}\PYG{o}{],} \PYG{n}{Long}\PYG{o}{.}\PYG{n+na}{parseLong}\PYG{o}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{4}\PYG{o}{])} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{o}{);}
+                    \PYG{o}{\PYGZcb{}}
+                \PYG{o}{\PYGZcb{})}
+                \PYG{o}{.}\PYG{n+na}{filter}\PYG{o}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{behaviorType}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{))}
+                \PYG{o}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{o}{(}
+                    \PYG{n}{WatermarkStrategy}\PYG{o}{.\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{o}{()}
+                    \PYG{o}{.}\PYG{n+na}{withTimestampAssigner}\PYG{o}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+                        \PYG{n+nd}{@Override}
+                        \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{o}{(}\PYG{n}{UserBehavior} \PYG{n}{element}\PYG{o}{,} \PYG{k+kt}{long} \PYG{n}{recordTimestamp}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+                            \PYG{k}{return} \PYG{n}{element}\PYG{o}{.}\PYG{n+na}{timestamp}\PYG{o}{;}
+                        \PYG{o}{\PYGZcb{}}
+                    \PYG{o}{\PYGZcb{}));}
+
+        \PYG{c+c1}{// SQL}
+        \PYG{n}{EnvironmentSettings} \PYG{n}{settings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{o}{.}\PYG{n+na}{newInstance}\PYG{o}{().}\PYG{n+na}{inStreamingMode}\PYG{o}{().}\PYG{n+na}{build}\PYG{o}{();}
+
+        \PYG{n}{StreamTableEnvironment} \PYG{n}{tEnv} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{o}{.}\PYG{n+na}{create}\PYG{o}{(}\PYG{n}{env}\PYG{o}{,} \PYG{n}{settings}\PYG{o}{);}
+
+        \PYG{n}{tEnv}\PYG{o}{.}\PYG{n+na}{createTemporaryView}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}t\PYGZdq{}}\PYG{o}{,} \PYG{n}{stream}\PYG{o}{,} \PYG{n}{\PYGZdl{}}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}itemId\PYGZdq{}}\PYG{o}{),} \PYG{n}{\PYGZdl{}}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}timestamp\PYGZdq{}}\PYG{o}{).}\PYG{n+na}{rowtime}\PYG{o}{().}\PYG{n+na}{as}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}ts\PYGZdq{}}\PYG{o}{));}
+
+        \PYG{c+c1}{// 按照itemid分流开窗聚合，结果是每一个itemid在每一个窗口的浏览量}
+        \PYG{n}{String} \PYG{n}{innerSQL} \PYG{o}{=} \PYG{l+s}{\PYGZdq{}SELECT itemId, COUNT(itemId) as itemCount, HOP\PYGZus{}END(ts, INTERVAL \PYGZsq{}5\PYGZsq{} MINUTE, INTERVAL \PYGZsq{}1\PYGZsq{} HOUR) as windowEnd\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{} FROM t GROUP BY HOP(ts, INTERVAL \PYGZsq{}5\PYGZsq{} MINUTE, INTERVAL \PYGZsq{}1\PYGZsq{} HOUR), itemId\PYGZdq{}}\PYG{o}{;}
+
+        \PYG{c+c1}{// 按照windowEnd分区，然后按照浏览量降序排列}
+        \PYG{n}{String} \PYG{n}{midSQL} \PYG{o}{=} \PYG{l+s}{\PYGZdq{}SELECT *, ROW\PYGZus{}NUMBER() OVER (PARTITION BY windowEnd ORDER BY itemCount DESC) as row\PYGZus{}num\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{} FROM (\PYGZdq{}} \PYG{o}{+} \PYG{n}{innerSQL} \PYG{o}{+} \PYG{l+s}{\PYGZdq{})\PYGZdq{}}\PYG{o}{;}
+
+        \PYG{c+c1}{// 取出前三名}
+        \PYG{n}{String} \PYG{n}{outerSQL} \PYG{o}{=} \PYG{l+s}{\PYGZdq{}SELECT * FROM (\PYGZdq{}} \PYG{o}{+} \PYG{n}{midSQL} \PYG{o}{+} \PYG{l+s}{\PYGZdq{}) WHERE row\PYGZus{}num \PYGZlt{}= 3\PYGZdq{}}\PYG{o}{;}
+
+        \PYG{n}{Table} \PYG{n}{result} \PYG{o}{=} \PYG{n}{tEnv}\PYG{o}{.}\PYG{n+na}{sqlQuery}\PYG{o}{(}\PYG{n}{outerSQL}\PYG{o}{);}
+
+        \PYG{n}{tEnv}\PYG{o}{.}\PYG{n+na}{toRetractStream}\PYG{o}{(}\PYG{n}{result}\PYG{o}{,} \PYG{n}{Row}\PYG{o}{.}\PYG{n+na}{class}\PYG{o}{).}\PYG{n+na}{print}\PYG{o}{();}
+
+        \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{execute}\PYG{o}{();}
+    \PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,29 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// 每个窗口里面，商品ID的PV数据}
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{ItemViewCount} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{itemId}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{count}\PYG{p}{;} \PYG{c+c1}{// pv 数据}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{windowStart}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{windowEnd}\PYG{p}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{ItemViewCount}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{ItemViewCount}\PYG{p}{(}\PYG{n}{String} \PYG{n}{itemId}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{count}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{windowStart}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{windowEnd}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{itemId} \PYG{o}{=} \PYG{n}{itemId}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{count} \PYG{o}{=} \PYG{n}{count}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{windowStart} \PYG{o}{=} \PYG{n}{windowStart}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{windowEnd} \PYG{o}{=} \PYG{n}{windowEnd}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{toString}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}ItemViewCount\PYGZob{}\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}itemId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{itemId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, count=\PYGZdq{}} \PYG{o}{+} \PYG{n}{count} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, windowStart=\PYGZdq{}} \PYG{o}{+} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{p}{(}\PYG{n}{windowStart}\PYG{p}{)} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, windowEnd=\PYGZdq{}} \PYG{o}{+} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{p}{(}\PYG{n}{windowEnd}\PYG{p}{)} \PYG{o}{+}
+                \PYG{l+s+sc}{\PYGZsq{}\PYGZcb{}\PYGZsq{}}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{SELECT} \PYG{k}{user}\PYG{p}{,} \PYG{k}{COUNT}\PYG{p}{(}\PYG{n}{url}\PYG{p}{)}
+\PYG{k}{FROM} \PYG{n}{clicks}
+\PYG{k}{GROUP} \PYG{k}{BY} \PYG{k}{user}\PYG{p}{;}
+\end{Verbatim}

@@ -1,0 +1,8 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.common.functions.MapFunction}\PYG{o}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.java.tuple.Tuple2}\PYG{o}{;}
+
+\PYG{n}{env}\PYG{o}{.}\PYG{n+na}{fromElements}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{,} \PYG{l+m+mi}{2}\PYG{o}{,} \PYG{l+m+mi}{3}\PYG{o}{)}
+\PYG{o}{.}\PYG{n+na}{map}\PYG{o}{(}\PYG{n}{i} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Tuple2}\PYG{o}{.}\PYG{n+na}{of}\PYG{o}{(}\PYG{n}{i}\PYG{o}{,} \PYG{n}{i}\PYG{o}{))}    \PYG{c+c1}{// 没有关于 Tuple2 字段的信息}
+\PYG{o}{.}\PYG{n+na}{print}\PYG{o}{();}
+\end{Verbatim}

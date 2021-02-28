@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZdl{} ./bin/flink savepoint bc0b2ad61ecd4a615d92ce25390f61ad \PYG{l+s+se}{\PYGZbs{}}
+hdfs:///xxx:50070/savepoints
+Triggering savepoint \PYG{k}{for} job bc0b2ad61ecd4a615d92ce25390f61ad.
+Waiting \PYG{k}{for} response...
+Savepoint completed.
+Path: hdfs:///xxx:50070/savepoints/savepoint\PYGZhy{}bc0b2a\PYGZhy{}63cf5d5ccef8
+You can resume your program from this savepoint with the run command.
+\end{Verbatim}

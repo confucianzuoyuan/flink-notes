@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{personTuple}\PYG{p}{.}\PYG{n+na}{f1} \PYG{o}{=} \PYG{l+m+mi}{42}\PYG{p}{;} \PYG{c+c1}{// set the 2nd field to 42}
+\PYG{n}{personTuple}\PYG{p}{.}\PYG{n+na}{setField}\PYG{p}{(}\PYG{l+m+mi}{43}\PYG{p}{,} \PYG{l+m+mi}{1}\PYG{p}{);} \PYG{c+c1}{// set the 2nd field to 43}
+\end{Verbatim}

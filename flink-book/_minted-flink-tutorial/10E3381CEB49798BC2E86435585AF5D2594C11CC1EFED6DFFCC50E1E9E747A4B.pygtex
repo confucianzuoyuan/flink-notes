@@ -1,0 +1,19 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{readings}\PYG{o}{.}\PYG{n+na}{filter}\PYG{o}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{behaviorType}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{));}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{n}{readings}\PYG{o}{.}\PYG{n+na}{filter}\PYG{o}{(}\PYG{k}{new} \PYG{n}{FilterFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{n+nd}{@Override}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{Boolean} \PYG{n+nf}{filter}\PYG{o}{(}\PYG{n}{UserBehavior} \PYG{n}{r}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ireturn} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{behaviorType}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{);}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{});}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{n}{readings}\PYG{o}{.}\PYG{n+na}{filter}\PYG{o}{(}\PYG{k}{new} \PYG{n}{PvExtractor}\PYG{o}{());}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{IdExtractor} \PYG{k+kd}{implements} \PYG{n}{FilterFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{n+nd}{@Override}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{Boolean} \PYG{n+nf}{filter}\PYG{o}{(}\PYG{n}{UserBehavior} \PYG{n}{r}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ireturn} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{behaviorType}\PYG{o}{.}\PYG{n+na}{equals}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{);}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

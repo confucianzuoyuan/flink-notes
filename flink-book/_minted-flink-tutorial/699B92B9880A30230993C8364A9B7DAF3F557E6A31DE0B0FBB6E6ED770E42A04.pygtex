@@ -1,0 +1,21 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{\PYGZhy{}\PYGZhy{} 在 Flink SQL 中注册一张 MySQL 表 \PYGZsq{}users\PYGZsq{}}
+\PYG{k}{CREATE} \PYG{k}{TABLE} \PYG{n}{MyUserTable} \PYG{p}{(}
+  \PYG{n}{id} \PYG{n+nb}{BIGINT}\PYG{p}{,}
+  \PYG{n}{name} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{n}{age} \PYG{n+nb}{INT}\PYG{p}{,}
+  \PYG{n}{status} \PYG{n+nb}{BOOLEAN}\PYG{p}{,}
+  \PYG{k}{PRIMARY} \PYG{k}{KEY} \PYG{p}{(}\PYG{n}{id}\PYG{p}{)} \PYG{k}{NOT} \PYG{n}{ENFORCED}
+\PYG{p}{)} \PYG{k}{WITH} \PYG{p}{(}
+   \PYG{l+s+s1}{\PYGZsq{}connector\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}jdbc\PYGZsq{}}\PYG{p}{,}
+   \PYG{l+s+s1}{\PYGZsq{}url\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}jdbc:mysql://localhost:3306/mydatabase\PYGZsq{}}\PYG{p}{,}
+   \PYG{l+s+s1}{\PYGZsq{}table\PYGZhy{}name\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}users\PYGZsq{}}
+\PYG{p}{);}
+
+\PYG{c+c1}{\PYGZhy{}\PYGZhy{} 从另一张表 \PYGZdq{}T\PYGZdq{} 将数据写入到 JDBC 表中}
+\PYG{k}{INSERT} \PYG{k}{INTO} \PYG{n}{MyUserTable}
+\PYG{k}{SELECT} \PYG{n}{id}\PYG{p}{,} \PYG{n}{name}\PYG{p}{,} \PYG{n}{age}\PYG{p}{,} \PYG{n}{status} \PYG{k}{FROM} \PYG{n}{T}\PYG{p}{;}
+
+\PYG{c+c1}{\PYGZhy{}\PYGZhy{} 查看 JDBC 表中的数据}
+\PYG{k}{SELECT} \PYG{n}{id}\PYG{p}{,} \PYG{n}{name}\PYG{p}{,} \PYG{n}{age}\PYG{p}{,} \PYG{n}{status} \PYG{k}{FROM} \PYG{n}{MyUserTable}\PYG{p}{;}
+\end{Verbatim}

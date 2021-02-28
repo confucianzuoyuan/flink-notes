@@ -1,0 +1,55 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{ListStateExample} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{env}
+            \PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{())}
+            \PYG{p}{.}\PYG{n+na}{filter}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}sensor\PYGZus{}1\PYGZdq{}}\PYG{p}{))}
+            \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{process}\PYG{p}{(}\PYG{k}{new} \PYG{n}{KeyedProcessFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{SensorReading}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+
+                \PYG{k+kd}{private} \PYG{n}{ListState}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{readings}\PYG{p}{;}
+                \PYG{k+kd}{private} \PYG{n}{ValueState}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{timerTs}\PYG{p}{;}
+
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{open}\PYG{p}{(}\PYG{n}{Configuration} \PYG{n}{parameters}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{open}\PYG{p}{(}\PYG{n}{parameters}\PYG{p}{);}
+                    \PYG{n}{readings} \PYG{o}{=} \PYG{n}{getRuntimeContext}\PYG{p}{().}\PYG{n+na}{getListState}\PYG{p}{(}
+                            \PYG{k}{new} \PYG{n}{ListStateDescriptor}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}readings\PYGZdq{}}\PYG{p}{,} \PYG{n}{SensorReading}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{)}
+                    \PYG{p}{);}
+                    \PYG{n}{timerTs} \PYG{o}{=} \PYG{n}{getRuntimeContext}\PYG{p}{().}\PYG{n+na}{getState}\PYG{p}{(}
+                            \PYG{k}{new} \PYG{n}{ValueStateDescriptor}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}ts\PYGZdq{}}\PYG{p}{,} \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{LONG}\PYG{p}{)}
+                    \PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{processElement}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{sensorReading}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{collector}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{n}{readings}\PYG{p}{.}\PYG{n+na}{add}\PYG{p}{(}\PYG{n}{sensorReading}\PYG{p}{);}
+                    \PYG{k}{if} \PYG{p}{(}\PYG{n}{timerTs}\PYG{p}{.}\PYG{n+na}{value}\PYG{p}{()} \PYG{o}{==} \PYG{k+kc}{null}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                        \PYG{n}{context}\PYG{p}{.}\PYG{n+na}{timerService}\PYG{p}{()}
+                               \PYG{p}{.}\PYG{n+na}{registerProcessingTimeTimer}\PYG{p}{(}
+                                   \PYG{n}{context}\PYG{p}{.}\PYG{n+na}{timerService}\PYG{p}{().}\PYG{n+na}{currentProcessingTime}\PYG{p}{()} \PYG{o}{+} \PYG{l+m+mi}{10} \PYG{o}{*} \PYG{l+m+mi}{1000L}
+                               \PYG{p}{);}
+                        \PYG{n}{timerTs}\PYG{p}{.}\PYG{n+na}{update}\PYG{p}{(}\PYG{n}{context}\PYG{p}{.}\PYG{n+na}{timerService}\PYG{p}{().}\PYG{n+na}{currentProcessingTime}\PYG{p}{()} \PYG{o}{+} \PYG{l+m+mi}{10} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{p}{);}
+                    \PYG{p}{\PYGZcb{}}
+                \PYG{p}{\PYGZcb{}}
+
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{onTimer}\PYG{p}{(}\PYG{k+kt}{long} \PYG{n}{timestamp}\PYG{p}{,} \PYG{n}{OnTimerContext} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{onTimer}\PYG{p}{(}\PYG{n}{timestamp}\PYG{p}{,} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{out}\PYG{p}{);}
+                    \PYG{k+kt}{long} \PYG{n}{count} \PYG{o}{=} \PYG{l+m+mi}{0}\PYG{n}{L}\PYG{p}{;}
+                    \PYG{k}{for}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{r} \PYG{p}{:} \PYG{n}{readings}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{())} \PYG{p}{\PYGZob{}}
+                        \PYG{n}{count}\PYG{o}{++}\PYG{p}{;}
+                    \PYG{p}{\PYGZcb{}}
+                    \PYG{n}{out}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}there are \PYGZdq{}} \PYG{o}{+} \PYG{n}{count} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} readings\PYGZdq{}}\PYG{p}{);}
+                    \PYG{n}{timerTs}\PYG{p}{.}\PYG{n+na}{clear}\PYG{p}{();}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{SELECT} \PYG{o}{*}
+\PYG{k}{FROM} \PYG{n}{Orders} \PYG{n}{o}\PYG{p}{,} \PYG{n}{Shipments} \PYG{n}{s}
+\PYG{k}{WHERE} \PYG{n}{o}\PYG{p}{.}\PYG{n}{id} \PYG{o}{=} \PYG{n}{s}\PYG{p}{.}\PYG{n}{order\PYGZus{}id}
+\PYG{k}{AND} \PYG{n}{o}\PYG{p}{.}\PYG{n}{order\PYGZus{}time} \PYG{k}{BETWEEN} \PYG{n}{s}\PYG{p}{.}\PYG{n}{ship\PYGZus{}time} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{INTERVAL} \PYG{l+s+s1}{\PYGZsq{}4\PYGZsq{}} \PYG{n}{HOUR} \PYG{k}{AND} \PYG{n}{s}\PYG{p}{.}\PYG{n}{ship\PYGZus{}time}
+\end{Verbatim}

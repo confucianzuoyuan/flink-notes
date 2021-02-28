@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.java.tuple.Tuple2}\PYG{p}{;}
+
+\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}} \PYG{n}{personTuple} \PYG{o}{=} \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Alex\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{42}\PYG{p}{);}
+\PYG{n}{Integer} \PYG{n}{age} \PYG{o}{=} \PYG{n}{personTuple}\PYG{p}{.}\PYG{n+na}{getField}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);} \PYG{c+c1}{// age = 42}
+\end{Verbatim}

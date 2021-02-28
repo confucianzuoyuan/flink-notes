@@ -1,0 +1,42 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{readings} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
+
+\PYG{c+c1}{// write the sensor readings to a socket}
+\PYG{n}{readings}
+    \PYG{p}{.}\PYG{n+na}{addSink}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleSocketSink}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}localhost\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{9191}\PYG{p}{))}
+    \PYG{c+c1}{// set parallelism to 1 because only one thread can write to a socket}
+    \PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{SimpleSocketSink} \PYG{k+kd}{extends} \PYG{n}{RichSinkFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{private} \PYG{n}{String} \PYG{n}{host}\PYG{p}{;}
+    \PYG{k+kd}{private} \PYG{n}{Integer} \PYG{n}{port}\PYG{p}{;}
+
+    \PYG{k+kd}{private} \PYG{n}{Socket} \PYG{n}{socket}\PYG{p}{;}
+    \PYG{k+kd}{private} \PYG{n}{PrintStream} \PYG{n}{writer}\PYG{p}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{SimpleSocketSink}\PYG{p}{(}\PYG{n}{String} \PYG{n}{host}\PYG{p}{,} \PYG{n}{Integer} \PYG{n}{port}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{host} \PYG{o}{=} \PYG{n}{host}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{port} \PYG{o}{=} \PYG{n}{port}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{open}\PYG{p}{(}\PYG{n}{Configuration} \PYG{n}{parameters}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{open}\PYG{p}{(}\PYG{n}{parameters}\PYG{p}{);}
+        \PYG{n}{socket} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Socket}\PYG{p}{(}\PYG{n}{InetAddress}\PYG{p}{.}\PYG{n+na}{getByName}\PYG{p}{(}\PYG{n}{host}\PYG{p}{),} \PYG{n}{port}\PYG{p}{);}
+        \PYG{n}{writer} \PYG{o}{=} \PYG{k}{new} \PYG{n}{PrintStream}\PYG{p}{(}\PYG{n}{socket}\PYG{p}{.}\PYG{n+na}{getOutputStream}\PYG{p}{());}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{invoke}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{value}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{writer}\PYG{p}{.}\PYG{n+na}{println}\PYG{p}{(}\PYG{n}{value}\PYG{p}{.}\PYG{n+na}{toString}\PYG{p}{());}
+        \PYG{n}{writer}\PYG{p}{.}\PYG{n+na}{flush}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{close}\PYG{p}{()} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+        \PYG{n}{writer}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+        \PYG{n}{socket}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

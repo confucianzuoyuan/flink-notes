@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+(true,Mary,1)
+(true,Bob,1)
+(false,Mary,1)
+(true,Mary,2)
+(true,Liz,1)
+\end{Verbatim}

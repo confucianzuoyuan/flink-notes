@@ -1,0 +1,32 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// 用户行为的每一条数据就是一个POJO类}
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{UserBehavior} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{userId}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{itemId}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{categoryId}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{behaviorType}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{timestamp}\PYG{p}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{UserBehavior}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{UserBehavior}\PYG{p}{(}\PYG{n}{String} \PYG{n}{userId}\PYG{p}{,} \PYG{n}{String} \PYG{n}{itemId}\PYG{p}{,} \PYG{n}{String} \PYG{n}{categoryId}\PYG{p}{,} \PYG{n}{String} \PYG{n}{behaviorType}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{timestamp}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{userId} \PYG{o}{=} \PYG{n}{userId}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{itemId} \PYG{o}{=} \PYG{n}{itemId}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{categoryId} \PYG{o}{=} \PYG{n}{categoryId}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{behaviorType} \PYG{o}{=} \PYG{n}{behaviorType}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{timestamp} \PYG{o}{=} \PYG{n}{timestamp}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{toString}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}UserBehavior\PYGZob{}\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}userId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{userId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, itemId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{itemId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, categoryId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{categoryId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, behaviorType=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{behaviorType} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, timestamp=\PYGZdq{}} \PYG{o}{+} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{p}{(}\PYG{n}{timestamp}\PYG{p}{)} \PYG{o}{+}
+                \PYG{l+s+sc}{\PYGZsq{}\PYGZcb{}\PYGZsq{}}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

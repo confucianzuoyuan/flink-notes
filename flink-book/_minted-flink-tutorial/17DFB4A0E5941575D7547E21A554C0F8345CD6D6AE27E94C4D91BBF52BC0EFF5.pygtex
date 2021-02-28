@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+Mary,./home
+Bob,./cart
+Mary,./prod?id=1
+Liz,./home
+\end{Verbatim}

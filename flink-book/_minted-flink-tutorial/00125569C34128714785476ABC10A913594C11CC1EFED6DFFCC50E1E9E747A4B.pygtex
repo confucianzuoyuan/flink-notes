@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{Properties} \PYG{n}{properties} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Properties}\PYG{p}{();}
+\PYG{n}{properties}\PYG{p}{.}\PYG{n+na}{setProperty}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}bootstrap.servers\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}localhost:9092\PYGZdq{}}\PYG{p}{);}
+\PYG{n}{properties}\PYG{p}{.}\PYG{n+na}{setProperty}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}group.id\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}consumer\PYGZhy{}group\PYGZdq{}}\PYG{p}{);}
+\PYG{n}{properties}\PYG{p}{.}\PYG{n+na}{setProperty}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}key.deserializer\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}org.apache.kafka.common.serialization.StringDeserializer\PYGZdq{}}\PYG{p}{);}
+\PYG{n}{properties}\PYG{p}{.}\PYG{n+na}{setProperty}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}value.deserializer\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}org.apache.kafka.common.serialization.StringDeserializer\PYGZdq{}}\PYG{p}{);}
+\PYG{n}{properties}\PYG{p}{.}\PYG{n+na}{setProperty}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}auto.offset.reset\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}latest\PYGZdq{}}\PYG{p}{);}
+
+\PYG{n}{env}
+    \PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{FlinkKafkaConsumer}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{(}
+        \PYG{l+s}{\PYGZdq{}atguigu\PYGZdq{}}\PYG{p}{,}
+        \PYG{k}{new} \PYG{n}{SimpleStringSchema}\PYG{p}{(),}
+        \PYG{n}{properties}
+    \PYG{p}{))}
+    \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+\end{Verbatim}

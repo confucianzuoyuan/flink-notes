@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{SELECT} \PYG{k}{user}\PYG{p}{,} \PYG{n}{RANK}\PYG{p}{()} \PYG{n}{OVER} \PYG{p}{(}\PYG{k}{ORDER} \PYG{k}{BY} \PYG{n}{lastAction}\PYG{p}{)}
+\PYG{k}{FROM} \PYG{p}{(}
+  \PYG{k}{SELECT} \PYG{k}{user}\PYG{p}{,} \PYG{k}{MAX}\PYG{p}{(}\PYG{n}{cTime}\PYG{p}{)} \PYG{k}{AS} \PYG{n}{lastAction} \PYG{k}{FROM} \PYG{n}{clicks} \PYG{k}{GROUP} \PYG{k}{BY} \PYG{k}{user}
+\PYG{p}{);}
+\end{Verbatim}

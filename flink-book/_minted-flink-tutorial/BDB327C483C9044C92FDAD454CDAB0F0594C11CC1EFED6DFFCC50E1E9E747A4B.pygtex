@@ -1,0 +1,30 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// 方法一:}
+
+\PYG{c+c1}{// 基于 stream 中的事件产生时间戳和 watermark}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{inputStream}\PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(...);}
+
+\PYG{c+c1}{// 声明一个额外的逻辑字段作为事件时间属性}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}name\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}data\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}action\PYGZus{}time\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{rowtime}\PYG{p}{());}
+
+\PYG{c+c1}{// 方法二:}
+
+\PYG{c+c1}{// 从第一个字段获取事件时间，并且产生 watermark}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple3}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{inputStream}\PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(...);}
+
+\PYG{c+c1}{// 第一个字段已经用作事件时间抽取了，不用再用一个新字段来表示事件时间了}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}name\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}data\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}action\PYGZus{}time\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{rowtime}\PYG{p}{());}
+
+\PYG{c+c1}{// 注册临时视图}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}clicks\PYGZdq{}}\PYG{p}{,} \PYG{n}{table}\PYG{p}{);}
+
+\PYG{c+c1}{// 定义窗口}
+\PYG{c+c1}{// 一小时的滚动窗口，时间戳使用处理时间user\PYGZus{}action\PYGZus{}time}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT user, COUNT(url), TUMBLE\PYGZus{}START(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS), TUMBLE\PYGZus{}END(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS) FROM clicks GROUP BY user, TUMBLE(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS)\PYGZdq{}}\PYG{p}{);}
+
+\PYG{c+c1}{// 滑动窗口长度1小时，滑动距离30分钟}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT user, COUNT(url), HOP\PYGZus{}START(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}30\PYGZsq{} MINUTES, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS), HOP\PYGZus{}END(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}30\PYGZsq{} MINUTES, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS) FROM clicks GROUP BY user, HOP(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}30\PYGZsq{} MINUTES, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS)\PYGZdq{}}\PYG{p}{);}
+
+\PYG{c+c1}{// 会话窗口，超时时间是1小时}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT user, COUNT(url), SESSION\PYGZus{}START(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS), SESSION\PYGZus{}END(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS) FROM clicks GROUP BY user, SESSION(user\PYGZus{}action\PYGZus{}time, INTERVAL \PYGZsq{}1\PYGZsq{} HOURS)\PYGZdq{}}\PYG{p}{);}
+\end{Verbatim}

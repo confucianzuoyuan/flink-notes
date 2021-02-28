@@ -1,0 +1,40 @@
+digraph finite_state_machine {
+    rankdir=LR;
+    node[group=main];
+    0,1,2,3,4,5,6,7,8,9,10,11;
+    node[group=""];
+    node[group=g1]
+    {rankdir = LR; 10; 11}
+    size="8,5"
+    node [shape = circle];
+    0 [label = "(", xlabel="0", shape=circle];
+    1 [label = "(", xlabel="1", shape=circle];
+    2 [label = "A", xlabel="2", shape=circle];
+    3 [label = "*", xlabel="3", shape=circle];
+    4 [label = "B", xlabel="4", shape=circle];
+    5 [label = "|", xlabel="5", shape=circle];
+    6 [label = "A", xlabel="6", shape=circle];
+    7 [label = "C", xlabel="7", shape=circle];
+    8 [label = ")", xlabel="8", shape=circle];
+    9 [label = "D", xlabel="9", shape=circle];
+    10 [label = ")", xlabel="10", shape=circle];
+    11 [xlabel="11", label="", shape=doublecircle];
+    start [shape=plaintext, label="开始状态"];
+    end [shape=plaintext, label="结束状态"];
+    0 -> 1 [color = "red"];
+    1 -> 2 [color = "red"];
+    2 -> 3 [color = "red"];
+    2 -> 3;
+    3 -> 2 [color = "red"];
+    3 -> 4 [color = "red"];
+    4 -> 5;
+    1 -> 6 [color = "red"];
+    6 -> 7;
+    7 -> 8;
+    5 -> 8 [color = "red"];
+    8 -> 9 [color = "red"];
+    9 -> 10;
+    10 -> 11 [color = "red"];
+    start -> 0;
+    end -> 11;
+}

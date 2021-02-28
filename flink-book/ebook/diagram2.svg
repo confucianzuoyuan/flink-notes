@@ -1,0 +1,253 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg height='1028pt' preserveAspectRatio='xMidYMid meet' viewBox='0.00 0.00 230.49 1028.49' width='230pt' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns='http://www.w3.org/2000/svg'>
+<g class='graph' id='graph0' transform='scale(1 1) rotate(0) translate(4 1024.49)'>
+<title>G</title>
+<polygon fill='white' points='-4,4 -4,-1024.49 226.49,-1024.49 226.49,4 -4,4' stroke='transparent'/>
+
+<g class='node' id='node1'>
+<title>aa</title>
+<polygon fill='none' points='156.25,-1020.49 60.25,-1020.49 60.25,-984.49 156.25,-984.49 156.25,-1020.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-998.79'>hello world</text>
+</g>
+
+<g class='node' id='node2'>
+<title>a</title>
+<polygon fill='none' points='156.25,-948.49 60.25,-948.49 60.25,-912.49 156.25,-912.49 156.25,-948.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-926.79'>hello world</text>
+</g>
+
+<g class='edge' id='edge1'>
+<title>aa&#45;&gt;a</title>
+<path d='M108.25,-984.19C108.25,-976.48 108.25,-967.2 108.25,-958.6' fill='none' stroke='black'/>
+<polygon fill='black' points='111.75,-958.6 108.25,-948.6 104.75,-958.6 111.75,-958.6' stroke='black'/>
+</g>
+
+<g class='node' id='node3'>
+<title>b</title>
+<polygon fill='none' points='143.75,-876.49 72.75,-876.49 72.75,-840.49 143.75,-840.49 143.75,-876.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-854.79'>flatMap</text>
+</g>
+
+<g class='edge' id='edge2'>
+<title>a&#45;&gt;b</title>
+<path d='M108.25,-912.19C108.25,-904.48 108.25,-895.2 108.25,-886.6' fill='none' stroke='black'/>
+<polygon fill='black' points='111.75,-886.6 108.25,-876.6 104.75,-886.6 111.75,-886.6' stroke='black'/>
+</g>
+
+<g class='node' id='node4'>
+<title>cc</title>
+<polygon fill='none' points='148.75,-804.49 67.75,-804.49 67.75,-768.49 148.75,-768.49 148.75,-804.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-782.79'>(world,1)</text>
+</g>
+
+<g class='edge' id='edge3'>
+<title>b&#45;&gt;cc</title>
+<path d='M108.25,-840.19C108.25,-832.48 108.25,-823.2 108.25,-814.6' fill='none' stroke='black'/>
+<polygon fill='black' points='111.75,-814.6 108.25,-804.6 104.75,-814.6 111.75,-814.6' stroke='black'/>
+</g>
+
+<g class='node' id='node5'>
+<title>dd</title>
+<polygon fill='none' points='145.75,-732.49 70.75,-732.49 70.75,-696.49 145.75,-696.49 145.75,-732.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-710.79'>(hello,1)</text>
+</g>
+
+<g class='edge' id='edge4'>
+<title>cc&#45;&gt;dd</title>
+<path d='M108.25,-768.19C108.25,-760.48 108.25,-751.2 108.25,-742.6' fill='none' stroke='black'/>
+<polygon fill='black' points='111.75,-742.6 108.25,-732.6 104.75,-742.6 111.75,-742.6' stroke='black'/>
+</g>
+
+<g class='node' id='node6'>
+<title>c</title>
+<polygon fill='none' points='148.75,-660.49 67.75,-660.49 67.75,-624.49 148.75,-624.49 148.75,-660.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-638.79'>(world,1)</text>
+</g>
+
+<g class='edge' id='edge5'>
+<title>dd&#45;&gt;c</title>
+<path d='M108.25,-696.19C108.25,-688.48 108.25,-679.2 108.25,-670.6' fill='none' stroke='black'/>
+<polygon fill='black' points='111.75,-670.6 108.25,-660.6 104.75,-670.6 111.75,-670.6' stroke='black'/>
+</g>
+
+<g class='node' id='node7'>
+<title>d</title>
+<polygon fill='none' points='145.75,-588.49 70.75,-588.49 70.75,-552.49 145.75,-552.49 145.75,-588.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-566.79'>(hello,1)</text>
+</g>
+
+<g class='edge' id='edge6'>
+<title>c&#45;&gt;d</title>
+<path d='M108.25,-624.19C108.25,-616.48 108.25,-607.2 108.25,-598.6' fill='none' stroke='black'/>
+<polygon fill='black' points='111.75,-598.6 108.25,-588.6 104.75,-598.6 111.75,-598.6' stroke='black'/>
+</g>
+
+<g class='node' id='node8'>
+<title>e</title>
+<polygon fill='none' points='138.25,-516.49 78.25,-516.49 78.25,-480.49 138.25,-480.49 138.25,-516.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='108.25' y='-494.79'>keyBy</text>
+</g>
+
+<g class='edge' id='edge7'>
+<title>d&#45;&gt;e</title>
+<path d='M108.25,-552.19C108.25,-544.48 108.25,-535.2 108.25,-526.6' fill='none' stroke='black'/>
+<polygon fill='black' points='111.75,-526.6 108.25,-516.6 104.75,-526.6 111.75,-526.6' stroke='black'/>
+</g>
+
+<g class='node' id='node9'>
+<title>ff</title>
+<polygon fill='none' points='97.75,-444.49 22.75,-444.49 22.75,-408.49 97.75,-408.49 97.75,-444.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='60.25' y='-422.79'>(hello,1)</text>
+</g>
+
+<g class='edge' id='edge8'>
+<title>e&#45;&gt;ff</title>
+<path d='M96.38,-480.19C90.74,-471.97 83.89,-461.98 77.68,-452.91' fill='none' stroke='black'/>
+<polygon fill='black' points='80.52,-450.86 71.97,-444.6 74.74,-454.82 80.52,-450.86' stroke='black'/>
+</g>
+
+<g class='node' id='node11'>
+<title>gg</title>
+<polygon fill='none' points='199.75,-444.49 118.75,-444.49 118.75,-408.49 199.75,-408.49 199.75,-444.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='159.25' y='-422.79'>(world,1)</text>
+</g>
+
+<g class='edge' id='edge10'>
+<title>e&#45;&gt;gg</title>
+<path d='M120.85,-480.19C126.84,-471.97 134.12,-461.98 140.73,-452.91' fill='none' stroke='black'/>
+<polygon fill='black' points='143.72,-454.74 146.78,-444.6 138.07,-450.62 143.72,-454.74' stroke='black'/>
+</g>
+
+<g class='node' id='node10'>
+<title>f</title>
+<polygon fill='none' points='91.75,-372.49 16.75,-372.49 16.75,-336.49 91.75,-336.49 91.75,-372.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='54.25' y='-350.79'>(hello,1)</text>
+</g>
+
+<g class='edge' id='edge9'>
+<title>ff&#45;&gt;f</title>
+<path d='M58.76,-408.19C58.1,-400.48 57.31,-391.2 56.57,-382.6' fill='none' stroke='black'/>
+<polygon fill='black' points='60.05,-382.26 55.71,-372.6 53.08,-382.86 60.05,-382.26' stroke='black'/>
+</g>
+
+<g class='node' id='node13'>
+<title>h</title>
+<ellipse cx='42.25' cy='-258.25' fill='none' rx='42.49' ry='42.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='42.25' y='-254.55'>reduce</text>
+</g>
+
+<g class='edge' id='edge12'>
+<title>f&#45;&gt;h</title>
+<path d='M52.05,-336.21C51.1,-328.79 49.94,-319.7 48.76,-310.4' fill='none' stroke='black'/>
+<polygon fill='black' points='52.21,-309.77 47.47,-300.3 45.26,-310.66 52.21,-309.77' stroke='black'/>
+</g>
+
+<g class='node' id='node12'>
+<title>g</title>
+<polygon fill='none' points='200.75,-372.49 119.75,-372.49 119.75,-336.49 200.75,-336.49 200.75,-372.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='160.25' y='-350.79'>(world,1)</text>
+</g>
+
+<g class='edge' id='edge11'>
+<title>gg&#45;&gt;g</title>
+<path d='M159.49,-408.19C159.6,-400.48 159.74,-391.2 159.86,-382.6' fill='none' stroke='black'/>
+<polygon fill='black' points='163.36,-382.65 160,-372.6 156.36,-382.55 163.36,-382.65' stroke='black'/>
+</g>
+
+<g class='node' id='node14'>
+<title>i</title>
+<ellipse cx='162.25' cy='-258.25' fill='none' rx='42.49' ry='42.49' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='162.25' y='-254.55'>reduce</text>
+</g>
+
+<g class='edge' id='edge13'>
+<title>g&#45;&gt;i</title>
+<path d='M160.61,-336.21C160.77,-328.87 160.96,-319.89 161.15,-310.7' fill='none' stroke='black'/>
+<polygon fill='black' points='164.65,-310.77 161.37,-300.7 157.66,-310.62 164.65,-310.77' stroke='black'/>
+</g>
+
+<g class='edge' id='edge16'>
+<title>h&#45;&gt;h</title>
+<path d='M80.49,-276.24C92.76,-276.06 102.49,-270.06 102.49,-258.25 102.49,-249.94 97.68,-244.51 90.56,-241.95' fill='none' stroke='black'/>
+<polygon fill='black' points='90.93,-238.47 80.49,-240.25 89.76,-245.37 90.93,-238.47' stroke='black'/>
+</g>
+
+<g class='node' id='node15'>
+<title>jj</title>
+<polygon fill='none' points='79.75,-180 4.75,-180 4.75,-144 79.75,-144 79.75,-180' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='42.25' y='-158.3'>(hello,2)</text>
+</g>
+
+<g class='edge' id='edge14'>
+<title>h&#45;&gt;jj</title>
+<path d='M42.25,-215.91C42.25,-207.34 42.25,-198.51 42.25,-190.58' fill='none' stroke='black'/>
+<polygon fill='black' points='45.75,-190.43 42.25,-180.43 38.75,-190.43 45.75,-190.43' stroke='black'/>
+</g>
+
+<g class='edge' id='edge17'>
+<title>i&#45;&gt;i</title>
+<path d='M200.49,-276.24C212.76,-276.06 222.49,-270.06 222.49,-258.25 222.49,-249.94 217.68,-244.51 210.56,-241.95' fill='none' stroke='black'/>
+<polygon fill='black' points='210.93,-238.47 200.49,-240.25 209.76,-245.37 210.93,-238.47' stroke='black'/>
+</g>
+
+<g class='node' id='node16'>
+<title>kk</title>
+<polygon fill='none' points='202.75,-180 121.75,-180 121.75,-144 202.75,-144 202.75,-180' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='162.25' y='-158.3'>(world,2)</text>
+</g>
+
+<g class='edge' id='edge15'>
+<title>i&#45;&gt;kk</title>
+<path d='M162.25,-215.91C162.25,-207.34 162.25,-198.51 162.25,-190.58' fill='none' stroke='black'/>
+<polygon fill='black' points='165.75,-190.43 162.25,-180.43 158.75,-190.43 165.75,-190.43' stroke='black'/>
+</g>
+
+<g class='node' id='node17'>
+<title>j</title>
+<polygon fill='none' points='79.75,-108 4.75,-108 4.75,-72 79.75,-72 79.75,-108' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='42.25' y='-86.3'>(hello,1)</text>
+</g>
+
+<g class='edge' id='edge18'>
+<title>jj&#45;&gt;j</title>
+<path d='M42.25,-143.7C42.25,-135.98 42.25,-126.71 42.25,-118.11' fill='none' stroke='black'/>
+<polygon fill='black' points='45.75,-118.1 42.25,-108.1 38.75,-118.1 45.75,-118.1' stroke='black'/>
+</g>
+
+<g class='node' id='node18'>
+<title>k</title>
+<polygon fill='none' points='202.75,-108 121.75,-108 121.75,-72 202.75,-72 202.75,-108' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='162.25' y='-86.3'>(world,1)</text>
+</g>
+
+<g class='edge' id='edge20'>
+<title>kk&#45;&gt;k</title>
+<path d='M162.25,-143.7C162.25,-135.98 162.25,-126.71 162.25,-118.11' fill='none' stroke='black'/>
+<polygon fill='black' points='165.75,-118.1 162.25,-108.1 158.75,-118.1 165.75,-118.1' stroke='black'/>
+</g>
+
+<g class='node' id='node19'>
+<title>l</title>
+<polygon fill='none' points='69.25,-36 15.25,-36 15.25,0 69.25,0 69.25,-36' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='42.25' y='-14.3'>print</text>
+</g>
+
+<g class='edge' id='edge19'>
+<title>j&#45;&gt;l</title>
+<path d='M42.25,-71.7C42.25,-63.98 42.25,-54.71 42.25,-46.11' fill='none' stroke='black'/>
+<polygon fill='black' points='45.75,-46.1 42.25,-36.1 38.75,-46.1 45.75,-46.1' stroke='black'/>
+</g>
+
+<g class='node' id='node20'>
+<title>m</title>
+<polygon fill='none' points='189.25,-36 135.25,-36 135.25,0 189.25,0 189.25,-36' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='162.25' y='-14.3'>print</text>
+</g>
+
+<g class='edge' id='edge21'>
+<title>k&#45;&gt;m</title>
+<path d='M162.25,-71.7C162.25,-63.98 162.25,-54.71 162.25,-46.11' fill='none' stroke='black'/>
+<polygon fill='black' points='165.75,-46.1 162.25,-36.1 158.75,-46.1 165.75,-46.1' stroke='black'/>
+</g>
+</g>
+</svg>

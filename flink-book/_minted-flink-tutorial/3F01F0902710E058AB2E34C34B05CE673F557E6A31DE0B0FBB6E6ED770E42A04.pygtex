@@ -1,0 +1,21 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{\PYGZhy{}\PYGZhy{} register the HBase table \PYGZsq{}mytable\PYGZsq{} in Flink SQL}
+\PYG{k}{CREATE} \PYG{k}{TABLE} \PYG{n}{hTable} \PYG{p}{(}
+ \PYG{n}{rowkey} \PYG{n+nb}{INT}\PYG{p}{,}
+ \PYG{n}{family1} \PYG{k}{ROW}\PYG{o}{\PYGZlt{}}\PYG{n}{q1} \PYG{n+nb}{INT}\PYG{o}{\PYGZgt{}}\PYG{p}{,}
+ \PYG{n}{family2} \PYG{k}{ROW}\PYG{o}{\PYGZlt{}}\PYG{n}{q2} \PYG{n}{STRING}\PYG{p}{,} \PYG{n}{q3} \PYG{n+nb}{BIGINT}\PYG{o}{\PYGZgt{}}\PYG{p}{,}
+ \PYG{n}{family3} \PYG{k}{ROW}\PYG{o}{\PYGZlt{}}\PYG{n}{q4} \PYG{n}{DOUBLE}\PYG{p}{,} \PYG{n}{q5} \PYG{n+nb}{BOOLEAN}\PYG{p}{,} \PYG{n}{q6} \PYG{n}{STRING}\PYG{o}{\PYGZgt{}}\PYG{p}{,}
+ \PYG{k}{PRIMARY} \PYG{k}{KEY} \PYG{p}{(}\PYG{n}{rowkey}\PYG{p}{)} \PYG{k}{NOT} \PYG{n}{ENFORCED}
+\PYG{p}{)} \PYG{k}{WITH} \PYG{p}{(}
+ \PYG{l+s+s1}{\PYGZsq{}connector\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}hbase\PYGZhy{}1.4\PYGZsq{}}\PYG{p}{,}
+ \PYG{l+s+s1}{\PYGZsq{}table\PYGZhy{}name\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}mytable\PYGZsq{}}\PYG{p}{,}
+ \PYG{l+s+s1}{\PYGZsq{}zookeeper.quorum\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}localhost:2181\PYGZsq{}}
+\PYG{p}{);}
+
+\PYG{c+c1}{\PYGZhy{}\PYGZhy{} 假设\PYGZdq{}T\PYGZdq{}的 schema 是 [rowkey, f1q1, f2q2, f2q3, f3q4, f3q5, f3q6]}
+\PYG{k}{INSERT} \PYG{k}{INTO} \PYG{n}{hTable}
+\PYG{k}{SELECT} \PYG{n}{rowkey}\PYG{p}{,} \PYG{k}{ROW}\PYG{p}{(}\PYG{n}{f1q1}\PYG{p}{),} \PYG{k}{ROW}\PYG{p}{(}\PYG{n}{f2q2}\PYG{p}{,} \PYG{n}{f2q3}\PYG{p}{),} \PYG{k}{ROW}\PYG{p}{(}\PYG{n}{f3q4}\PYG{p}{,} \PYG{n}{f3q5}\PYG{p}{,} \PYG{n}{f3q6}\PYG{p}{)} \PYG{k}{FROM} \PYG{n}{T}\PYG{p}{;}
+
+\PYG{c+c1}{\PYGZhy{}\PYGZhy{} 查看HBase中的表}
+\PYG{k}{SELECT} \PYG{n}{rowkey}\PYG{p}{,} \PYG{n}{family1}\PYG{p}{,} \PYG{n}{family3}\PYG{p}{.}\PYG{n}{q4}\PYG{p}{,} \PYG{n}{family3}\PYG{p}{.}\PYG{n}{q6} \PYG{k}{FROM} \PYG{n}{hTable}\PYG{p}{;}
+\end{Verbatim}

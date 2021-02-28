@@ -1,0 +1,18 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{Pattern}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{p}{,} \PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}} \PYG{n}{pattern} \PYG{o}{=} \PYG{n}{Pattern}
+    \PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{n}{begin}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}create\PYGZdq{}}\PYG{p}{)}
+    \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleCondition}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{boolean} \PYG{n+nf}{filter}\PYG{p}{(}\PYG{n}{OrderEvent} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{eventType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}create\PYGZdq{}}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{})}
+    \PYG{p}{.}\PYG{n+na}{next}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}pay\PYGZdq{}}\PYG{p}{)}
+    \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleCondition}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{boolean} \PYG{n+nf}{filter}\PYG{p}{(}\PYG{n}{OrderEvent} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{eventType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}pay\PYGZdq{}}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{})}
+    \PYG{p}{.}\PYG{n+na}{within}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{));}
+\end{Verbatim}

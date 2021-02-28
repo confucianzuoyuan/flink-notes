@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+        \PYG{c+cm}{/* BEGIN BLOCK 1 */}
+        \PYG{n}{std}\PYG{o}{::}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{::}\PYG{k+kt}{size\PYGZus{}t}\PYG{o}{\PYGZgt{}} \PYG{n}{extent}\PYG{p}{(}\PYG{n}{get\PYGZus{}extent}\PYG{p}{(}\PYG{n}{value}\PYG{p}{));}
+        \PYG{n}{std}\PYG{o}{::}\PYG{n}{copy}\PYG{p}{(}\PYG{n}{extent}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(),} \PYG{n}{extent}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(),} \PYG{n}{std}\PYG{o}{::}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{size}\PYG{p}{));}
+        \PYG{n}{std}\PYG{o}{::}\PYG{n}{copy}\PYG{p}{(}\PYG{n}{extent}\PYG{p}{.}\PYG{n}{begin}\PYG{p}{(),} \PYG{n}{extent}\PYG{p}{.}\PYG{n}{end}\PYG{p}{(),} \PYG{n}{std}\PYG{o}{::}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{chunk}\PYG{p}{));}
+        \PYG{n}{std}\PYG{o}{::}\PYG{n}{fill\PYGZus{}n}\PYG{p}{(}\PYG{n}{std}\PYG{o}{::}\PYG{n}{back\PYGZus{}inserter}\PYG{p}{(}\PYG{n}{offset}\PYG{p}{),} \PYG{n}{extent}\PYG{p}{.}\PYG{n}{size}\PYG{p}{(),} \PYG{l+m+mi}{0}\PYG{p}{);}
+        \PYG{n}{ar}\PYG{p}{.}\PYG{n}{write}\PYG{p}{(}\PYG{n}{path}\PYG{p}{,} \PYG{n}{get\PYGZus{}pointer}\PYG{p}{(}\PYG{n}{value}\PYG{p}{),} \PYG{n}{size}\PYG{p}{,} \PYG{n}{chunk}\PYG{p}{,} \PYG{n}{offset}\PYG{p}{);}
+        \PYG{c+cm}{/* END BLOCK 1 */}
+\end{Verbatim}

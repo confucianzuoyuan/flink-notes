@@ -1,0 +1,8 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZdl{} ./bin/flink cancel \PYGZhy{}s \PYG{l+s+se}{\PYGZbs{}}
+hdfs:///xxx:50070/savepoints d5fdaff43022954f5f02fcd8f25ef855
+Cancelling job bc0b2ad61ecd4a615d92ce25390f61ad
+with savepoint to hdfs:///xxx:50070/savepoints.
+Cancelled job bc0b2ad61ecd4a615d92ce25390f61ad.
+Savepoint stored \PYG{k}{in} hdfs:///xxx:50070/savepoints/savepoint\PYGZhy{}bc0b2a\PYGZhy{}d08de07fbb10.
+\end{Verbatim}

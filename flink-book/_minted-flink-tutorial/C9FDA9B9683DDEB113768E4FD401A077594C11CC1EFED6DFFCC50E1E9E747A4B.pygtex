@@ -1,0 +1,43 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{env}
+    \PYG{o}{.}\PYG{n+na}{addSource}\PYG{o}{(}\PYG{k}{new} \PYG{n}{UserBehaviorSource}\PYG{o}{())}
+    \PYG{o}{.}\PYG{n+na}{addSink}\PYG{o}{(}\PYG{k}{new} \PYG{n}{MyJDBC}\PYG{o}{());}
+
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{MyJDBC} \PYG{k+kd}{extends} \PYG{n}{RichSinkFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZob{}}
+    \PYG{k+kd}{private} \PYG{n}{Connection} \PYG{n}{conn}\PYG{o}{;}
+    \PYG{k+kd}{private} \PYG{n}{PreparedStatement} \PYG{n}{insertStmt}\PYG{o}{;}
+    \PYG{k+kd}{private} \PYG{n}{PreparedStatement} \PYG{n}{updateStmt}\PYG{o}{;}
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{open}\PYG{o}{(}\PYG{n}{Configuration} \PYG{n}{parameters}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+        \PYG{k+kd}{super}\PYG{o}{.}\PYG{n+na}{open}\PYG{o}{(}\PYG{n}{parameters}\PYG{o}{);}
+        \PYG{n}{conn} \PYG{o}{=} \PYG{n}{DriverManager}\PYG{o}{.}\PYG{n+na}{getConnection}\PYG{o}{(}
+        \PYG{l+s}{\PYGZdq{}jdbc:mysql://localhost:3306/userbehavior\PYGZdq{}}\PYG{o}{,}
+            \PYG{l+s}{\PYGZdq{}zuoyuan\PYGZdq{}}\PYG{o}{,}
+            \PYG{l+s}{\PYGZdq{}zuoyuan\PYGZdq{}}
+        \PYG{o}{);}
+        \PYG{n}{insertStmt} \PYG{o}{=} \PYG{n}{conn}\PYG{o}{.}\PYG{n+na}{prepareStatement}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}INSERT INTO userbehavior (itemId, categoryId) VALUES (?, ?)\PYGZdq{}}\PYG{o}{);}
+        \PYG{n}{updateStmt} \PYG{o}{=} \PYG{n}{conn}\PYG{o}{.}\PYG{n+na}{prepareStatement}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}UPDATE userbehavior SET categoryId = ? WHERE itemId = ?\PYGZdq{}}\PYG{o}{);}
+    \PYG{o}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{invoke}\PYG{o}{(}\PYG{n}{UserBehavior} \PYG{n}{r}\PYG{o}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+        \PYG{n}{updateStmt}\PYG{o}{.}\PYG{n+na}{setString}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{,} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{categoryId}\PYG{o}{);}
+        \PYG{n}{updateStmt}\PYG{o}{.}\PYG{n+na}{setString}\PYG{o}{(}\PYG{l+m+mi}{2}\PYG{o}{,} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{itemId}\PYG{o}{);}
+        \PYG{n}{updateStmt}\PYG{o}{.}\PYG{n+na}{execute}\PYG{o}{();}
+
+        \PYG{k}{if} \PYG{o}{(}\PYG{n}{updateStmt}\PYG{o}{.}\PYG{n+na}{getUpdateCount}\PYG{o}{()} \PYG{o}{==} \PYG{l+m+mi}{0}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+            \PYG{n}{insertStmt}\PYG{o}{.}\PYG{n+na}{setString}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{,} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{itemId}\PYG{o}{);}
+            \PYG{n}{insertStmt}\PYG{o}{.}\PYG{n+na}{setString}\PYG{o}{(}\PYG{l+m+mi}{2}\PYG{o}{,} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{categoryId}\PYG{o}{);}
+            \PYG{n}{insertStmt}\PYG{o}{.}\PYG{n+na}{execute}\PYG{o}{();}
+        \PYG{o}{\PYGZcb{}}
+    \PYG{o}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{close}\PYG{o}{()} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+        \PYG{k+kd}{super}\PYG{o}{.}\PYG{n+na}{close}\PYG{o}{();}
+        \PYG{n}{insertStmt}\PYG{o}{.}\PYG{n+na}{close}\PYG{o}{();}
+        \PYG{n}{updateStmt}\PYG{o}{.}\PYG{n+na}{close}\PYG{o}{();}
+        \PYG{n}{conn}\PYG{o}{.}\PYG{n+na}{close}\PYG{o}{();}
+    \PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

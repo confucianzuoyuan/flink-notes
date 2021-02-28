@@ -1,0 +1,71 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{LoginFailDetect} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{c+c1}{// 登录事件流}
+        \PYG{n}{KeyedStream}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}
+            \PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+                \PYG{k}{new} \PYG{n}{LoginEvent}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}1\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}0.0.0.0\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}fail\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{2000L}\PYG{p}{),}
+                \PYG{k}{new} \PYG{n}{LoginEvent}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}1\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}0.0.0.1\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}fail\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{3000L}\PYG{p}{),}
+                \PYG{k}{new} \PYG{n}{LoginEvent}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}1\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}0.0.0.2\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}fail\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{4000L}\PYG{p}{)}
+            \PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                \PYG{n}{WatermarkStrategy}\PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}
+                    \PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                        \PYG{n+nd}{@Override}
+                        \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{LoginEvent} \PYG{n}{loginEvent}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{l}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                            \PYG{k}{return} \PYG{n}{loginEvent}\PYG{p}{.}\PYG{n+na}{eventTime}\PYG{p}{;}
+                        \PYG{p}{\PYGZcb{}}
+                    \PYG{p}{\PYGZcb{}}
+                \PYG{p}{)}
+            \PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{userId}\PYG{p}{);}
+
+        \PYG{c+c1}{// 模板定义}
+        \PYG{n}{Pattern}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{p}{,} \PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}} \PYG{n}{pattern} \PYG{o}{=} \PYG{n}{Pattern}
+            \PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}}\PYG{n}{begin}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}first\PYGZdq{}}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleCondition}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{boolean} \PYG{n+nf}{filter}\PYG{p}{(}\PYG{n}{LoginEvent} \PYG{n}{loginEvent}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{loginEvent}\PYG{p}{.}\PYG{n+na}{eventType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}fail\PYGZdq{}}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{next}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}second\PYGZdq{}}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleCondition}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{boolean} \PYG{n+nf}{filter}\PYG{p}{(}\PYG{n}{LoginEvent} \PYG{n}{loginEvent}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{loginEvent}\PYG{p}{.}\PYG{n+na}{eventType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}fail\PYGZdq{}}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{next}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}third\PYGZdq{}}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleCondition}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{boolean} \PYG{n+nf}{filter}\PYG{p}{(}\PYG{n}{LoginEvent} \PYG{n}{loginEvent}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{loginEvent}\PYG{p}{.}\PYG{n+na}{eventType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}fail\PYGZdq{}}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{within}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{));}
+
+        \PYG{c+c1}{// 在流上使用模板来匹配}
+        \PYG{n}{PatternStream}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}} \PYG{n}{patternedStream} \PYG{o}{=} \PYG{n}{CEP}\PYG{p}{.}\PYG{n+na}{pattern}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{pattern}\PYG{p}{);}
+
+        \PYG{c+c1}{// 将匹配到的事件选择出来，然后输出}
+        \PYG{n}{patternedStream}
+            \PYG{p}{.}\PYG{n+na}{select}\PYG{p}{(}\PYG{k}{new} \PYG{n}{PatternSelectFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{p}{,} \PYG{n}{Tuple4}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{n}{Tuple4}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{select}\PYG{p}{(}\PYG{n}{Map}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{List}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{map}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{n}{LoginEvent} \PYG{n}{first} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}first\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
+                    \PYG{n}{LoginEvent} \PYG{n}{second} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}second\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
+                    \PYG{n}{LoginEvent} \PYG{n}{third} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}third\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
+                    \PYG{k}{return} \PYG{n}{Tuple4}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{first}\PYG{p}{.}\PYG{n+na}{userId}\PYG{p}{,} \PYG{n}{first}\PYG{p}{.}\PYG{n+na}{ipAddress}\PYG{p}{,} \PYG{n}{second}\PYG{p}{.}\PYG{n+na}{ipAddress}\PYG{p}{,} \PYG{n}{third}\PYG{p}{.}\PYG{n+na}{ipAddress}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,13 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{CREATE} \PYG{k}{TABLE} \PYG{n}{myUserTable} \PYG{p}{(}
+  \PYG{n}{user\PYGZus{}id} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{n}{user\PYGZus{}name} \PYG{n}{STRING}
+  \PYG{n}{uv} \PYG{n+nb}{BIGINT}\PYG{p}{,}
+  \PYG{n}{pv} \PYG{n+nb}{BIGINT}\PYG{p}{,}
+  \PYG{k}{PRIMARY} \PYG{k}{KEY} \PYG{p}{(}\PYG{n}{user\PYGZus{}id}\PYG{p}{)} \PYG{k}{NOT} \PYG{n}{ENFORCED}
+\PYG{p}{)} \PYG{k}{WITH} \PYG{p}{(}
+  \PYG{l+s+s1}{\PYGZsq{}connector\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}elasticsearch\PYGZhy{}7\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}hosts\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}http://localhost:9200\PYGZsq{}}\PYG{p}{,}
+  \PYG{l+s+s1}{\PYGZsq{}index\PYGZsq{}} \PYG{o}{=} \PYG{l+s+s1}{\PYGZsq{}users\PYGZsq{}}
+\PYG{p}{);}
+\end{Verbatim}

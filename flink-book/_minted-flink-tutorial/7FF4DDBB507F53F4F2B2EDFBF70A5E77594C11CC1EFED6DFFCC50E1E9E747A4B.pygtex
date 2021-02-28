@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{TypeInformation}\PYG{o}{\PYGZlt{}}\PYG{n}{Integer}\PYG{o}{\PYGZgt{}} \PYG{n}{intType} \PYG{o}{=} \PYG{n}{Types}\PYG{o}{.}\PYG{n+na}{INT}\PYG{o}{;}
+
+\PYG{n}{TypeInformation}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{tupleType} \PYG{o}{=} \PYG{n}{Types}\PYG{o}{.}\PYG{n+na}{TUPLE}\PYG{o}{(}\PYG{n}{Types}\PYG{o}{.}\PYG{n+na}{LONG}\PYG{o}{,} \PYG{n}{Types}\PYG{o}{.}\PYG{n+na}{STRING}\PYG{o}{);}
+
+\PYG{n}{TypeInformation}\PYG{o}{\PYGZlt{}}\PYG{n}{Person}\PYG{o}{\PYGZgt{}} \PYG{n}{personType} \PYG{o}{=} \PYG{n}{Types}\PYG{o}{.}\PYG{n+na}{POJO}\PYG{o}{(}\PYG{n}{Person}\PYG{o}{.}\PYG{n+na}{class}\PYG{o}{);}
+\end{Verbatim}

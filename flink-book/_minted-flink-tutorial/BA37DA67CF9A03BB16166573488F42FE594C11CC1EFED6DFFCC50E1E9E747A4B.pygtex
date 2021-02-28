@@ -1,0 +1,26 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStreamSource}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{text} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{socketTextStream}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}localhost\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{9999}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}\PYGZbs{}n\PYGZdq{}}\PYG{p}{);}
+
+\PYG{n}{String} \PYG{n}{brokerList} \PYG{o}{=} \PYG{l+s}{\PYGZdq{}localhost:9092\PYGZdq{}}\PYG{p}{;}
+\PYG{n}{String} \PYG{n}{topic} \PYG{o}{=} \PYG{l+s}{\PYGZdq{}topic\PYGZdq{}}\PYG{p}{;}
+
+\PYG{n}{Properties} \PYG{n}{prop} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Properties}\PYG{p}{();}
+\PYG{n}{prop}\PYG{p}{.}\PYG{n+na}{setProperty}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}bootstrap.servers\PYGZdq{}}\PYG{p}{,} \PYG{n}{brokerList}\PYG{p}{);}
+
+\PYG{c+c1}{//第一种解决方案，设置FlinkKafkaProducer里面的事务超时时间}
+\PYG{c+c1}{//设置事务超时时间}
+\PYG{c+c1}{//prop.setProperty(\PYGZdq{}transaction.timeout.ms\PYGZdq{},60000*15+\PYGZdq{}\PYGZdq{});}
+
+\PYG{c+c1}{//第二种解决方案，设置kafka的最大事务超时时间}
+
+\PYG{c+c1}{//FlinkKafkaProducer\PYGZlt{}String\PYGZgt{} myProducer = new FlinkKafkaProducer\PYGZlt{}\PYGZgt{}(brokerList, topic, new SimpleStringSchema());}
+
+\PYG{c+c1}{//使用仅一次语义的kafkaProducer}
+\PYG{n}{FlinkKafkaProducer}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{myProducer} \PYG{o}{=} \PYG{k}{new} \PYG{n}{FlinkKafkaProducer}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{(}
+    \PYG{n}{topic}\PYG{p}{,}
+    \PYG{k}{new} \PYG{n}{KeyedSerializationSchemaWrapper}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleStringSchema}\PYG{p}{()),}
+    \PYG{n}{prop}\PYG{p}{,}
+    \PYG{n}{FlinkKafkaProducer}\PYG{p}{.}\PYG{n+na}{Semantic}\PYG{p}{.}\PYG{n+na}{EXACTLY\PYGZus{}ONCE}
+\PYG{p}{);}
+\PYG{n}{text}\PYG{p}{.}\PYG{n+na}{addSink}\PYG{p}{(}\PYG{n}{myProducer}\PYG{p}{);}
+\end{Verbatim}

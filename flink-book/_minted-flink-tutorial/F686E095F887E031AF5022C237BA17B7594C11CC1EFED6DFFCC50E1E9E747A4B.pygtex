@@ -1,0 +1,33 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{WriteToRedisExample} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
+
+        \PYG{n}{FlinkJedisPoolConfig} \PYG{n}{conf} \PYG{o}{=} \PYG{k}{new} \PYG{n}{FlinkJedisPoolConfig}\PYG{p}{.}\PYG{n+na}{Builder}\PYG{p}{().}\PYG{n+na}{setHost}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}localhost\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{build}\PYG{p}{();}
+
+        \PYG{n}{stream}\PYG{p}{.}\PYG{n+na}{addSink}\PYG{p}{(}\PYG{k}{new} \PYG{n}{RedisSink}\PYG{o}{\PYGZlt{}}\PYG{n}{Event}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{n}{conf}\PYG{p}{,} \PYG{k}{new} \PYG{n}{MyRedisSink}\PYG{p}{()));}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{MyRedisSink} \PYG{k+kd}{implements} \PYG{n}{RedisMapper}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{getKeyFromData}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{r}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{getValueFromData}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{r}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{+} \PYG{l+s}{\PYGZdq{}\PYGZdq{}}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{RedisCommandDescription} \PYG{n+nf}{getCommandDescription}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{k}{new} \PYG{n}{RedisCommandDescription}\PYG{p}{(}\PYG{n}{RedisCommand}\PYG{p}{.}\PYG{n+na}{HSET}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}sensor\PYGZdq{}}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

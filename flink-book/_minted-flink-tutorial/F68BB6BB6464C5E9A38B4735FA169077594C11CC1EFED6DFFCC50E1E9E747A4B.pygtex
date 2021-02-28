@@ -1,0 +1,15 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{input} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{k+kd}{final} \PYG{n}{StreamingFileSink}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{sink} \PYG{o}{=} \PYG{n}{StreamingFileSink}
+    \PYG{p}{.}\PYG{n+na}{forRowFormat}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Path}\PYG{p}{(}\PYG{n}{outputPath}\PYG{p}{),} \PYG{k}{new} \PYG{n}{SimpleStringEncoder}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}UTF\PYGZhy{}8\PYGZdq{}}\PYG{p}{))}
+    \PYG{p}{.}\PYG{n+na}{withRollingPolicy}\PYG{p}{(}
+        \PYG{n}{DefaultRollingPolicy}\PYG{p}{.}\PYG{n+na}{builder}\PYG{p}{()}
+        \PYG{p}{.}\PYG{n+na}{withRolloverInterval}\PYG{p}{(}\PYG{n}{TimeUnit}\PYG{p}{.}\PYG{n+na}{MINUTES}\PYG{p}{.}\PYG{n+na}{toMillis}\PYG{p}{(}\PYG{l+m+mi}{15}\PYG{p}{))}
+        \PYG{p}{.}\PYG{n+na}{withInactivityInterval}\PYG{p}{(}\PYG{n}{TimeUnit}\PYG{p}{.}\PYG{n+na}{MINUTES}\PYG{p}{.}\PYG{n+na}{toMillis}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{))}
+        \PYG{p}{.}\PYG{n+na}{withMaxPartSize}\PYG{p}{(}\PYG{l+m+mi}{1024} \PYG{o}{*} \PYG{l+m+mi}{1024} \PYG{o}{*} \PYG{l+m+mi}{1024}\PYG{p}{)}
+    \PYG{p}{.}\PYG{n+na}{build}\PYG{p}{())}
+    \PYG{p}{.}\PYG{n+na}{build}\PYG{p}{();}
+
+\PYG{n}{input}\PYG{p}{.}\PYG{n+na}{addSink}\PYG{p}{(}\PYG{n}{sink}\PYG{p}{);}
+\end{Verbatim}

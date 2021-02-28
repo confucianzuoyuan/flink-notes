@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n+nt}{\PYGZlt{}dependency\PYGZgt{}}
+\PYGZca{}\PYGZca{}I\PYG{n+nt}{\PYGZlt{}groupId\PYGZgt{}}org.apache.flink\PYG{n+nt}{\PYGZlt{}/groupId\PYGZgt{}}
+\PYGZca{}\PYGZca{}I\PYG{n+nt}{\PYGZlt{}artifactId\PYGZgt{}}flink\PYGZhy{}connector\PYGZhy{}kafka\PYGZus{}\PYGZdl{}\PYGZob{}scala.binary.version\PYGZcb{}\PYG{n+nt}{\PYGZlt{}/artifactId\PYGZgt{}}
+\PYGZca{}\PYGZca{}I\PYG{n+nt}{\PYGZlt{}version\PYGZgt{}}\PYGZdl{}\PYGZob{}flink.version\PYGZcb{}\PYG{n+nt}{\PYGZlt{}/version\PYGZgt{}}
+\PYG{n+nt}{\PYGZlt{}/dependency\PYGZgt{}}
+\end{Verbatim}

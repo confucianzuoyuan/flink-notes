@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}
+    \PYG{o}{.}\PYG{n+na}{addSource}\PYG{o}{(...)}
+    \PYG{o}{.}\PYG{n+na}{map}\PYG{o}{(...)}
+    \PYG{o}{.}\PYG{n+na}{filter}\PYG{o}{(...)}
+    \PYG{o}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{o}{(...)}
+\end{Verbatim}

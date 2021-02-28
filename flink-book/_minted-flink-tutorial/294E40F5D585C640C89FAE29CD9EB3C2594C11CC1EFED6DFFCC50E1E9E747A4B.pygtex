@@ -1,0 +1,49 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.java.tuple.Tuple2}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.datastream.DataStreamSource}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.environment.StreamExecutionEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.EnvironmentSettings}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.Table}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.bridge.java.StreamTableEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.types.Row}\PYG{p}{;}
+
+\PYG{k+kn}{import static} \PYG{n+nn}{org.apache.flink.table.api.Expressions.}\PYG{n}{\PYGZdl{}}\PYG{p}{;}
+
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{QueryGroupByCnt} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStreamSource}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}
+                \PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+                        \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Mary\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./home\PYGZdq{}}\PYG{p}{),}
+                        \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Bob\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./cart\PYGZdq{}}\PYG{p}{),}
+                        \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Mary\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./prod?id=1\PYGZdq{}}\PYG{p}{),}
+                        \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Liz\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}./home\PYGZdq{}}\PYG{p}{)}
+                \PYG{p}{);}
+
+        \PYG{n}{EnvironmentSettings} \PYG{n}{settings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{inStreamingMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+
+        \PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnvironment} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{env}\PYG{p}{,} \PYG{n}{settings}\PYG{p}{);}
+
+        \PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnvironment}
+                \PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}
+                        \PYG{n}{stream}\PYG{p}{,}
+                        \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f0\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZdq{}}\PYG{p}{),} \PYG{c+c1}{// 将f0字段命名为user}
+                        \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}url\PYGZdq{}}\PYG{p}{)}   \PYG{c+c1}{// 将f1字段命名为url}
+                \PYG{p}{);}
+
+        \PYG{c+c1}{// 将动态表注册为临时视图}
+        \PYG{n}{tableEnvironment}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}clicks\PYGZdq{}}\PYG{p}{,} \PYG{n}{table}\PYG{p}{);}
+
+        \PYG{c+c1}{// 在临时视图上进行查询}
+        \PYG{n}{Table} \PYG{n}{result} \PYG{o}{=} \PYG{n}{tableEnvironment}
+                \PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT user, COUNT(url) FROM clicks GROUP BY user\PYGZdq{}}\PYG{p}{);}
+
+        \PYG{c+c1}{// 将查询结果转换成数据流，由于查询存在聚合操作，所以使用toRetractStream方法}
+        \PYG{n}{tableEnvironment}\PYG{p}{.}\PYG{n+na}{toRetractStream}\PYG{p}{(}\PYG{n}{result}\PYG{p}{,} \PYG{n}{Row}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{).}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
