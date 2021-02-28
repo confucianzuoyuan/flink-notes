@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{final} \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Hello World\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}Hello World\PYGZdq{}}\PYG{p}{);}
+
+        \PYG{n}{stream}
+                \PYG{p}{.}\PYG{n+na}{flatMap}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Tokenizer}\PYG{p}{())}
+                \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
+                \PYG{p}{.}\PYG{n+na}{sum}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{)}
+                \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}单词计数\PYGZdq{}}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+\end{Verbatim}
