@@ -7,6 +7,9 @@ with open("flink-tutorial.tex", "rt") as fin:
             elif line.startswith('### '):
                 newline = '\subsection{' + line.split()[1] + '}\n'
                 fout.write(newline)
+            elif line.startswith('#### '):
+                newline = '\subsubsection{' + line.split()[1] + '}\n'
+                fout.write(newline)
             elif line.startswith('```java'):
                 newline = '\\begin{minted}[linenos,breaklines,fontsize=\\footnotesize]{java}\n'
                 fout.write(newline)
