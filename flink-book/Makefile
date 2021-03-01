@@ -1,3 +1,3 @@
 all:
 	@echo Making book ...
-	xelatex -shell-escape flink-book.tex
+	xelatex -shell-escape flink-tutorial.tex
