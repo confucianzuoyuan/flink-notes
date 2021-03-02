@@ -1,0 +1,20 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{SensorReading} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{id}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n}{timestamp}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{k+kt}{double} \PYG{n}{temperature}\PYG{p}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{SensorReading}\PYG{p}{()} \PYG{p}{\PYGZob{}} \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{SensorReading}\PYG{p}{(}\PYG{n}{String} \PYG{n}{id}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{timestamp}\PYG{p}{,} \PYG{k+kt}{double} \PYG{n}{temperature}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{id} \PYG{o}{=} \PYG{n}{id}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{timestamp} \PYG{o}{=} \PYG{n}{timestamp}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{=} \PYG{n}{temperature}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{toString}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}(\PYGZdq{}} \PYG{o}{+} \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{id} \PYG{o}{+} \PYG{l+s}{\PYGZdq{}, \PYGZdq{}} \PYG{o}{+} \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{timestamp} \PYG{o}{+} \PYG{l+s}{\PYGZdq{}, \PYGZdq{}} \PYG{o}{+} \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{+} \PYG{l+s}{\PYGZdq{})\PYGZdq{}}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{KeyedStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{keyed} \PYG{o}{=} \PYG{n}{readings}\PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{);}
+\end{Verbatim}

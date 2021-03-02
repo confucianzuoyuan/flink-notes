@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// T: the element type}
+\PYG{n}{ReduceFunction}\PYG{o}{[}\PYG{n}{T}\PYG{o}{]}
+    \PYG{o}{\PYGZgt{}} \PYG{n}{reduce}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,} \PYG{n}{T}\PYG{p}{):} \PYG{n}{T}
+\end{Verbatim}

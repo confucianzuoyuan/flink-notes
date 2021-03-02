@@ -1,0 +1,10 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{maxTempPerSensor} \PYG{o}{=} \PYG{n}{keyed}
+        \PYG{p}{.}\PYG{n+na}{reduce}\PYG{p}{((}\PYG{n}{r1}\PYG{p}{,} \PYG{n}{r2}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{p}{\PYGZob{}}
+            \PYG{k}{if} \PYG{p}{(}\PYG{n}{r1}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{\PYGZgt{}} \PYG{n}{r2}\PYG{p}{.}\PYG{n+na}{temperature}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{k}{return} \PYG{n}{r1}\PYG{p}{;}
+            \PYG{p}{\PYGZcb{}} \PYG{k}{else} \PYG{p}{\PYGZob{}}
+                \PYG{k}{return} \PYG{n}{r2}\PYG{p}{;}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{});}
+\end{Verbatim}

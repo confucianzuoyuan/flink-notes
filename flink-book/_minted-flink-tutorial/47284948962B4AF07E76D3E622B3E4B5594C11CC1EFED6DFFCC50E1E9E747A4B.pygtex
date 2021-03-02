@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// T: the type of input elements}
+\PYG{c+c1}{// O: the type of output elements}
+\PYG{n}{FlatMapFunction}\PYG{o}{[}\PYG{n}{T}\PYG{p}{,} \PYG{n}{O}\PYG{o}{]}
+    \PYG{o}{\PYGZgt{}} \PYG{n}{flatMap}\PYG{p}{(}\PYG{n}{T}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{[}\PYG{n}{O}\PYG{o}{]}\PYG{p}{):} \PYG{n}{Unit}
+\end{Verbatim}
