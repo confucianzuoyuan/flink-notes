@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{parisStream} \PYG{o}{=} \PYG{p}{...}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{tokyoStream} \PYG{o}{=} \PYG{p}{...}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{rioStream} \PYG{o}{=} \PYG{p}{...}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{allCities} \PYG{o}{=} \PYG{n}{parisStream}
+  \PYG{p}{.}\PYG{n+na}{union}\PYG{p}{(}\PYG{n}{tokyoStream}\PYG{p}{,} \PYG{n}{rioStream}\PYG{p}{);}
+\end{Verbatim}

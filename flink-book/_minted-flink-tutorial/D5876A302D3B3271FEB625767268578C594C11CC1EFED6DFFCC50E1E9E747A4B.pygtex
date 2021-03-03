@@ -1,0 +1,28 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{SmokeLevelSource} \PYG{k+kd}{implements} \PYG{n}{SourceFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{SmokeLevel}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{private} \PYG{k+kt}{boolean} \PYG{n}{running} \PYG{o}{=} \PYG{k+kc}{true}\PYG{p}{;}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{run}\PYG{p}{(}\PYG{n}{SourceContext}\PYG{o}{\PYGZlt{}}\PYG{n}{SmokeLevel}\PYG{o}{\PYGZgt{}} \PYG{n}{srcCtx}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+
+        \PYG{n}{Random} \PYG{n}{rand} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Random}\PYG{p}{();}
+
+        \PYG{k}{while} \PYG{p}{(}\PYG{n}{running}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+
+            \PYG{k}{if} \PYG{p}{(}\PYG{n}{rand}\PYG{p}{.}\PYG{n+na}{nextGaussian}\PYG{p}{()} \PYG{o}{\PYGZgt{}} \PYG{l+m+mf}{0.8}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{srcCtx}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{n}{SmokeLevel}\PYG{p}{.}\PYG{n+na}{HIGH}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}} \PYG{k}{else} \PYG{p}{\PYGZob{}}
+                \PYG{n}{srcCtx}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{n}{SmokeLevel}\PYG{p}{.}\PYG{n+na}{LOW}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}}
+
+            \PYG{n}{Thread}\PYG{p}{.}\PYG{n+na}{sleep}\PYG{p}{(}\PYG{l+m+mi}{1000}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{cancel}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{running} \PYG{o}{=} \PYG{k+kc}{false}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

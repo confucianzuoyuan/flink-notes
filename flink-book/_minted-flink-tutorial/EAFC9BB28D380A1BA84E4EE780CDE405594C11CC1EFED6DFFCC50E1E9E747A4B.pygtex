@@ -1,0 +1,46 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{MultiStreamTransformations} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{tempReadings} \PYG{o}{=} \PYG{n}{env}
+                \PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SmokeLevel}\PYG{o}{\PYGZgt{}} \PYG{n}{smokeReadings} \PYG{o}{=} \PYG{n}{env}
+                \PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SmokeLevelSource}\PYG{p}{())}
+                \PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{KeyedStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{keyedTempReadings} \PYG{o}{=} \PYG{n}{tempReadings}
+                \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Alert}\PYG{o}{\PYGZgt{}} \PYG{n}{alerts} \PYG{o}{=} \PYG{n}{keyedTempReadings}
+                \PYG{p}{.}\PYG{n+na}{connect}\PYG{p}{(}\PYG{n}{smokeReadings}\PYG{p}{.}\PYG{n+na}{broadcast}\PYG{p}{())}
+                \PYG{p}{.}\PYG{n+na}{flatMap}\PYG{p}{(}\PYG{k}{new} \PYG{n}{RaiseAlertFlatMap}\PYG{p}{());}
+
+        \PYG{n}{alerts}\PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Multi\PYGZhy{}Stream Transformations Example\PYGZdq{}}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{RaiseAlertFlatMap} \PYG{k+kd}{implements} \PYG{n}{CoFlatMapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{p}{,} \PYG{n}{SmokeLevel}\PYG{p}{,} \PYG{n}{Alert}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+
+        \PYG{k+kd}{private} \PYG{n}{SmokeLevel} \PYG{n}{smokeLevel} \PYG{o}{=} \PYG{n}{SmokeLevel}\PYG{p}{.}\PYG{n+na}{LOW}\PYG{p}{;}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{flatMap1}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{tempReading}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{Alert}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{c+c1}{// high chance of fire =\PYGZgt{} true}
+            \PYG{k}{if} \PYG{p}{(}\PYG{k}{this}\PYG{p}{.}\PYG{n+na}{smokeLevel} \PYG{o}{==} \PYG{n}{SmokeLevel}\PYG{p}{.}\PYG{n+na}{HIGH} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{n}{tempReading}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{\PYGZgt{}} \PYG{l+m+mi}{100}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{out}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Alert}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Risk of fire! \PYGZdq{}} \PYG{o}{+} \PYG{n}{tempReading}\PYG{p}{,} \PYG{n}{tempReading}\PYG{p}{.}\PYG{n+na}{timestamp}\PYG{p}{));}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{flatMap2}\PYG{p}{(}\PYG{n}{SmokeLevel} \PYG{n}{smokeLevel}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{Alert}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{c+c1}{// update smoke level}
+            \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{smokeLevel} \PYG{o}{=} \PYG{n}{smokeLevel}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
