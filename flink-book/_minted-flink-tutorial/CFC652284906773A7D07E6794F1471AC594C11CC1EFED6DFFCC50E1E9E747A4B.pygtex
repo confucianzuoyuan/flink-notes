@@ -1,0 +1,10 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+\PYG{k+kt}{int} \PYG{n}{defaultP} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{getParallelism}\PYG{p}{();}
+\PYG{n}{env}
+  \PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{CustomSource}\PYG{p}{())}
+  \PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MyMapper}\PYG{p}{())}
+  \PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{n}{defaultP} \PYG{o}{*} \PYG{l+m+mi}{2}\PYG{p}{)}
+  \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{()}
+  \PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{);}
+\end{Verbatim}

@@ -1,0 +1,18 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{Person} \PYG{p}{\PYGZob{}}
+  \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{name}\PYG{p}{;}
+  \PYG{k+kd}{public} \PYG{k+kt}{int} \PYG{n}{age}\PYG{p}{;}
+
+  \PYG{k+kd}{public} \PYG{n+nf}{Person}\PYG{p}{()} \PYG{p}{\PYGZob{}\PYGZcb{}}
+
+  \PYG{k+kd}{public} \PYG{n+nf}{Person}\PYG{p}{(}\PYG{n}{String} \PYG{n}{name}\PYG{p}{,} \PYG{k+kt}{int} \PYG{n}{age}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+    \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{name} \PYG{o}{=} \PYG{n}{name}\PYG{p}{;}
+    \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{age} \PYG{o}{=} \PYG{n}{age}\PYG{p}{;}
+  \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Person}\PYG{o}{\PYGZgt{}} \PYG{n}{persons} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+  \PYG{k}{new} \PYG{n}{Person}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Alex\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{42}\PYG{p}{),}
+  \PYG{k}{new} \PYG{n}{Person}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Wendy\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{23}\PYG{p}{)}
+\PYG{p}{);}
+\end{Verbatim}

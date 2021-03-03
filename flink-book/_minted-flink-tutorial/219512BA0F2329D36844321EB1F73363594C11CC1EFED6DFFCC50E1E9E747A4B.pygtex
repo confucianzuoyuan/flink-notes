@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{numbers} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}\PYG{l+m+mi}{1L}\PYG{p}{,} \PYG{l+m+mi}{2L}\PYG{p}{,} \PYG{l+m+mi}{3L}\PYG{p}{,} \PYG{l+m+mi}{4L}\PYG{p}{);}
+\PYG{n}{numbers}\PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{n}{n} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{n} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{);}
+\end{Verbatim}
