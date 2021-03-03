@@ -5,6 +5,6 @@
     \PYG{k}{return} \PYG{n}{SensorReading}\PYG{p}{(}\PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{,} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{timestamp}\PYG{p}{,} \PYG{n}{celsius}\PYG{p}{);}
   \PYG{p}{\PYGZcb{})}
   \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{)}
-  \PYG{p}{.}\PYG{n+na}{timeWindow}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{))}
+  \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingProcessingTimeWindows}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
   \PYG{p}{.}\PYG{n+na}{apply}\PYG{p}{(}\PYG{k}{new} \PYG{n}{TemperatureAverager}\PYG{p}{());}
 \end{Verbatim}

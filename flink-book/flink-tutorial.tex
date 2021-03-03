@@ -1078,7 +1078,6 @@ public class SensorReading {
 public class AverageSensorReadings {
   public static void main(String[] args) throws Exception {
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
     DataStream<SensorReading> sensorData = env.addSource(new SensorSource());
 
@@ -1088,7 +1087,7 @@ public class AverageSensorReadings {
         return SensorReading(r.id, r.timestamp, celsius);
       })
       .keyBy(r -> r.id)
-      .timeWindow(Time.seconds(5))
+      .window(TumblingProcessingTimeWindows(Time.seconds(5)))
       .apply(new TemperatureAverager());
 
     avgTemp.print();
@@ -1130,7 +1129,7 @@ StreamExecutionEnvironment remoteEnv = StreamExecutionEnvironment
   ); // JAR file to ship to the JobManager
 \end{minted}
 
-接下来，我们使用env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)来将我们程序的时间语义设置为事件时间。执行环境提供了很多配置选项，例如：设置程序的并行度和程序是否开启容错机制。
+执行环境提供了很多配置选项，例如：设置程序的并行度和程序是否开启容错机制。
 
 \section{读取输入流}
 
@@ -1149,7 +1148,7 @@ DataStream<SensorReading> sensorData = env
 
 一旦我们有一条DataStream，我们就可以在这条数据流上面使用转换算子了。转换算子有很多种。一些转换算子可以产生一条新的DataStream，当然这个DataStream的类型可能是新类型。还有一些转换算子不会改变原有DataStream的数据，但会将数据流分区或者分组。业务逻辑就是由转换算子串起来组合而成的。
 
-在我们的例子中，我们首先使用map()转换算子将传感器的温度值转换成了摄氏温度单位。然后，我们使用keyBy()转换算子将传感器读数流按照传感器ID进行分区。接下来，我们定义了一个timeWindow()转换算子，这个算子将每个传感器ID所对应的分区的传感器读数分配到了5秒钟的滚动窗口中。
+在我们的例子中，我们首先使用map()转换算子将传感器的温度值转换成了摄氏温度单位。然后，我们使用keyBy()转换算子将传感器读数流按照传感器ID进行分区。接下来，我们定义了一个window()算子，这个算子将每个传感器ID所对应的分区的传感器读数分配到了5秒钟的滚动窗口中。
 
 \begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
 DataStream<T> avgTemp = sensorData
@@ -1158,7 +1157,7 @@ DataStream<T> avgTemp = sensorData
     return SensorReading(r.id, r.timestamp, celsius);
   })
   .keyBy(r -> r.id)
-  .timeWindow(Time.seconds(5))
+  .window(TumblingProcessingTimeWindows(Time.seconds(5)))
   .apply(new TemperatureAverager());
 \end{minted}
 
@@ -1908,5 +1907,472 @@ public static class MyFlatMap extends RichFlatMapFunction<Integer, Tuple2<Intege
   }
 }
 \end{minted}
+
+\chapter{基于时间和窗口的操作符}
+
+在本章，我们将要学习DataStream API中处理时间和基于时间的操作符，例如窗口操作符。
+
+首先，我们会学习如何定义时间属性，时间戳和水位线。然后我们将会学习底层操作process function，它可以让我们访问时间戳和水位线，以及注册定时器事件。接下来，我们将会使用Flink的window API，它提供了通常使用的各种窗口类型的内置实现。我们将会学到如何进行用户自定义窗口操作符，以及窗口的核心功能：assigners（分配器）、triggers（触发器）和evictors（清理器）。最后，我们将讨论如何基于时间来做流的联结查询，以及处理迟到事件的策略。
+
+\section{设置时间属性}
+
+如果我们想要在分布式流处理应用程序中定义有关时间的操作，彻底理解时间的语义是非常重要的。当我们指定了一个窗口去收集某1分钟内的数据时，这个长度为1分钟的桶中，到底应该包含哪些数据？
+
+\textit{ProcessingTime}
+
+\begin{quotation}
+    机器时间在分布式系统中又叫做“墙上时钟”。
+\end{quotation}
+
+当操作符执行时，此操作符看到的时间是操作符所在机器的机器时间。Processing-time window的触发取决于机器时间，窗口包含的元素也是那个机器时间段内到达的元素。通常情况下，窗口操作符使用processing time会导致不确定的结果，因为基于机器时间的窗口中收集的元素取决于元素到达的速度快慢。使用processing time会为程序提供极低的延迟，因为无需等待水位线的到达。
+
+\begin{quotation}
+    如果要追求极限的低延迟，请使用ProcessingTime。
+\end{quotation}
+
+\textit{EventTime}
+
+当操作符执行时，操作符看的当前时间是由流中元素所携带的信息决定的。流中的每一个元素都必须包含时间戳信息。而系统的逻辑时钟由水位线(Watermark)定义。我们之前学习过，时间戳要么在事件进入流处理程序之前已经存在，要么就需要在程序的数据源（source）处进行分配。当水位线宣布特定时间段的数据都已经到达，事件时间窗口将会被触发计算。即使数据到达的顺序是乱序的，事件时间窗口的计算结果也将是确定性的。窗口的计算结果并不取决于元素到达的快与慢。
+
+\begin{quotation}
+    当水位线超过事件时间窗口的结束时间时，窗口将会闭合，不再接收数据，并触发计算。
+\end{quotation}
+
+\textit{IngestionTime}
+
+当事件进入source操作符时，source操作符所在机器的机器时间，就是此事件的“摄入时间”（IngestionTime），并同时产生水位线。IngestionTime相当于EventTime和ProcessingTime的混合体。一个事件的IngestionTime其实就是它进入流处理器中的时间。
+
+\begin{quotation}
+    IngestionTime没什么价值，既有EventTime的执行效率（比较低），有没有EventTime计算结果的准确性。
+\end{quotation}
+
+Flink 1.12通过指定不同类型的窗口来使用不同的时间属性。
+
+\subsection{处理时间设定}
+
+我们写Flink程序一般遵循以下步骤：
+
+\begin{enumerate}
+    \item 读取数据源
+    \item 分流
+    \item 开窗
+    \item 聚合
+    \item 输出结果
+\end{enumerate}
+
+\textit{滚动窗口}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+.keyBy(...)
+.window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+.aggregate(...)
+\end{minted}
+
+\textit{滑动窗口}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+.keyBy(...)
+.window(SlidingProcessingTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+.aggregate(...)
+\end{minted}
+
+\textit{会话窗口}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+.keyBy(...)
+.window(ProcessingTimeSessionWindows.withGap(Time.seconds(10)))
+.aggregate(...)
+\end{minted}
+
+\subsection{事件时间设定和水位线的产生}
+
+\textit{滚动窗口}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+.keyBy(...)
+.window(TumblingEventTimeWindows.of(Time.seconds(5)))
+.aggregate(...)
+\end{minted}
+
+\textit{滑动窗口}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+.keyBy(...)
+.window(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(5)))
+.aggregate(...)
+\end{minted}
+
+\textit{会话窗口}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+.keyBy(...)
+.window(EventTimeSessionWindows.withGap(Time.seconds(10)))
+.aggregate(...)
+\end{minted}
+
+如果使用事件时间，那么流中的事件必须包含这个事件真正发生的时间。使用了事件时间的流必须携带水位线。
+
+时间戳和水位线的单位是毫秒，记时从1970-01-01T00:00:00Z开始。到达某个操作符的水位线就会告知这个操作符：小于等于水位线中携带的时间戳的事件都已经到达这个操作符了。时间戳和水位线可以由SourceFunction产生，或者由用户自定义的时间戳分配器和水位线产生器来生成。
+
+Flink暴露了TimestampAssigner接口供我们实现，使我们可以自定义如何从事件数据中抽取时间戳。一般来说，时间戳分配器需要在source操作符后马上进行调用。
+
+\begin{quotation}
+    因为时间戳分配器看到的元素的顺序应该和source操作符产生数据的顺序是一样的，否则就乱了。这就是为什么我们经常将source操作符的并行度设置为1的原因。
+\end{quotation}
+
+也就是说，任何分区操作都会将元素的顺序打乱，例如：并行度改变，keyBy()操作等等。
+
+所以最佳实践是：在尽量接近数据源source操作符的地方分配时间戳和产生水位线，甚至最好在SourceFunction中分配时间戳和产生水位线。当然在分配时间戳和产生水位线之前可以对流进行map和filter操作是没问题的，也就是说必须是窄依赖。
+
+以下这种写法是可以的。
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+DataStream<T> stream = env
+  .addSource(...)
+  .map(...)
+  .filter(...)
+  .assignTimestampsAndWatermarks(...)
+\end{minted}
+
+我们来看一个例子，这个例子的最大延迟时间是5秒钟。
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+env
+  .addSource(new SensorSource())
+  .assignTimestampsAndWatermarks(
+    WatermarkStrategy
+      .<SensorReading>forBoundedOutOfOrderness(Duration.ofSeconds(5))
+      .withTimestampAssigner(new SerializableTimestampAssigner<SensorReading>() {
+        @Override
+        public long extractTimestamp(SensorReading element, long recordTimestamp) {
+          return element.timestamp;
+        }
+      }))
+    .keyBy(r -> r.id)
+    .window(TumblingEventTimeWindows.of(Time.seconds(5)))
+    .aggregate(...)
+\end{minted}
+
+如果我们已经知道到来的事件的时间戳是升序的，也就是最大延迟时间为0，那么我们可以使用如下写法：
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+env
+  .addSource(new SensorSource())
+  .assignTimestampsAndWatermarks(
+    WatermarkStrategy.<SensorReading>forMonotonousTimestamps()
+      .withTimestampAssigner(new SerializableTimestampAssigner<SensorReading>() {
+        @Override
+        public long extractTimestamp(SensorReading element, long recordTimestamp) {
+          return element.timestamp;
+        }
+    }))
+    .keyBy(r -> r.id)
+    .window(TumblingEventTimeWindows.of(Time.seconds(5)))
+    .aggregate(...)
+\end{minted}
+
+\subsection{自定义水位线的产生逻辑}
+
+\textbf{产生水位线的接口}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+@Public
+public interface WatermarkGenerator<T> {
+
+    /**
+     * 每来一个事件都会调用, 允许水位线产生器记忆和检查事件的时间戳。
+     * 允许水位线产生器基于事件本身发射水位线。
+     */
+    void onEvent(T event, long eventTimestamp, WatermarkOutput output);
+
+    /**
+     * 周期性的调用（默认200ms调用一次）, 可能会产生新的水位线，也可能不会。
+     *
+     * 调用周期通过ExecutionConfig#getAutoWatermarkInterval()方法来配置。
+     */
+    void onPeriodicEmit(WatermarkOutput output);
+}
+\end{minted}
+
+\textbf{周期性产生水位线}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+public class BoundedOutOfOrdernessGenerator implements WatermarkGenerator<MyEvent> {
+
+    private final long maxOutOfOrderness = 3500; // 最大延迟时间是3.5s
+
+    private long currentMaxTimestamp;
+
+    @Override
+    public void onEvent(MyEvent event, long eventTimestamp, WatermarkOutput output) {
+        currentMaxTimestamp = Math.max(currentMaxTimestamp, eventTimestamp);
+    }
+
+    @Override
+    public void onPeriodicEmit(WatermarkOutput output) {
+        // 产生水位线的公式：观察到的最大时间戳 - 最大延迟时间 - 1ms
+        output.emitWatermark(new Watermark(currentMaxTimestamp - maxOutOfOrderness - 1));
+    }
+
+}
+\end{minted}
+
+\textbf{不规则水位线的产生}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+public class PunctuatedAssigner implements WatermarkGenerator<MyEvent> {
+
+    @Override
+    public void onEvent(MyEvent event, long eventTimestamp, WatermarkOutput output) {
+        if (event.hasWatermarkMarker()) {
+            output.emitWatermark(new Watermark(event.getWatermarkTimestamp()));
+        }
+    }
+
+    @Override
+    public void onPeriodicEmit(WatermarkOutput output) {
+        // 不需要做任何事情，因为我们在onEvent方法中发射了水位线
+    }
+}
+\end{minted}
+
+\subsection{水位线总结}
+
+\begin{definition}{水位线定义}{watermark}
+    水位线是一种逻辑时钟，Flink认为时间戳小于等于水位线的事件都到了。
+\end{definition}
+
+\begin{definition}{计算公式}{calculation}
+    \begin{equation}
+        \text{水位线} = \text{观察到的事件所包含的最大时间戳} - \text{最大延迟时间} - \text{1毫秒}
+    \end{equation}
+\end{definition}
+
+\begin{quotation}
+    在事件时间的世界里，时间就是水位线。
+\end{quotation}
+
+现在我们要讨论一下水位线会对我们的程序产生什么样的影响。
+
+水位线用来平衡延迟和计算结果的正确性。水位线告诉我们，在触发计算（例如关闭窗口并触发窗口计算）之前，我们需要等待事件多长时间。基于事件时间的操作符根据水位线来衡量系统的逻辑时间的进度。
+
+完美的水位线永远不会错：时间戳小于水位线的事件不会再出现。在特殊情况下(例如非乱序事件流)，最近一次事件的时间戳就可能是完美的水位线。启发式水位线则相反，它只估计时间，因此有可能出错，即迟到的事件(其时间戳小于水位线标记时间)晚于水位线出现。针对启发式水位线，Flink提供了处理迟到元素的机制。
+
+设定水位线通常需要用到领域知识。举例来说，如果知道事件的迟到时间不会超过5秒，就可以将水位线标记时间设为收到的最大时间戳减去5秒。另一种做法是，采用一个Flink作业监控事件流，学习事件的迟到规律，并以此构建水位线生成模型。
+
+如果最大延迟时间设置的很大，计算出的结果会更精确，但收到计算结果的速度会很慢，同时系统会缓存大量的数据，并对系统造成比较大的压力。如果最大延迟时间设置的很小，那么收到计算结果的速度会很快，但可能收到错误的计算结果。不过Flink处理迟到数据的机制可以解决这个问题。上述问题看起来很复杂，但是恰恰符合现实世界的规律：大部分真实的事件流都是乱序的，并且通常无法了解它们的乱序程度(因为理论上不能预见未来)。水位线是唯一让我们直面乱序事件流并保证正确性的机制; 否则只能选择忽视事实，假装错误的结果是正确的。
+
+\section{处理函数}
+
+我们之前学习的转换算子是无法访问事件的时间戳信息和水位线信息的。而这在一些应用场景下，极为重要。例如MapFunction这样的map转换算子就无法访问时间戳或者当前事件的事件时间。
+
+基于此，DataStream API提供了一系列的Low-Level转换算子。可以访问时间戳、水位线以及注册定时事件。还可以输出特定的一些事件，例如超时事件等。Process Function用来构建事件驱动的应用以及实现自定义的业务逻辑(使用之前的window函数和转换算子无法实现)。例如，Flink-SQL就是使用Process Function实现的。
+
+Flink提供了8个Process Function：
+
+\begin{itemize}
+    \item ProcessFunction
+    \item KeyedProcessFunction
+    \item CoProcessFunction
+    \item ProcessJoinFunction
+    \item BroadcastProcessFunction
+    \item KeyedBroadcastProcessFunction
+    \item ProcessWindowFunction
+    \item ProcessAllWindowFunction
+\end{itemize}
+
+\subsection{KeyedProcessFunction的使用}
+
+我们这里详细介绍一下KeyedProcessFunction。
+
+KeyedProcessFunction用来操作KeyedStream。KeyedProcessFunction会处理流的每一个元素，输出为0个、1个或者多个元素。所有的Process Function都继承自RichFunction接口，所以都有open()、close()和getRuntimeContext()等方法。而KeyedProcessFunction<KEY, IN, OUT>还额外提供了两个方法:
+
+\begin{itemize}
+    \item processElement(I value, Context ctx, Collector<O> out)：流中的每一个元素都会调用这个方法，调用结果将会放在Collector数据类型中输出。Context可以访问元素的时间戳，元素的key，以及TimerService时间服务。Context还可以将结果输出到别的流(side outputs)。
+    \item onTimer(long timestamp, OnTimerContext ctx, Collector<O> out)：本方法是一个回调函数。当之前注册的定时器触发时调用。参数timestamp为定时器所设定的触发的时间戳。Collector为输出结果的集合。OnTimerContext和processElement的Context参数一样，提供了上下文的一些信息，例如firing trigger的时间信息(事件时间或者处理时间)。
+\end{itemize}
+
+\textbf{时间服务和定时器}
+
+Context和OnTimerContext所持有的TimerService对象拥有以下方法:
+
+\begin{itemize}
+    \item currentProcessingTime()返回当前处理时间
+    \item currentWatermark()返回当前水位线的时间戳
+    \item registerProcessingTimeTimer(long time)会注册当前key的processing time的timer。当processing time到达定时时间时，触发timer。
+    \item registerEventTimeTimer(long time)会注册当前key的event time timer。当水位线大于等于定时器注册的时间时，触发定时器执行回调函数。
+    \item deleteProcessingTimeTimer(long time)删除之前注册处理时间定时器。如果没有这个时间戳的定时器，则不执行。
+    \item deleteEventTimeTimer(long time)删除之前注册的事件时间定时器，如果没有此时间戳的定时器，则不执行。
+\end{itemize}
+
+当定时器timer触发时，执行回调函数onTimer()。processElement()方法和onTimer()方法是同步（不是异步）方法，这样可以避免并发访问和操作状态。
+
+针对每一个key和timestamp，只能注册一个定期器。也就是说，每一个key可以注册多个定时器，但在每一个时间戳只能注册一个定时器。KeyedProcessFunction默认将所有定时器的时间戳放在一个优先队列中。在Flink做检查点操作时，定时器也会被保存到状态后端中。
+
+举个例子说明KeyedProcessFunction如何操作KeyedStream。
+
+下面的程序展示了如何监控温度传感器的温度值，如果温度值在一秒钟之内(processing time)连续上升，报警。
+
+主程序
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+DataStream<String> warings = readings
+    .keyBy(r -> r.id)
+    .process(new TempIncreaseAlertFunction());
+\end{minted}
+
+处理函数的实现如下
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+public static class TempIncreaseAlertFunction extends KeyedProcessFunction<String, SensorReading, String> {
+
+    private ValueState<Double> lastTemp;
+    private ValueState<Long> currentTimer;
+
+    @Override
+    public void open(Configuration parameters) throws Exception {
+        super.open(parameters);
+        lastTemp = getRuntimeContext().getState(
+                new ValueStateDescriptor<>("last-temp", Types.DOUBLE)
+        );
+        currentTimer = getRuntimeContext().getState(
+                new ValueStateDescriptor<>("current-timer", Types.LONG)
+        );
+    }
+
+    @Override
+    public void processElement(SensorReading r, Context ctx, Collector<String> out) throws Exception {
+        // 取出上一次的温度
+        Double prevTemp = 0.0;
+        if (lastTemp.value() != null) {
+            prevTemp = lastTemp.value();
+        }
+        // 将当前温度更新到上一次的温度这个变量中
+        lastTemp.update(r.temperature);
+
+        Long curTimerTimestamp = 0L;
+        if (currentTimer.value() != null) {
+            curTimerTimestamp = currentTimer.value();
+        }
+        if (prevTemp == 0.0 || r.temperature < prevTemp) {
+            // 温度下降或者是第一个温度值，删除定时器
+            ctx.timerService().deleteProcessingTimeTimer(curTimerTimestamp);
+            // 清空状态变量
+            currentTimer.clear();
+        } else if (r.temperature > prevTemp && curTimerTimestamp == 0) {
+            // 温度上升且我们并没有设置定时器
+            long timerTs = ctx.timerService().currentProcessingTime() + 1000L;
+            ctx.timerService().registerProcessingTimeTimer(timerTs);
+            // 保存定时器时间戳
+            currentTimer.update(timerTs);
+        }
+    }
+
+    @Override
+    public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+        super.onTimer(timestamp, ctx, out);
+        out.collect("传感器id为: "
+                + ctx.getCurrentKey()
+                + "的传感器温度值已经连续1s上升了。");
+        currentTimer.clear();
+    }
+}
+\end{minted}
+
+\textbf{将事件发送到侧输出}
+
+大部分的DataStream API的算子的输出是单一输出，也就是某种数据类型的流。除了split算子，可以将一条流分成多条流，这些流的数据类型也都相同。process function的side outputs功能可以产生多条流，并且这些流的数据类型可以不一样。一个side output可以定义为OutputTag<X>对象，X是输出流的数据类型。process function可以通过Context对象发射一个事件到一个或者多个side outputs。
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+public class SideOutputExample {
+
+    private static OutputTag<String> output = new OutputTag<String>("side-output"){};
+
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        DataStream<SensorReading> stream = env.addSource(new SensorSource());
+
+        SingleOutputStreamOperator<SensorReading> warnings = stream
+                .process(new ProcessFunction<SensorReading, SensorReading>() {
+                    @Override
+                    public void processElement(SensorReading value, Context ctx, Collector<SensorReading> out) throws Exception {
+                        if (value.temperature < 32) {
+                            ctx.output(output, "温度小于32度！");
+                        }
+                        out.collect(value);
+                    }
+                });
+
+        warnings.print();
+        warnings.getSideOutput(output).print();
+
+        env.execute();
+    }
+}
+\end{minted}
+
+\subsection{CoProcessFunction的使用}
+
+对于两条输入流，DataStream API提供了CoProcessFunction这样的low-level操作。CoProcessFunction提供了操作每一个输入流的方法: processElement1()和processElement2()。类似于ProcessFunction，这两种方法都通过Context对象来调用。这个Context对象可以访问事件数据，定时器时间戳，TimerService，以及side outputs。CoProcessFunction也提供了onTimer()回调函数。下面的例子展示了如何使用CoProcessFunction来合并两条流。
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+public class SensorSwitch {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        KeyedStream<SensorReading, String> stream = env
+                .addSource(new SensorSource())
+                .keyBy(r -> r.id);
+
+        KeyedStream<Tuple2<String, Long>, String> switches = env
+                .fromElements(Tuple2.of("sensor_2", 10 * 1000L))
+                .keyBy(r -> r.f0);
+
+        stream
+                .connect(switches)
+                .process(new SwitchProcess())
+                .print();
+
+        env.execute();
+    }
+
+    public static class SwitchProcess extends CoProcessFunction<SensorReading, Tuple2<String, Long>, SensorReading> {
+
+        private ValueState<Boolean> forwardingEnabled;
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            super.open(parameters);
+            forwardingEnabled = getRuntimeContext().getState(
+                    new ValueStateDescriptor<>("filterSwitch", Types.BOOLEAN)
+            );
+        }
+
+        @Override
+        public void processElement1(SensorReading value, Context ctx, Collector<SensorReading> out) throws Exception {
+            if (forwardingEnabled.value() != null && forwardingEnabled.value()) {
+                out.collect(value);
+            }
+        }
+
+        @Override
+        public void processElement2(Tuple2<String, Long> value, Context ctx, Collector<SensorReading> out) throws Exception {
+            forwardingEnabled.update(true);
+            ctx.timerService().registerProcessingTimeTimer(ctx.timerService().currentProcessingTime() + value.f1);
+        }
+
+        @Override
+        public void onTimer(long timestamp, OnTimerContext ctx, Collector<SensorReading> out) throws Exception {
+            super.onTimer(timestamp, ctx, out);
+            forwardingEnabled.clear();
+        }
+    }
+}
+\end{minted}
+
+\subsection{ProcessWindowFunction的使用}
 
 \end{document}

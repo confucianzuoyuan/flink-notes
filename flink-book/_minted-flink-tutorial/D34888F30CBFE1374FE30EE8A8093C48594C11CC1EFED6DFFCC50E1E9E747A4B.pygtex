@@ -2,7 +2,6 @@
 \PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{AverageSensorReadings} \PYG{p}{\PYGZob{}}
   \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
     \PYG{k+kd}{final} \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
-    \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setStreamTimeCharacteristic}\PYG{p}{(}\PYG{n}{TimeCharacteristic}\PYG{p}{.}\PYG{n+na}{EventTime}\PYG{p}{);}
 
     \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{sensorData} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
 
@@ -12,7 +11,7 @@
         \PYG{k}{return} \PYG{n}{SensorReading}\PYG{p}{(}\PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{,} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{timestamp}\PYG{p}{,} \PYG{n}{celsius}\PYG{p}{);}
       \PYG{p}{\PYGZcb{})}
       \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{)}
-      \PYG{p}{.}\PYG{n+na}{timeWindow}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{))}
+      \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingProcessingTimeWindows}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
       \PYG{p}{.}\PYG{n+na}{apply}\PYG{p}{(}\PYG{k}{new} \PYG{n}{TemperatureAverager}\PYG{p}{());}
 
     \PYG{n}{avgTemp}\PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}

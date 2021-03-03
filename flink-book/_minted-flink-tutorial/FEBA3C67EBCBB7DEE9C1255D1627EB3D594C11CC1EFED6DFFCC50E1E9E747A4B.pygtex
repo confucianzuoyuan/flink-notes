@@ -1,0 +1,20 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{BoundedOutOfOrdernessGenerator} \PYG{k+kd}{implements} \PYG{n}{WatermarkGenerator}\PYG{o}{\PYGZlt{}}\PYG{n}{MyEvent}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{private} \PYG{k+kd}{final} \PYG{k+kt}{long} \PYG{n}{maxOutOfOrderness} \PYG{o}{=} \PYG{l+m+mi}{3500}\PYG{p}{;} \PYG{c+c1}{// 最大延迟时间是3.5s}
+
+    \PYG{k+kd}{private} \PYG{k+kt}{long} \PYG{n}{currentMaxTimestamp}\PYG{p}{;}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{onEvent}\PYG{p}{(}\PYG{n}{MyEvent} \PYG{n}{event}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{eventTimestamp}\PYG{p}{,} \PYG{n}{WatermarkOutput} \PYG{n}{output}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{n}{currentMaxTimestamp} \PYG{o}{=} \PYG{n}{Math}\PYG{p}{.}\PYG{n+na}{max}\PYG{p}{(}\PYG{n}{currentMaxTimestamp}\PYG{p}{,} \PYG{n}{eventTimestamp}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{onPeriodicEmit}\PYG{p}{(}\PYG{n}{WatermarkOutput} \PYG{n}{output}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{c+c1}{// 产生水位线的公式：观察到的最大时间戳 \PYGZhy{} 最大延迟时间 \PYGZhy{} 1ms}
+        \PYG{n}{output}\PYG{p}{.}\PYG{n+na}{emitWatermark}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Watermark}\PYG{p}{(}\PYG{n}{currentMaxTimestamp} \PYG{o}{\PYGZhy{}} \PYG{n}{maxOutOfOrderness} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{));}
+    \PYG{p}{\PYGZcb{}}
+
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
