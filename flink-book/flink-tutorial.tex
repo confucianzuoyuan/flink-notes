@@ -2999,4 +2999,194 @@ public class UpdateWindowResultWithLateEvent {
 }
 \end{minted}
 
+\chapter{有状态算子和应用}
+
+状态操作符和用户自定义函数都是我们在写流处理程序时，常用的工具。事实上，大部分稍微复杂一点的逻辑都需要保存数据或者保存计算结果。很多Flink内置的操作符例如：source操作符，sink操作符等等都是有状态的，也就是说会缓存流数据或者计算结果。例如，窗口操作符将会为ProcessWindowFunction收集输入的数据，或者收集ReduceFunction计算的结果。而ProcessFunction也会保存定时器事件，一些sink方法为了做到exactly-once，会将事务保存下来。除了内置的操作符以及提供的source和sink操作符，Flink的DataStream API还在UDF函数中暴露了可以注册、保存和访问状态的接口。
+
+本章重点讨论有状态的用户自定义函数的实现，以及讨论有状态应用的性能和健壮性。特别的，我们将解释在用户自定义函数中，如何定义不同类型的状态，以及如何与状态进行交互。我们还讨论了性能方面的问题以及如何控制状态大小的问题。
+
+\section{实现有状态的用户自定义函数}
+
+我们知道函数有两种状态，键控状态(keyed state)和操作符状态(operator state)。我们重点来看一下键控状态。我们来看一下如何在RuntimeContext中定义键控状态。
+
+用户自定义函数可以使用keyed state来存储和访问key对应的状态。对于每一个key，Flink将会维护一个状态实例。一个操作符的状态实例将会被分发到操作符的所有并行任务中去。这表明函数的每一个并行任务只为所有key的某一部分key保存key对应的状态实例。所以keyed state和分布式key-value map数据结构非常类似。
+
+keyed state仅可用于KeyedStream。Flink支持以下数据类型的状态变量：
+
+\begin{itemize}
+    \item ValueState<T>保存单个的值，值的类型为T。
+    \begin{itemize}
+        \item get操作: ValueState.value()
+        \item set操作: ValueState.update(T value)
+    \end{itemize}
+    \item ListState<T>保存一个列表，列表里的元素的数据类型为T。基本操作如下：
+    \begin{itemize}
+        \item ListState.add(T value)
+        \item ListState.addAll(List<T> values)
+        \item ListState.get()返回Iterable<T>
+        \item ListState.update(List<T> values)
+    \end{itemize}
+    \item MapState<K, V>保存Key-Value对。
+    \begin{itemize}
+        \item MapState.get(K key)
+        \item MapState.put(K key, V value)
+        \item MapState.contains(K key)
+        \item MapState.remove(K key)
+    \end{itemize}
+    \item ReducingState<T>
+    \item AggregatingState<I, O>
+\end{itemize}
+
+State.clear()是清空操作。
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+public class ListStateExample {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        env
+            .addSource(new SensorSource())
+            .filter(r -> r.id.equals("sensor_1"))
+            .keyBy(r -> r.id)
+            .process(new KeyedProcessFunction<String, SensorReading, String>() {
+
+                private ListState<SensorReading> readings;
+                private ValueState<Long> timerTs;
+
+                @Override
+                public void open(Configuration parameters) throws Exception {
+                    super.open(parameters);
+                    readings = getRuntimeContext().getListState(
+                            new ListStateDescriptor<SensorReading>("readings", SensorReading.class)
+                    );
+                    timerTs = getRuntimeContext().getState(
+                            new ValueStateDescriptor<Long>("ts", Types.LONG)
+                    );
+                }
+
+                @Override
+                public void processElement(SensorReading sensorReading, Context context, Collector<String> collector) throws Exception {
+                    readings.add(sensorReading);
+                    if (timerTs.value() == null) {
+                        context.timerService().registerProcessingTimeTimer(context.timerService().currentProcessingTime() + 10 * 1000L);
+                        timerTs.update(context.timerService().currentProcessingTime() + 10 * 1000L);
+                    }
+                }
+
+                @Override
+                public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+                    super.onTimer(timestamp, ctx, out);
+                    long count = 0L;
+                    for(SensorReading r : readings.get()) {
+                        count++;
+                    }
+                    out.collect("there are " + count + " readings");
+                    timerTs.clear();
+                }
+            })
+            .print();
+
+        env.execute();
+    }
+}
+\end{minted}
+
+上面例子中的KeyedProcessFunction只能访问当前处理的元素所包含的key所对应的状态变量。
+
+\begin{note}
+    不同key对应的keyed state是相互隔离的。
+\end{note}
+
+\begin{itemize}
+    \item 通过RuntimeContext注册StateDescriptor。StateDescriptor以状态state的名字和存储的数据类型为参数。数据类型必须指定，因为Flink需要选择合适的序列化器。
+    \item 在open()方法中创建state变量。注意复习之前的RichFunction相关知识。
+\end{itemize}
+
+当一个函数注册了StateDescriptor描述符，Flink会检查状态后端是否已经存在这个状态。这种情况通常出现在应用挂掉要从检查点或者保存点恢复的时候。在这两种情况下，Flink会将注册的状态连接到已经存在的状态。如果不存在状态，则初始化一个空的状态。
+
+\section{状态后端}
+
+\subsection{选择一个状态后端}
+
+\begin{itemize}
+    \item MemoryStateBackend将状态当作Java的对象(没有序列化操作)存储在TaskManager JVM进程的堆上。
+    \item FsStateBackend将状态存储在本地的文件系统或者远程的文件系统如HDFS。
+    \item RocksDBStateBackend将状态存储在RocksDB中。
+\end{itemize}
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+env.setStateBackend(new FsStateBackend("file:///tmp/checkpoints", false))
+\end{minted}
+
+\subsection{防止状态泄露}
+
+流应用通常需要运行几个月或者几年。如果state数据不断增长的话，会爆炸。所以控制state数据的大小十分重要。而Flink并不会清理state和gc。所以所有的stateful operator都需要控制他们各自的状态数据大小，保证不爆炸。
+
+例如我们之前讲过增量聚合函数ReduceFunction/AggregateFunction，就可以提前聚合而不给state太多压力。
+
+我们来看一个例子，我们实现了一个KeyedProcessFunction，用来计算连续两次的温度的差值，如果差值超过阈值，报警。
+
+我们之前实现过这个需求，但没有清理掉状态数据。比如一小时内不再产生温度数据的传感器对应的状态数据就可以清理掉了。
+
+\subsection{配置检查点}
+
+10秒钟保存一次检查点。
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+env.enableCheckpointing(10000L);
+\end{minted}
+
+\chapter{读写外部系统}
+
+数据可以存储在不同的系统中，例如：文件系统，对象存储系统（OSS），关系型数据库，Key-Value存储，搜索引擎索引，日志系统，消息队列，等等。每一种系统都是给特定的应用场景设计的，在某一个特定的目标上超越了其他系统。今天的数据架构，往往包含着很多不同的存储系统。在将一个组件加入到我们的系统中时，我们需要问一个问题：“这个组件和架构中的其他组件能多好的一起工作？”
+
+添加一个像Flink这样的数据处理系统，需要仔细的考虑。因为Flink没有自己的存储层，而是读取数据和持久化数据都需要依赖外部存储。所以，对于Flink，针对外部系统提供良好的读取和写入的连接器就很重要了。尽管如此，仅仅能够读写外部系统对于Flink这样想要提供任务故障情况下一致性保证的流处理器来讲，是不够的。
+
+在本章中，我们将会讨论source和sink的连接器。这些连接器影响了Flink的一致性保证，也提供了对于最流行的一些外部系统的读写的连接器。我们还将学习如何实现自定义source和sink连接器，以及如何实现可以向外部系统发送异步读写请求的函数。
+
+\section{应用的一致性保证}
+
+Flink的检查点和恢复机制定期的会保存应用程序状态的一致性检查点。在故障的情况下，应用程序的状态将会从最近一次完成的检查点恢复，并继续处理。尽管如此，可以使用检查点来重置应用程序的状态无法完全达到令人满意的一致性保证。相反，source和sink的连接器需要和Flink的检查点和恢复机制进行集成才能提供有意义的一致性保证。
+
+为了给应用程序提供恰好处理一次语义的状态一致性保证，应用程序的source连接器需要能够将source的读位置重置到之前保存的检查点位置。当处理一次检查点时，source操作符将会把source的读位置持久化，并在恢复的时候从这些读位置开始重新读取。支持读位置的检查点的source连接器一般来说是基于文件的存储系统，如：文件流或者Kafka source（检查点会持久化某个正在消费的topic的读偏移量）。如果一个应用程序从一个无法存储和重置读位置的source连接器摄入数据，那么当任务出现故障的时候，数据就会丢失。也就是说我们只能提供at-most-once）的一致性保证。
+
+Fink的检查点和恢复机制和可以重置读位置的source连接器结合使用，可以保证应用程序不会丢失任何数据。尽管如此，应用程序可能会发出两次计算结果，因为从上一次检查点恢复的应用程序所计算的结果将会被重新发送一次（一些结果已经发送出去了，这时任务故障，然后从上一次检查点恢复，这些结果将被重新计算一次然后发送出去）。所以，可重置读位置的source和Flink的恢复机制不足以提供端到端的恰好处理一次语义，即使应用程序的状态是恰好处理一次一致性级别。
+
+一个志在提供端到端恰好处理一次语义一致性的应用程序需要特殊的sink连接器。sink连接器可以在不同的情况下使用两种技术来达到恰好处理一次一致性语义：幂等性写入和事务性写入。
+
+\subsection{幂等性写入}
+
+一个幂等操作无论执行多少次都会返回同样的结果。例如，重复的向hashmap中插入同样的key-value对就是幂等操作，因为头一次插入操作之后所有的插入操作都不会改变这个hashmap，因为hashmap已经包含这个key-value对了。另一方面，append操作就不是幂等操作了，因为多次append同一个元素将会导致列表每次都会添加一个元素。在流处理程序中，幂等写入操作是很有意思的，因为幂等写入操作可以执行多次但不改变结果。所以它们可以在某种程度上缓和Flink检查点机制带来的重播计算结果的效应。
+
+需要注意的是，依赖于幂等性sink来达到exactly-once语义的应用程序，必须保证在从检查点恢复以后，它将会覆盖之前已经写入的结果。例如，一个包含有sink操作的应用在sink到一个key-value存储时必须保证它能够确定的计算出将要更新的key值。同时，从Flink程序sink到的key-value存储中读取数据的应用，在Flink从检查点恢复的过程中，可能会看到不想看到的结果。当重播开始时，之前已经发出的计算结果可能会被更早的结果所覆盖（因为在恢复过程中）。所以，一个消费Flink程序输出数据的应用，可能会观察到时间回退，例如读到了比之前小的计数。也就是说，当流处理程序处于恢复过程中时，流处理程序的结果将处于不稳定的状态，因为一些结果被覆盖掉，而另一些结果还没有被覆盖。一旦重播完成，也就是说应用程序已经通过了之前出故障的点，结果将会继续保持一致性。
+
+\subsection{事务性写入}
+
+第二种实现端到端的恰好处理一次一致性语义的方法基于事务性写入。其思想是只将最近一次成功保存的检查点之前的计算结果写入到外部系统中去。这样就保证了在任务故障的情况下，端到端恰好处理一次语义。应用将被重置到最近一次的检查点，而在这个检查点之后并没有向外部系统发出任何计算结果。通过只有当检查点保存完成以后再写入数据这种方法，事务性的方法将不会遭受幂等性写入所遭受的重播不一致的问题。尽管如此，事务性写入却带来了延迟，因为只有在检查点完成以后，我们才能看到计算结果。
+
+Flink提供了两种构建模块来实现事务性sink连接器：write-ahead-log（WAL，预写式日志）sink和两阶段提交sink。WAL式sink将会把所有计算结果写入到应用程序的状态中，等接到检查点完成的通知，才会将计算结果发送到sink系统。因为sink操作会把数据都缓存在状态后段，所以WAL可以使用在任何外部sink系统上。尽管如此，WAL还是无法提供刀枪不入的恰好处理一次语义的保证，再加上由于要缓存数据带来的状态后段的状态大小的问题，WAL模型并不十分完美。
+
+与之形成对比的，2PC sink需要sink系统提供事务的支持或者可以模拟出事务特性的模块。对于每一个检查点，sink开始一个事务，然后将所有的接收到的数据都添加到事务中，并将这些数据写入到sink系统，但并没有提交（commit）它们。当事务接收到检查点完成的通知时，事务将被commit，数据将被真正的写入sink系统。这项机制主要依赖于一次sink可以在检查点完成之前开始事务，并在应用程序从一次故障中恢复以后再commit的能力。
+
+2PC协议依赖于Flink的检查点机制。检查点屏障是开始一个新的事务的通知，所有操作符自己的检查点成功的通知是它们可以commit的投票，而作业管理器通知一个检查点成功的消息是commit事务的指令。于WAL sink形成对比的是，2PC sinks依赖于sink系统和sink本身的实现可以实现恰好处理一次语义。更多的，2PC sink不断的将数据写入到sink系统中，而WAL写模型就会有之前所述的问题。
+
+\begin{table}[htbp]
+   \centering
+   \caption{总结}
+     \begin{tabular}{lll}
+     \toprule
+      & 不可重置的源 & 可重置的源 \\
+     \midrule
+     any sink & at-most-once & at-least-once \\
+     幂等性sink & at-most-once & exactly-once（当从任务失败中恢复时，存在暂时的不一致性） \\
+     预写式日志sink & at-most-once & at-least-once \\
+     2PC sink & at-most-once & exactly-once \\
+     \bottomrule
+     \end{tabular}%
+   \label{tab:theorem-class}%
+ \end{table}%
+
 \end{document}

@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+\PYG{n}{env}\PYG{p}{.}\PYG{n+na}{enableCheckpointing}\PYG{p}{(}\PYG{l+m+mi}{10000L}\PYG{p}{);}
+\end{Verbatim}

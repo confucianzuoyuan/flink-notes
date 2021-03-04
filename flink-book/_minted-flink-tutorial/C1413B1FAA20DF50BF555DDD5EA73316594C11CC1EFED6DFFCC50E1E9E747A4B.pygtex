@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+\PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setStateBackend}\PYG{p}{(}\PYG{k}{new} \PYG{n}{FsStateBackend}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}file:///tmp/checkpoints\PYGZdq{}}\PYG{p}{,} \PYG{k+kc}{false}\PYG{p}{))}
+\end{Verbatim}
