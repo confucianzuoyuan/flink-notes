@@ -22,18 +22,6 @@
   \end{frame}
 
   \begin{frame}
-    \frametitle{JobMaster}
-
-    \begin{itemize}
-        \item 控制一个应用程序执行的主进程，也就是说，每个应用程序都会被一个不同的JobMaster所控制执行。
-        \item JobMaster会先接收到要执行的应用程序，这个应用程序会包括：作业图(JobGraph)、逻辑数据流图和打包了所有的类、库和其它资源的JAR包。
-        \item JobMaster会把JobGraph转换成一个物理层面的数据流图，这个图被叫做“执行图”(ExecutionGraph)，包含了所有可以并发执行的任务。
-        \item JobMaster会向资源管理器(Flink的资源管理器)请求执行任务必要的资源，也就是任务管理器(TaskManager)上的任务插槽（slot）。一旦它获取到了足够的资源，就会将执行图(DAG)分发到真正运行它们的TaskManager上。而在运行过程中，JobManager会负责所有需要中央协调的操作，比如说检查点(checkpoints)的协调。
-    \end{itemize}
-  
-  \end{frame}
-
-  \begin{frame}
       \frametitle{Flink架构}
   
       \begin{itemize}
@@ -44,7 +32,7 @@
   \end{frame}
 
   \begin{frame}
-    \frametitle{集群}
+    \frametitle{Flink架构}
 
     \begin{figure}
         \centering
@@ -66,6 +54,18 @@
     \frametitle{作业管理器(JobManager)}
 
     \begin{itemize}
+        \item 控制一个应用程序执行的主进程，也就是说，每个应用程序都会被一个不同的JobManager所控制执行。
+        \item JobManager会先接收到要执行的应用程序，这个应用程序会包括：作业图(JobGraph)、逻辑数据流图和打包了所有的类、库和其它资源的JAR包。
+        \item JobManager会把JobGraph转换成一个物理层面的数据流图，这个图被叫做“执行图”(ExecutionGraph)，包含了所有可以并发执行的任务。
+        \item JobManager会向资源管理器(Flink的资源管理器)请求执行任务必要的资源，也就是任务管理器(TaskManager)上的任务插槽（slot）。一旦它获取到了足够的资源，就会将执行图(DAG)分发到真正运行它们的TaskManager上。而在运行过程中，JobManager会负责所有需要中央协调的操作，比如说检查点(checkpoints)的协调。
+    \end{itemize}
+  
+  \end{frame}
+
+  \begin{frame}
+    \frametitle{作业管理器(JobManager)}
+
+    \begin{itemize}
         \item 资源管理器(ResourceManager)：ResourceManager 负责 Flink 集群中的资源提供、回收、分配 - 它管理task slots，这是Flink集群中资源调度的单位。Flink为不同的环境和资源提供者（例如YARN、Mesos、Kubernetes和standalone部署）实现了对应的ResourceManager。在standalone设置中，ResourceManager只能分配可用TaskManager的slots，而不能自行启动新的TaskManager。
         \item 分发器(Dispatcher)：Dispatcher 提供了一个 REST 接口，用来提交 Flink 应用程序执行，并为每个提交的作业启动一个新的 JobMaster。它还运行 Flink WebUI 用来提供作业执行信息。
         \item JobMaster：JobMaster负责管理单个JobGraph的执行。Flink集群中可以同时运行多个作业，每个作业都有自己的JobMaster。
@@ -74,18 +74,58 @@
   \end{frame}
 
   \begin{frame}
-      \frametitle{Flink架构}
+      \frametitle{资源管理器}
+  
+      \begin{itemize}
+          \item 主要负责管理任务管理器（TaskManager）的插槽（slot），TaskManager 插槽是Flink中定义的处理资源单元。
+          \item Flink为不同的环境和资源管理工具提供了不同资源管理器，比如YARN、Mesos、Kubernetes（管理docker容器组成的集群），以及Standalone（独立集群）部署。
+          \item 当JobManager申请插槽资源时，Flink的资源管理器会将有空闲插槽的TaskManager分配给JobManager。如果Flink的资源管理器没有足够的插槽来满足JobManager的请求，它还可以向Yarn的资源管理器发起会话，以提供启动TaskManager进程的容器。
+      \end{itemize}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{分发器}
+  
+      \begin{itemize}
+          \item 可以跨作业运行，它为应用提交提供了RESTful接口(GET/PUT/DELETE/POST)。
+          \item 当一个应用被提交执行时，分发器就会启动并将应用移交给一个JobManager。
+          \item Dispatcher也会启动一个Web UI(localhost:8081)，用来方便地展示和监控作业执行的信息。
+          \item Dispatcher在架构中可能并不是必需的，这取决于应用提交运行的方式。
+      \end{itemize}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{任务提交流程}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[width=0.6\textwidth]{image16.png}
+        \caption{Flink运行时的组件}
+      \end{figure}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{任务调度原理}
 
       \begin{figure}
         \centering
         \includegraphics[height=0.6\textheight]{image13.pdf}
         \caption{Flink运行时的组件}
-      \end{figure}      
+      \end{figure}
   
   \end{frame}
 
   \begin{frame}
       \frametitle{TaskManager和Slots}
+
+      \begin{figure}
+        \centering
+        \includegraphics[width=0.6\textwidth]{image17.png}
+        \caption{任务管理器和插槽}
+      \end{figure}
   
       \begin{itemize}
           \item Flink 中每一个 TaskManager 都是一个JVM进程，每一个任务插槽都会启动一个线程，它可能会在独立的线程上执行一个或多个 subtask，每一个子任务占用一个任务插槽（Task Slot）
@@ -105,12 +145,103 @@
   \end{frame}
 
   \begin{frame}
+      \frametitle{TaskManager和Slots}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[height=0.6\textheight]{image18.png}
+        \caption{并行度}
+      \end{figure}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{TaskManager和Slots}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[height=0.6\textheight]{image19.png}
+        \caption{并行度}
+      \end{figure}
+  
+  \end{frame}
+
+  \begin{frame}
       \frametitle{程序与数据流(DataFlow)}
   
+      \begin{figure}
+          \centering
+          \includegraphics[height=0.4\textheight]{image20.png}
+          \caption{数据流}
+      \end{figure}
+
+      \begin{itemize}
+          \item 所有的Flink程序都是由三部分组成的：Source 、Transformation 和 Sink。
+          \item Source 负责读取数据源，Transformation 利用各种算子进行处理加工，Sink 负责输出。
+      \end{itemize}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{程序与数据流(DataFlow)}
+
       \begin{itemize}
           \item 在运行时，Flink上运行的程序会被映射成“逻辑数据流”（dataflows），它包含了这三部分
           \item 每一个dataflow以一个或多个sources开始以一个或多个sinks结束。dataflow类似于任意的有向无环图（DAG）
           \item 在大部分情况下，程序中的转换运算（transformations）跟dataflow中的算子（operator）是一一对应的关系
+      \end{itemize}
+
+      \begin{figure}
+          \centering
+          \includegraphics[width=0.6\textwidth]{image21.png}
+          \caption{数据流}
+      \end{figure}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{图数据结构的转化}
+
+      \begin{center}
+        \smartdiagramset{
+            border color=none,
+            set color list={blue!50!cyan,green!60!lime,orange!50!red,red!80!black},
+            back arrow disabled=true
+        }
+        \smartdiagram[flow diagram:horizontal]{StreamGraph, JobGraph, ExecutionGraph, 物理执行图}
+      \end{center}
+
+      \begin{itemize}
+          \item StreamGraph：是根据用户通过 Stream API 编写的代码生成的最初的图。用来表示程序的拓扑结构。
+          \item JobGraph：StreamGraph在编译的阶段经过优化后生成了 JobGraph，提交给 JobManager 的数据结构。主要的优化为，将多个符合条件（窄依赖，没有shuffle）的算子 chain 在一起作为一个节点。
+          \item ExecutionGraph：JobManager 根据 JobGraph 生成ExecutionGraph。ExecutionGraph是JobGraph的并行化版本，是调度层最核心的数据结构。
+          \item 物理执行图：JobManager 根据 ExecutionGraph 对 Job 进行调度后，在各个TaskManager 上部署 Task 后形成的“图”，并不是一个具体的数据结构。
+      \end{itemize}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{图数据结构的转化}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[height=0.6\textheight]{image22.png}
+        \caption{图的转化}
+      \end{figure}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{并行度(Parallelism)}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[height=0.4\textheight]{image23.png}
+        \caption{图的转化}
+      \end{figure}
+
+      \begin{itemize}
+          \item 一个特定算子的子任务（subtask）的个数被称之为其并行度（parallelism）。一般情况下，一个 stream 的并行度，可以认为就是其所有算子中最大的并行度。
       \end{itemize}
   
   \end{frame}
@@ -146,9 +277,20 @@
       \begin{figure}
         \centering
         \includegraphics[width=0.9\textwidth]{image15.png}
-        \caption{Flink运行时的组件}
+        \caption{并行度}
       \end{figure}
       
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{任务链}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[width=0.9\textwidth]{image24.png}
+        \caption{任务链}
+      \end{figure}      
+  
   \end{frame}
 
   \begin{frame}[plain,c]
