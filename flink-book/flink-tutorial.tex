@@ -3174,19 +3174,114 @@ Flink提供了两种构建模块来实现事务性sink连接器：write-ahead-lo
 2PC协议依赖于Flink的检查点机制。检查点屏障是开始一个新的事务的通知，所有操作符自己的检查点成功的通知是它们可以commit的投票，而作业管理器通知一个检查点成功的消息是commit事务的指令。于WAL sink形成对比的是，2PC sinks依赖于sink系统和sink本身的实现可以实现恰好处理一次语义。更多的，2PC sink不断的将数据写入到sink系统中，而WAL写模型就会有之前所述的问题。
 
 \begin{table}[htbp]
-   \centering
-   \caption{总结}
-     \begin{tabular}{lll}
-     \toprule
+  \centering
+  \caption{总结}
+    \begin{tabular}{lll}
+    \toprule
       & 不可重置的源 & 可重置的源 \\
-     \midrule
-     any sink & at-most-once & at-least-once \\
-     幂等性sink & at-most-once & exactly-once（当从任务失败中恢复时，存在暂时的不一致性） \\
-     预写式日志sink & at-most-once & at-least-once \\
-     2PC sink & at-most-once & exactly-once \\
-     \bottomrule
-     \end{tabular}%
-   \label{tab:theorem-class}%
- \end{table}%
+    \midrule
+    any sink & at-most-once & at-least-once \\
+    幂等性sink & at-most-once & exactly-once（当从任务失败中恢复时，存在暂时的不一致性） \\
+    预写式日志sink & at-most-once & at-least-once \\
+    2PC sink & at-most-once & exactly-once \\
+    \bottomrule
+    \end{tabular}%
+  \label{tab:theorem-class}%
+\end{table}%
+
+\subsection{Flink提供的连接器}
+
+Flink提供了读写很多存储系统的连接器。消息队列，日志系统，例如Apache Kafka, Kinesis, RabbitMQ等等这些是常用的数据源。在批处理环境中，数据流很可能是监听一个文件系统，而当新的数据落盘的时候，读取这些新数据。
+
+在sink一端，数据流经常写入到消息队列中，以供接下来的流处理程序消费。数据流也可能写入到文件系统中做持久化，或者交给批处理程序来进行分析。数据流还可能被写入到key-value存储或者关系型数据库中，例如Cassandra，ElasticSearch或者MySQL中，这样数据可供查询，还可以在仪表盘中显示出来。
+
+不幸的是，对于大多数存储系统并没有标准接口，除了针对DBMS的JDBC。相反，每一个存储系统都需要有自己的特定的连接器。所以，Flink需要维护针对不同存储系统（消息队列，日志系统，文件系统，k-v数据库，关系型数据库等等）的连接器实现。
+
+Flink提供了针对Apache Kafka, Kinesis, RabbitMQ, Apache Nifi, 各种文件系统，Cassandra, Elasticsearch, 还有JDBC的连接器。除此之外，Apache Bahir项目还提供了额外的针对例如ActiveMQ, Akka, Flume, Netty, 和Redis等的连接器。
+
+\subsection{Apache Kafka Source连接器}
+
+Apache Kafka是一个分布式流式平台。它的核心是一个分布式的发布订阅消息系统。
+
+Kafka将事件流组织为所谓的topics。一个主题就是一个事件日志系统，Kafka可以保证主题中的数据在被读取时和这些数据在被写入时相同的顺序。为了扩大读写的规模，主题可以分裂为多个分区，这些分区分布在一个集群上面。这时，读写顺序的保证就限制到了分区这个粒度， Kafka并没有提供从不同分区读取数据时的顺序保证。Kafka分区的读位置称为偏移量（offset）。
+
+Kafka的依赖引入如下：
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{xml}
+<dependency>
+   <groupId>org.apache.flink</groupId>
+   <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
+   <version>${flink.version}</version>
+</dependency>
+\end{minted}
+
+Flink Kafka连接器并行的摄入事件流。每一个并行source任务可以从一个或者多个分区中读取数据。任务将会跟踪每一个分区当前的读偏移量，然后将读偏移量写入到检查点数据中。当从任务故障恢复时，读偏移量将被恢复，而source任务将从检查点保存的读偏移量开始重新读取数据。Flink Kafka连接器并不依赖Kafka自己的offset-tracking机制（基于消费者组实现）。下图展示了分区如何分配给source实例。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/spaf_0801.png}
+    \caption{消费Kafka}
+\end{figure}
+
+Kafka source连接器使用如下代码创建
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+Properties properties = new Properties();
+properties.setProperty("bootstrap.servers", "localhost:9092");
+properties.setProperty("group.id", "consumer-group");
+properties.setProperty("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+properties.setProperty("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+properties.setProperty("auto.offset.reset", "latest");
+
+env
+    .addSource(new FlinkKafkaConsumer011<String>(
+        "atguigu",
+        new SimpleStringSchema(),
+        properties
+    ))
+    .print();
+\end{minted}
+
+构造器接受三个参数。第一个参数定义了从哪些topic中读取数据，可以是一个topic，也可以是topic列表，还可以是匹配所有想要读取的topic的正则表达式。当从多个topic中读取数据时，Kafka连接器将会处理所有topic的分区，将这些分区的数据放到一条流中去。
+
+第二个参数是一个DeserializationSchema或者KeyedDeserializationSchema。Kafka消息被存储为原始的字节数据，所以需要反序列化成Java或者Scala对象。上例中使用的SimpleStringSchema，是一个内置的DeserializationSchema，它仅仅是简单的将字节数组反序列化成字符串。DeserializationSchema和KeyedDeserializationSchema是公共的接口，所以我们可以自定义反序列化逻辑。
+
+第三个参数是一个Properties对象，设置了用来读写的Kafka客户端的一些属性。
+
+\subsection{Apache Kafka Sink连接器}
+
+下面的例子展示了如何创建一个Kafka sink
+
+\begin{minted}[linenos,breaklines,fontsize=\footnotesize]{java}
+Properties properties = new Properties();
+properties.put("bootstrap.servers", "localhost:9092");
+stream
+    .addSink(
+        new FlinkKafkaProducer011<String>(
+            "test",
+            new SimpleStringSchema(),
+            properties
+    ));
+\end{minted}
+
+\subsection{Kakfa Sink的at-least-once保证}
+
+Flink的Kafka sink提供了基于配置的一致性保证。Kafka sink使用下面的条件提供了至少处理一次保证：
+
+\begin{itemize}
+    \item Flink检查点机制开启，所有的数据源都是可重置的。
+    \item 当写入失败时，sink连接器将会抛出异常，使得应用程序挂掉然后重启。这是默认行为。应用程序内部的Kafka客户端还可以配置为重试写入，只要提前声明当写入失败时，重试几次这样的属性（retries property）。
+    \item sink连接器在完成它的检查点之前会等待Kafka发送已经将数据写入的通知。
+\end{itemize}
+
+\subsection{Kafka Sink的恰好处理一次语义保证}
+
+Kafka 0.11版本引入了事务写特性。由于这个新特性，Flink Kafka sink可以为输出结果提供恰好处理一次语义的一致性保证，只要经过合适的配置就行。Flink程序必须开启检查点机制，并从可重置的数据源进行消费。FlinkKafkaProducer还提供了包含Semantic参数的构造器来控制sink提供的一致性保证。可能的取值如下：
+
+\begin{itemize}
+    \item Semantic.NONE，不提供任何一致性保证。数据可能丢失或者被重写多次。
+    \item Semantic.AT\_LEAST\_ONCE，保证无数据丢失，但可能被处理多次。这个是默认设置。
+    \item Semantic.EXACTLY\_ONCE，基于Kafka的事务性写入特性实现，保证每条数据恰好处理一次。
+\end{itemize}
 
 \end{document}
