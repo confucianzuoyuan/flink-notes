@@ -1,0 +1,21 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Double}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{minTempPerwindow} \PYG{o}{=} \PYG{n}{sensorData}
+    \PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{p}{,} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Double}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Double}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{map}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{value}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{,} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{temperature}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{})}
+    \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
+    \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingProcessingTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
+    \PYG{p}{.}\PYG{n+na}{reduce}\PYG{p}{(}\PYG{k}{new} \PYG{n}{ReduceFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Double}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Double}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{reduce}\PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Double}\PYG{o}{\PYGZgt{}} \PYG{n}{value1}\PYG{p}{,} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Double}\PYG{o}{\PYGZgt{}} \PYG{n}{value2}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k}{if} \PYG{p}{(}\PYG{n}{value1}\PYG{p}{.}\PYG{n+na}{f1} \PYG{o}{\PYGZlt{}} \PYG{n}{value2}\PYG{p}{.}\PYG{n+na}{f1}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{k}{return} \PYG{n}{value1}\PYG{p}{;}
+            \PYG{p}{\PYGZcb{}} \PYG{k}{else} \PYG{p}{\PYGZob{}}
+                \PYG{k}{return} \PYG{n}{value2}\PYG{p}{;}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{})}
+\end{Verbatim}

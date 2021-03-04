@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{input1}
+  \PYG{p}{.}\PYG{n+na}{intervalJoin}\PYG{p}{(}\PYG{n}{input2}\PYG{p}{)}
+  \PYG{p}{.}\PYG{n+na}{between}\PYG{p}{(}\PYG{o}{\PYGZlt{}}\PYG{n}{lower}\PYG{o}{\PYGZhy{}}\PYG{n}{bound}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{o}{\PYGZlt{}}\PYG{n}{upper}\PYG{o}{\PYGZhy{}}\PYG{n}{bound}\PYG{o}{\PYGZgt{}}\PYG{p}{)} \PYG{c+c1}{// 相对于input1的上下界}
+  \PYG{p}{.}\PYG{n+na}{process}\PYG{p}{(}\PYG{n}{ProcessJoinFunction}\PYG{p}{)} \PYG{c+c1}{// 处理匹配的事件对}
+\end{Verbatim}

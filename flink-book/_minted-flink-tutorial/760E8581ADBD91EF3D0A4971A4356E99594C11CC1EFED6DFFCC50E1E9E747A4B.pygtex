@@ -1,0 +1,63 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{TwoWindowJoinExample} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream1} \PYG{o}{=} \PYG{n}{env}
+            \PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}a\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}b\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}a\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{2000L}\PYG{p}{),}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}b\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{2000L}\PYG{p}{)}
+            \PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                \PYG{n}{WatermarkStrategy}
+                    \PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                    \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}
+                        \PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                            \PYG{n+nd}{@Override}
+                            \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{stringLongTuple2}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{l}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                                \PYG{k}{return} \PYG{n}{stringLongTuple2}\PYG{p}{.}\PYG{n+na}{f1}\PYG{p}{;}
+                            \PYG{p}{\PYGZcb{}}
+                        \PYG{p}{\PYGZcb{}}
+                    \PYG{p}{)}
+            \PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream2} \PYG{o}{=} \PYG{n}{env}
+            \PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}a\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{3000L}\PYG{p}{),}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}b\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{3000L}\PYG{p}{),}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}a\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{4000L}\PYG{p}{),}
+                \PYG{n}{Tuple2}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}b\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{4000L}\PYG{p}{)}
+            \PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                \PYG{n}{WatermarkStrategy}
+                    \PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                    \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}
+                        \PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                            \PYG{n+nd}{@Override}
+                            \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{stringLongTuple2}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{l}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                                \PYG{k}{return} \PYG{n}{stringLongTuple2}\PYG{p}{.}\PYG{n+na}{f1}\PYG{p}{;}
+                            \PYG{p}{\PYGZcb{}}
+                        \PYG{p}{\PYGZcb{}}
+                    \PYG{p}{)}
+            \PYG{p}{);}
+
+        \PYG{n}{stream1}
+            \PYG{p}{.}\PYG{n+na}{join}\PYG{p}{(}\PYG{n}{stream2}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{equalTo}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingEventTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
+            \PYG{p}{.}\PYG{n+na}{apply}\PYG{p}{(}\PYG{k}{new} \PYG{n}{JoinFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{join}\PYG{p}{(}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{stringLongTuple2}\PYG{p}{,} \PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{stringLongTuple22}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{stringLongTuple2} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} =\PYGZgt{} \PYGZdq{}} \PYG{o}{+} \PYG{n}{stringLongTuple22}\PYG{p}{;}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
