@@ -1,0 +1,60 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{TransactionalFileSink} \PYG{k+kd}{extends} \PYG{n}{TwoPhaseCommitSinkFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{Void}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{private} \PYG{n}{BufferedWriter} \PYG{n}{transactionWriter}\PYG{p}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{TransactionalFileSink}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{super}\PYG{p}{(}\PYG{n}{StringSerializer}\PYG{p}{.}\PYG{n+na}{INSTANCE}\PYG{p}{,} \PYG{n}{VoidSerializer}\PYG{p}{.}\PYG{n+na}{INSTANCE}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{protected} \PYG{n}{String} \PYG{n+nf}{beginTransaction}\PYG{p}{()} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k+kt}{long} \PYG{n}{timeNow} \PYG{o}{=} \PYG{n}{System}\PYG{p}{.}\PYG{n+na}{currentTimeMillis}\PYG{p}{();}
+        \PYG{k+kt}{int} \PYG{n}{taskIdx} \PYG{o}{=} \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{getRuntimeContext}\PYG{p}{().}\PYG{n+na}{getIndexOfThisSubtask}\PYG{p}{();}
+        \PYG{n}{String} \PYG{n}{transactionFile} \PYG{o}{=} \PYG{n}{timeNow} \PYG{o}{+} \PYG{l+s}{\PYGZdq{}\PYGZhy{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{taskIdx}\PYG{p}{;}
+        \PYG{n}{Path} \PYG{n}{tFilePath} \PYG{o}{=} \PYG{n}{Paths}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}/home/zuoyuan/filetemp/\PYGZdq{}} \PYG{o}{+} \PYG{n}{transactionFile}\PYG{p}{);}
+        \PYG{n}{Files}\PYG{p}{.}\PYG{n+na}{createFile}\PYG{p}{(}\PYG{n}{tFilePath}\PYG{p}{);}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{transactionWriter} \PYG{o}{=} \PYG{n}{Files}\PYG{p}{.}\PYG{n+na}{newBufferedWriter}\PYG{p}{(}\PYG{n}{tFilePath}\PYG{p}{);}
+        \PYG{n}{System}\PYG{p}{.}\PYG{n+na}{out}\PYG{p}{.}\PYG{n+na}{println}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}create tx\PYGZdq{}}\PYG{p}{);}
+        \PYG{k}{return} \PYG{n}{transactionFile}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{protected} \PYG{k+kt}{void} \PYG{n+nf}{invoke}\PYG{p}{(}\PYG{n}{String} \PYG{n}{transaction}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{value}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{transactionWriter}\PYG{p}{.}\PYG{n+na}{write}\PYG{p}{(}\PYG{n}{value}\PYG{p}{.}\PYG{n+na}{toString}\PYG{p}{());}
+        \PYG{n}{transactionWriter}\PYG{p}{.}\PYG{n+na}{write}\PYG{p}{(}\PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}n\PYGZsq{}}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{protected} \PYG{k+kt}{void} \PYG{n+nf}{preCommit}\PYG{p}{(}\PYG{n}{String} \PYG{n}{transaction}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{transactionWriter}\PYG{p}{.}\PYG{n+na}{flush}\PYG{p}{();}
+        \PYG{n}{transactionWriter}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{protected} \PYG{k+kt}{void} \PYG{n+nf}{commit}\PYG{p}{(}\PYG{n}{String} \PYG{n}{transaction}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{n}{Path} \PYG{n}{tFilePath} \PYG{o}{=} \PYG{n}{Paths}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}/home/zuoyuan/filetemp/\PYGZdq{}} \PYG{o}{+} \PYG{n}{transaction}\PYG{p}{);}
+        \PYG{k}{if} \PYG{p}{(}\PYG{n}{Files}\PYG{p}{.}\PYG{n+na}{exists}\PYG{p}{(}\PYG{n}{tFilePath}\PYG{p}{))} \PYG{p}{\PYGZob{}}
+            \PYG{k}{try} \PYG{p}{\PYGZob{}}
+                \PYG{n}{Path} \PYG{n}{cFilePath} \PYG{o}{=} \PYG{n}{Paths}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}/home/zuoyuan/filetarget/\PYGZdq{}} \PYG{o}{+} \PYG{n}{transaction}\PYG{p}{);}
+                \PYG{n}{Files}\PYG{p}{.}\PYG{n+na}{move}\PYG{p}{(}\PYG{n}{tFilePath}\PYG{p}{,} \PYG{n}{cFilePath}\PYG{p}{);}
+                \PYG{n}{System}\PYG{p}{.}\PYG{n+na}{out}\PYG{p}{.}\PYG{n+na}{println}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}commit complete\PYGZdq{}}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}} \PYG{k}{catch} \PYG{p}{(}\PYG{n}{IOException} \PYG{n}{e}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{e}\PYG{p}{.}\PYG{n+na}{printStackTrace}\PYG{p}{();}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{protected} \PYG{k+kt}{void} \PYG{n+nf}{abort}\PYG{p}{(}\PYG{n}{String} \PYG{n}{transaction}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{n}{Path} \PYG{n}{tFilePath} \PYG{o}{=} \PYG{n}{Paths}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}/home/zuoyuan/filetemp/\PYGZdq{}} \PYG{o}{+} \PYG{n}{transaction}\PYG{p}{);}
+        \PYG{k}{if} \PYG{p}{(}\PYG{n}{Files}\PYG{p}{.}\PYG{n+na}{exists}\PYG{p}{(}\PYG{n}{tFilePath}\PYG{p}{))} \PYG{p}{\PYGZob{}}
+            \PYG{k}{try} \PYG{p}{\PYGZob{}}
+                \PYG{n}{Files}\PYG{p}{.}\PYG{n+na}{delete}\PYG{p}{(}\PYG{n}{tFilePath}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}} \PYG{k}{catch} \PYG{p}{(}\PYG{n}{IOException} \PYG{n}{e}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{e}\PYG{p}{.}\PYG{n+na}{printStackTrace}\PYG{p}{();}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,49 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{ResettableCountSource}
+        \PYG{k+kd}{implements} \PYG{n}{SourceFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}}\PYG{p}{,} \PYG{n}{CheckpointedFunction} \PYG{p}{\PYGZob{}}
+
+    \PYG{k+kd}{private} \PYG{n}{Boolean} \PYG{n}{isRunning} \PYG{o}{=} \PYG{k+kc}{true}\PYG{p}{;}
+    \PYG{k+kd}{private} \PYG{n}{Long} \PYG{n}{cnt}\PYG{p}{;}
+    \PYG{k+kd}{private} \PYG{n}{ListState}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{offsetState}\PYG{p}{;}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{run}\PYG{p}{(}\PYG{n}{SourceContext}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{ctx}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k}{while} \PYG{p}{(}\PYG{n}{isRunning} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{n}{cnt} \PYG{o}{\PYGZlt{}} \PYG{n}{Long}\PYG{p}{.}\PYG{n+na}{MAX\PYGZus{}VALUE}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{c+c1}{// synchronize data emission and checkpoints}
+            \PYG{k+kd}{synchronized} \PYG{p}{(}\PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{getCheckpointLock}\PYG{p}{())} \PYG{p}{\PYGZob{}}
+                \PYG{n}{cnt} \PYG{o}{+=} \PYG{l+m+mi}{1}\PYG{p}{;}
+                \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{n}{cnt}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{cancel}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{n}{isRunning} \PYG{o}{=} \PYG{k+kc}{false}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{snapshotState}\PYG{p}{(}\PYG{n}{FunctionSnapshotContext} \PYG{n}{context}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{c+c1}{// remove previous cnt}
+        \PYG{n}{offsetState}\PYG{p}{.}\PYG{n+na}{clear}\PYG{p}{();}
+        \PYG{c+c1}{// add current cnt}
+        \PYG{n}{offsetState}\PYG{p}{.}\PYG{n+na}{add}\PYG{p}{(}\PYG{n}{cnt}\PYG{p}{);}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{initializeState}\PYG{p}{(}\PYG{n}{FunctionInitializationContext} \PYG{n}{context}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{ListStateDescriptor}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{desc} \PYG{o}{=} \PYG{k}{new} \PYG{n}{ListStateDescriptor}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{(}
+                \PYG{l+s}{\PYGZdq{}offset\PYGZdq{}}\PYG{p}{,} \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{LONG}\PYG{p}{);}
+        \PYG{n}{offsetState} \PYG{o}{=} \PYG{n}{context}
+                \PYG{p}{.}\PYG{n+na}{getOperatorStateStore}\PYG{p}{()}
+                \PYG{p}{.}\PYG{n+na}{getListState}\PYG{p}{(}\PYG{n}{desc}\PYG{p}{);}
+        \PYG{c+c1}{// initialize cnt variable}
+        \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{it} \PYG{o}{=} \PYG{n}{offsetState}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{();}
+        \PYG{k}{if} \PYG{p}{(}\PYG{k+kc}{null} \PYG{o}{==} \PYG{n}{it} \PYG{o}{||} \PYG{o}{!}\PYG{n}{it}\PYG{p}{.}\PYG{n+na}{iterator}\PYG{p}{().}\PYG{n+na}{hasNext}\PYG{p}{())} \PYG{p}{\PYGZob{}}
+            \PYG{n}{cnt} \PYG{o}{=} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1L}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}} \PYG{k}{else} \PYG{p}{\PYGZob{}}
+            \PYG{n}{cnt} \PYG{o}{=} \PYG{n}{it}\PYG{p}{.}\PYG{n+na}{iterator}\PYG{p}{().}\PYG{n+na}{next}\PYG{p}{();}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

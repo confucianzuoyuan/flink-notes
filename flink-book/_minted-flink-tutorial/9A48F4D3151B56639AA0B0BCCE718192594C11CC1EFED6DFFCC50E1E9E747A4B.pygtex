@@ -1,0 +1,19 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{CountSource} \PYG{k+kd}{implements} \PYG{n}{SourceFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{private} \PYG{n}{Boolean} \PYG{n}{isRunning} \PYG{o}{=} \PYG{k+kc}{true}\PYG{p}{;}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{run}\PYG{p}{(}\PYG{n}{SourceContext}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{ctx}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{k+kt}{long} \PYG{n}{cnt} \PYG{o}{=} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{;}
+        \PYG{k}{while} \PYG{p}{(}\PYG{n}{isRunning} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{n}{cnt} \PYG{o}{\PYGZlt{}} \PYG{n}{Long}\PYG{p}{.}\PYG{n+na}{MAX\PYGZus{}VALUE}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{n}{cnt} \PYG{o}{+=} \PYG{l+m+mi}{1}\PYG{p}{;}
+            \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{n}{cnt}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{cancel}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{n}{isRunning} \PYG{o}{=} \PYG{k+kc}{false}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

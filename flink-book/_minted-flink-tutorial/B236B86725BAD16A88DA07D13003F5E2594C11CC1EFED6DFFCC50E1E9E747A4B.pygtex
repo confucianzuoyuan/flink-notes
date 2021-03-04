@@ -1,0 +1,53 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{WriteToMySQLExample} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
+
+        \PYG{n}{stream}\PYG{p}{.}\PYG{n+na}{addSink}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MyJDBCSink}\PYG{p}{());}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{MyJDBCSink} \PYG{k+kd}{extends} \PYG{n}{RichSinkFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{private} \PYG{n}{Connection} \PYG{n}{conn}\PYG{p}{;}
+        \PYG{k+kd}{private} \PYG{n}{PreparedStatement} \PYG{n}{insertStmt}\PYG{p}{;}
+        \PYG{k+kd}{private} \PYG{n}{PreparedStatement} \PYG{n}{updateStmt}\PYG{p}{;}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{open}\PYG{p}{(}\PYG{n}{Configuration} \PYG{n}{parameters}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{open}\PYG{p}{(}\PYG{n}{parameters}\PYG{p}{);}
+            \PYG{n}{conn} \PYG{o}{=} \PYG{n}{DriverManager}\PYG{p}{.}\PYG{n+na}{getConnection}\PYG{p}{(}
+                    \PYG{l+s}{\PYGZdq{}jdbc:mysql://localhost:3306/sensor\PYGZdq{}}\PYG{p}{,}
+                    \PYG{l+s}{\PYGZdq{}zuoyuan\PYGZdq{}}\PYG{p}{,}
+                    \PYG{l+s}{\PYGZdq{}zuoyuan\PYGZdq{}}
+            \PYG{p}{);}
+            \PYG{n}{insertStmt} \PYG{o}{=} \PYG{n}{conn}\PYG{p}{.}\PYG{n+na}{prepareStatement}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}INSERT INTO temps (id, temp) VALUES (?, ?)\PYGZdq{}}\PYG{p}{);}
+            \PYG{n}{updateStmt} \PYG{o}{=} \PYG{n}{conn}\PYG{p}{.}\PYG{n+na}{prepareStatement}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}UPDATE temps SET temp = ? WHERE id = ?\PYGZdq{}}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{invoke}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{value}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{context}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{n}{updateStmt}\PYG{p}{.}\PYG{n+na}{setDouble}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{temperature}\PYG{p}{);}
+            \PYG{n}{updateStmt}\PYG{p}{.}\PYG{n+na}{setString}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{);}
+            \PYG{n}{updateStmt}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+
+            \PYG{k}{if} \PYG{p}{(}\PYG{n}{updateStmt}\PYG{p}{.}\PYG{n+na}{getUpdateCount}\PYG{p}{()} \PYG{o}{==} \PYG{l+m+mi}{0}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{insertStmt}\PYG{p}{.}\PYG{n+na}{setString}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{);}
+                \PYG{n}{insertStmt}\PYG{p}{.}\PYG{n+na}{setDouble}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{,} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{temperature}\PYG{p}{);}
+                \PYG{n}{insertStmt}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{close}\PYG{p}{()} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+            \PYG{n}{insertStmt}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+            \PYG{n}{updateStmt}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+            \PYG{n}{conn}\PYG{p}{.}\PYG{n+na}{close}\PYG{p}{();}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
