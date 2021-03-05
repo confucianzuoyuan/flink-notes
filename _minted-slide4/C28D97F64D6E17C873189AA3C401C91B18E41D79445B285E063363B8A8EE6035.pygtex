@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{PunctuatedAssigner} \PYG{k+kd}{implements} \PYG{n}{WatermarkGenerator}\PYG{o}{\PYGZlt{}}\PYG{n}{MyEvent}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{onEvent}\PYG{p}{(}\PYG{n}{MyEvent} \PYG{n}{event}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{eventTimestamp}\PYG{p}{,} \PYG{n}{WatermarkOutput} \PYG{n}{output}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{k}{if} \PYG{p}{(}\PYG{n}{event}\PYG{p}{.}\PYG{n+na}{hasWatermarkMarker}\PYG{p}{())} \PYG{p}{\PYGZob{}}
+            \PYG{n}{output}\PYG{p}{.}\PYG{n+na}{emitWatermark}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Watermark}\PYG{p}{(}\PYG{n}{event}\PYG{p}{.}\PYG{n+na}{getWatermarkTimestamp}\PYG{p}{()));}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{onPeriodicEmit}\PYG{p}{(}\PYG{n}{WatermarkOutput} \PYG{n}{output}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{c+c1}{// 不需要做任何事情，因为我们在onEvent方法中发射了水位线}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

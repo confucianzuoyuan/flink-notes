@@ -1,0 +1,12 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+    \PYG{n}{WatermarkStrategy}
+        \PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}}\PYG{n}{forBoundedOutOfOrderness}\PYG{p}{(}\PYG{n}{Duration}\PYG{p}{.}\PYG{n+na}{ofSeconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{))}
+        \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+            \PYG{n+nd}{@Override}
+            \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{SensorReading} \PYG{n}{element}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{recordTimestamp}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{k}{return} \PYG{n}{element}\PYG{p}{.}\PYG{n+na}{timestamp}\PYG{p}{;}
+            \PYG{p}{\PYGZcb{}}
+        \PYG{p}{\PYGZcb{})}
+\PYG{p}{)}
+\end{Verbatim}
