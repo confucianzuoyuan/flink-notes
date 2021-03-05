@@ -2,6 +2,7 @@ all:
 	@echo Making beamer ...
 	xelatex -shell-escape slide1.tex
 	xelatex -shell-escape slide2.tex
+	xelatex -shell-escape slide3.tex
 clean:
 	@echo Done. 
 	-rm -f *.aux

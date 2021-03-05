@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{ProcessingTimeSessionWindows}\PYG{p}{.}\PYG{n+na}{withGap}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{)))}
+\end{Verbatim}
