@@ -5,6 +5,7 @@ all:
 	xelatex -shell-escape slide3.tex
 	xelatex -shell-escape slide4.tex
 	xelatex -shell-escape slide5.tex
+	xelatex -shell-escape slide6.tex
 clean:
 	@echo Done. 
 	-rm -f *.aux
