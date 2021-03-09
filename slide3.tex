@@ -194,12 +194,55 @@
   \end{frame}
 
   \begin{frame}
+      \frametitle{增量聚合函数}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[width=0.6\textwidth]{spaf_0604.png}
+        \caption{增量聚合函数}
+      \end{figure}
+  
+  \end{frame}
+
+  \begin{frame}
       \frametitle{全窗口聚合函数}
   
       \begin{itemize}
           \item 先把窗口所有数据收集起来，等到计算的时候会遍历所有数据
           \item ProcessWindowFunction
       \end{itemize}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{全窗口聚合函数}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[width=0.6\textwidth]{spaf_0605.png}
+        \caption{全窗口聚合函数}
+      \end{figure}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{增量聚合和全窗口聚合结合使用}
+  
+      \begin{itemize}
+          \item 可以访问窗口信息
+          \item 不需要收集窗口中的所有元素，只需要维护一个累加器，节省内存
+      \end{itemize}
+  
+  \end{frame}
+
+  \begin{frame}
+      \frametitle{增量聚合和全窗口聚合结合使用}
+  
+      \begin{figure}
+        \centering
+        \includegraphics[width=0.6\textwidth]{spaf_0606.png}
+        \caption{增量聚合和全窗口聚合结合使用}
+      \end{figure}
   
   \end{frame}
 
