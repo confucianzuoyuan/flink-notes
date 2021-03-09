@@ -222,6 +222,39 @@
   
   \end{frame}
 
+  \begin{frame}[fragile]
+      \frametitle{基于Key的窗口}
+  
+\begin{minted}[breaklines,fontsize=\tiny]{java}
+stream
+    .keyBy(...)               <-  keyed versus non-keyed windows
+    .window(...)              <-  required: "assigner"
+    [.trigger(...)]            <-  optional: "trigger" (else default trigger)
+    [.evictor(...)]            <-  optional: "evictor" (else no evictor)
+    [.allowedLateness(...)]    <-  optional: "lateness" (else zero)
+    [.sideOutputLateData(...)] <-  optional: "output tag" (else no side output for late data)
+    .reduce/aggregate/fold/apply()      <-  required: "function"
+    [.getSideOutput(...)]      <-  optional: "output tag"
+\end{minted}
+  
+  \end{frame}
+
+  \begin{frame}[fragile]
+      \frametitle{不分流直接开窗口}
+  
+\begin{minted}[breaklines,fontsize=\tiny]{java}
+stream
+    .windowAll(...)           <-  required: "assigner"
+    [.trigger(...)]            <-  optional: "trigger" (else default trigger)
+    [.evictor(...)]            <-  optional: "evictor" (else no evictor)
+    [.allowedLateness(...)]    <-  optional: "lateness" (else zero)
+    [.sideOutputLateData(...)] <-  optional: "output tag" (else no side output for late data)
+    .reduce/aggregate/fold/apply()      <-  required: "function"
+    [.getSideOutput(...)]      <-  optional: "output tag"
+\end{minted}
+  
+  \end{frame}
+
   \begin{frame}[plain,c]
     %\frametitle{A first slide}
     

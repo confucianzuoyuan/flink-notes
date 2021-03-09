@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{stream}
+    \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(...)}               \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{keyed} \PYG{n}{versus} \PYG{n}{non}\PYG{o}{\PYGZhy{}}\PYG{n}{keyed} \PYG{n}{windows}
+    \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(...)}              \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{required}\PYG{p}{:} \PYG{l+s}{\PYGZdq{}assigner\PYGZdq{}}
+    \PYG{o}{[}\PYG{p}{.}\PYG{n+na}{trigger}\PYG{p}{(...)}\PYG{o}{]}            \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{optional}\PYG{p}{:} \PYG{l+s}{\PYGZdq{}trigger\PYGZdq{}} \PYG{p}{(}\PYG{k}{else} \PYG{k}{default} \PYG{n}{trigger}\PYG{p}{)}
+    \PYG{o}{[}\PYG{p}{.}\PYG{n+na}{evictor}\PYG{p}{(...)}\PYG{o}{]}            \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{optional}\PYG{p}{:} \PYG{l+s}{\PYGZdq{}evictor\PYGZdq{}} \PYG{p}{(}\PYG{k}{else} \PYG{n}{no} \PYG{n}{evictor}\PYG{p}{)}
+    \PYG{o}{[}\PYG{p}{.}\PYG{n+na}{allowedLateness}\PYG{p}{(...)}\PYG{o}{]}    \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{optional}\PYG{p}{:} \PYG{l+s}{\PYGZdq{}lateness\PYGZdq{}} \PYG{p}{(}\PYG{k}{else} \PYG{n}{zero}\PYG{p}{)}
+    \PYG{o}{[}\PYG{p}{.}\PYG{n+na}{sideOutputLateData}\PYG{p}{(...)}\PYG{o}{]} \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{optional}\PYG{p}{:} \PYG{l+s}{\PYGZdq{}output tag\PYGZdq{}} \PYG{p}{(}\PYG{k}{else} \PYG{n}{no} \PYG{n}{side} \PYG{n}{output} \PYG{k}{for} \PYG{n}{late} \PYG{n}{data}\PYG{p}{)}
+    \PYG{p}{.}\PYG{n+na}{reduce}\PYG{o}{/}\PYG{n}{aggregate}\PYG{o}{/}\PYG{n}{fold}\PYG{o}{/}\PYG{n}{apply}\PYG{p}{()}      \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{required}\PYG{p}{:} \PYG{l+s}{\PYGZdq{}function\PYGZdq{}}
+    \PYG{o}{[}\PYG{p}{.}\PYG{n+na}{getSideOutput}\PYG{p}{(...)}\PYG{o}{]}      \PYG{o}{\PYGZlt{}\PYGZhy{}}  \PYG{n}{optional}\PYG{p}{:} \PYG{l+s}{\PYGZdq{}output tag\PYGZdq{}}
+\end{Verbatim}
