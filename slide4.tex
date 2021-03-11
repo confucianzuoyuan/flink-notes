@@ -2,6 +2,34 @@
 \usepackage{ctex}
 \usepackage{minted}
 \usepackage{smartdiagram}
+
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{amsmath,amssymb}%      pour les maths
+\usepackage{enumitem}
+\usepackage{varwidth}
+
+\usetikzlibrary{calc}
+
+\newcommand{\mybox}[4][\textwidth-\pgfkeysvalueof{/pgf/inner xsep}-2mm]{%
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}
+\node[line width=.5mm, rounded corners, draw=#2, inner ysep=10pt, text width=#1, outer sep=0] (one) {\vspace*{15pt}\\\begin{varwidth}{\textwidth}#4\end{varwidth}};
+\node[text=white,anchor=north east,align=center, minimum height=20pt] (two) at (one.north east) {#3 \hspace*{.5mm}};
+\path[fill=#2] 
+    (one.north west|-two.west) --
+    ($(two.west)+(-1.5cm,0)$) 
+    to[out=0,in=180] (two.south west) --
+    (two.south east) [rounded corners] --
+    (one.north east) -- 
+    (one.north west) [sharp corners] -- cycle;
+\node[text=white,anchor=north east,align=center, minimum height=20pt, text height=2ex] (three) at (one.north east) {#3 \hspace*{.5mm}};
+\end{tikzpicture} 
+\end{figure}
+}
+
+
 \usetikzlibrary{positioning}
 \usetheme{metropolis}           % Use metropolis theme
 \title{Flink中的时间语义和Watermark}
@@ -14,10 +42,10 @@
     \frametitle{主要内容}
 
     \begin{itemize}
-        \item Flink 中的时间语义
-        \item 设置 Event Time
+        \item Flink中的时间语义
+        \item 设置Event Time
         \item 水位线（Watermark）
-        \item Watermark 的传递、引入和设定
+        \item Watermark的传递、引入和设定
     \end{itemize}
   
   \end{frame}
@@ -148,6 +176,33 @@
       \end{itemize}
   
   \end{frame}
+
+  \begin{frame}
+      \frametitle{水位线}
+\mybox[5cm]{red!70!black}{水位线定义}{Flink认为小于水位线的事件都已到达}
+  \end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	
+	\mybox[5cm]{red!70!black}{水位线定义}{水位线是一种逻辑时钟}
+	
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\mybox[5cm]{red!70!black}{水位线定义}{水位线由程序员编程插入到数据流中}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\mybox[5cm]{red!70!black}{水位线定义}{水位线是一种特殊的事件}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\mybox[5cm]{red!70!black}{水位线定义}{在事件时间的世界里，水位线就是时间}
+\end{frame}
 
   \begin{frame}
       \frametitle{Watermark的特点}

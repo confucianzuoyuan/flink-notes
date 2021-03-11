@@ -2,6 +2,7 @@
 \usepackage{ctex}
 \usepackage{minted}
 \usepackage{smartdiagram}
+\usepackage{diagbox}
 \usetikzlibrary{positioning}
 \usetheme{metropolis}           % Use metropolis theme
 \title{Flink的状态一致性}
@@ -169,7 +170,22 @@
   \begin{frame}
       \frametitle{不同Sink的一致性保证}
   
-      
+      \begin{center}
+          \begin{tabular}{|l|l|l|}
+          \hline
+          \diagbox[width=4cm]{sink}{source} & 不可重置的源 & 可重置的源 \\
+          \hline
+          any sink & at-most-once & at-least-once \\
+          \hline
+          幂等性sink & at-most-once & exactly-once \\
+          \hline
+          预写式日志sink & at-most-once & at-least-once \\
+          \hline
+          2PC sink & at-most-once & exactly-once \\
+          \hline
+          \end{tabular}%
+      \end{center}
+    
   
   \end{frame}
 
