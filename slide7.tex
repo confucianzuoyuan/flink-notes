@@ -26,6 +26,12 @@
 
   \begin{frame}
       \frametitle{什么是状态一致性}
+      
+      \begin{figure}
+      	\centering
+      	\includegraphics[width=0.9\textwidth]{image34.png}
+      	\caption{状态一致性}
+      \end{figure}
   
       \begin{itemize}
           \item 有状态的流处理，内部每个算子任务都可以有自己的状态
@@ -69,8 +75,12 @@
 
   \begin{frame}
       \frametitle{一致性检查点（Checkpoints）}
-  
       
+      \begin{figure}
+      	\centering
+      	\includegraphics[width=0.9\textwidth]{image36.png}
+      	\caption{一致性检查点}
+      \end{figure}
   
   \end{frame}
 
@@ -104,8 +114,12 @@
       \frametitle{幂等写入（Idempotent Writes）}
   
       \textbf{所谓幂等操作，是说一个操作，可以重复执行很多次，但只导致一次结果更改，也就是说，后面再重复执行就不起作用了}
-
-
+      
+       \begin{figure}
+      	\centering
+      	\includegraphics[width=0.6\textwidth]{image45.png}
+      	\caption{字典数据结构}
+      \end{figure}
   
   \end{frame}
 
@@ -186,7 +200,6 @@
           \end{tabular}%
       \end{center}
     
-  
   \end{frame}
 
   \begin{frame}
@@ -202,6 +215,12 @@
 
   \begin{frame}
       \frametitle{Exactly-Once两阶段提交}
+      
+      \begin{figure}
+      	\centering
+      	\includegraphics[width=0.7\textwidth]{image46.png}
+      	\caption{两阶段提交}
+      \end{figure}
   
       \begin{itemize}
           \item JobManager协调各个TaskManager进行checkpoint存储
@@ -212,6 +231,12 @@
 
   \begin{frame}
       \frametitle{Exactly-Once两阶段提交}
+      
+      \begin{figure}
+      	\centering
+      	\includegraphics[width=0.7\textwidth]{image47.png}
+      	\caption{两阶段提交}
+      \end{figure}
   
       \begin{itemize}
           \item 当checkpoint启动时，JobManager会将检查点分界线（barrier）注入数据流
@@ -222,6 +247,12 @@
 
   \begin{frame}
       \frametitle{Exactly-Once两阶段提交}
+      
+      \begin{figure}
+      	\centering
+      	\includegraphics[width=0.7\textwidth]{image48.png}
+      	\caption{两阶段提交}
+      \end{figure}
   
       \begin{itemize}
           \item 每个算子会对当前的状态做个快照，保存到状态后端
@@ -232,6 +263,12 @@
 
   \begin{frame}
       \frametitle{Exactly-Once两阶段提交}
+      
+      \begin{figure}
+      	\centering
+      	\includegraphics[width=0.7\textwidth]{image49.png}
+      	\caption{两阶段提交}
+      \end{figure}
   
       \begin{itemize}
           \item 每个内部的transform任务遇到barrier时，都会把状态存到checkpoint里
@@ -242,6 +279,12 @@
 
   \begin{frame}
       \frametitle{Exactly-Once两阶段提交}
+      
+      \begin{figure}
+      	\centering
+      	\includegraphics[width=0.7\textwidth]{image50.png}
+      	\caption{两阶段提交}
+      \end{figure}
   
       \begin{itemize}
           \item 当所有算子任务的快照完成，也就是这次的checkpoint完成时，JobManager会向所有任务发通知，确认这次checkpoint完成
