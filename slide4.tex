@@ -204,8 +204,19 @@
 
 \begin{frame}
 	\frametitle{水位线}
-	
-	\textbf{水位线超过窗口结束时间，窗口闭合，默认情况下，迟到元素被抛弃}
+	\begin{tcolorbox}
+		水位线超过窗口结束时间，窗口闭合，默认情况下，迟到元素被抛弃
+	\end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\begin{tcolorbox}
+		\begin{itemize}
+			\item Flink会在流的最开始插入一个时间戳为无穷小的时间戳
+			\item Flink会在流的最末尾插入一个时间戳为无穷大的时间戳
+		\end{itemize}
+	\end{tcolorbox}
 \end{frame}
 
   \begin{frame}
