@@ -216,8 +216,8 @@
 	\frametitle{水位线}
 	\begin{tcolorbox}
 		\begin{itemize}
-			\item Flink会在流的最开始插入一个时间戳为无穷小的时间戳
-			\item Flink会在流的最末尾插入一个时间戳为无穷大的时间戳
+			\item Flink会在流的最开始插入一个时间戳为负无穷大的水位线
+			\item Flink会在流的最末尾插入一个时间戳为正无穷大的水位线
 		\end{itemize}
 	\end{tcolorbox}
 \end{frame}
