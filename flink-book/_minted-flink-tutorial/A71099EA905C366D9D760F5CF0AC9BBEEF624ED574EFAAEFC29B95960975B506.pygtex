@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZdl{} ./bin/flink modify \PYGZlt{}jobId\PYGZgt{} \PYGZhy{}p \PYGZlt{}newParallelism\PYGZgt{}
+\end{Verbatim}
