@@ -2856,7 +2856,7 @@ public class RedirectLateEvent {
 
         SingleOutputStreamOperator<String> lateReadings = stream
             .keyBy(r -> r.f0)
-            .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+            .window(TumblingEventTimeWindows.of(Time.seconds(5)))
             .sideOutputLateData(output) // use after keyBy and timeWindow
             .process(new ProcessWindowFunction<Tuple2<String, Long>, String, String, TimeWindow>() {
                 @Override
@@ -2962,7 +2962,7 @@ public class UpdateWindowResultWithLateEvent {
                 })
             )
             .keyBy(r -> r.f0)
-            .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+            .window(TumblingEventTimeWindows.of(Time.seconds(5)))
             .allowedLateness(Time.seconds(5))
             .process(new UpdateWindowResult())
             .print();

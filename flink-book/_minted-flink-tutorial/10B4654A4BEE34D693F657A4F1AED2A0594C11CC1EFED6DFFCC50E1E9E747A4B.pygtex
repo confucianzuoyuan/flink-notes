@@ -24,7 +24,7 @@
                 \PYG{p}{\PYGZcb{})}
             \PYG{p}{)}
             \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{f0}\PYG{p}{)}
-            \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingProcessingTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
+            \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{TumblingEventTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
             \PYG{p}{.}\PYG{n+na}{allowedLateness}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{))}
             \PYG{p}{.}\PYG{n+na}{process}\PYG{p}{(}\PYG{k}{new} \PYG{n}{UpdateWindowResult}\PYG{p}{())}
             \PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
