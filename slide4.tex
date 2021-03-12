@@ -196,10 +196,13 @@
 
 \begin{frame}
 	\frametitle{窗口}
-	\begin{itemize}
-		\item 左闭右开区间
-		\item $\left[ 0s,5s \right] \text{不包含}  5s \text{，其实是} \left[ 0,4999ms \right]$
-	\end{itemize}
+	\begin{tcolorbox}
+		\begin{itemize}
+			\item 左闭右开区间
+			\item $\left[ 0s,5s \right] \text{不包含}  5s \text{，其实是} \left[ 0,4999ms \right]$
+		\end{itemize}
+	\end{tcolorbox}
+	
 \end{frame}
 
 \begin{frame}
@@ -231,7 +234,7 @@
       \begin{itemize}
           \item Watermark 是一条特殊的数据记录，由程序员编程产生
           \item 水位线是流中的特殊事件，由程序员编程插入到数据流中
-          \item Watermark 必须单调递增，以确保任务的事件时间时钟在向前推进，而不是在后退，（Watermark就是当前数据流的逻辑时钟）
+          \item Watermark必须单调递增，以确保任务的事件时间时钟在向前推进，而不是在后退，（Watermark就是当前数据流的逻辑时钟）
           \item Watermark 与数据的时间戳相关
       \end{itemize}
   
