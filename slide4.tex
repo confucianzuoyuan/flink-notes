@@ -2,33 +2,8 @@
 \usepackage{ctex}
 \usepackage{minted}
 \usepackage{smartdiagram}
-
+\usepackage{tcolorbox}
 \usepackage{tikz}
-\usepackage{amsmath}
-\usepackage{amsmath,amssymb}%      pour les maths
-\usepackage{enumitem}
-\usepackage{varwidth}
-
-\usetikzlibrary{calc}
-
-\newcommand{\mybox}[4][\textwidth-\pgfkeysvalueof{/pgf/inner xsep}-2mm]{%
-\begin{figure}[!h]
-\centering
-\begin{tikzpicture}
-\node[line width=.5mm, rounded corners, draw=#2, inner ysep=10pt, text width=#1, outer sep=0] (one) {\vspace*{15pt}\\\begin{varwidth}{\textwidth}#4\end{varwidth}};
-\node[text=white,anchor=north east,align=center, minimum height=20pt] (two) at (one.north east) {#3 \hspace*{.5mm}};
-\path[fill=#2] 
-    (one.north west|-two.west) --
-    ($(two.west)+(-1.5cm,0)$) 
-    to[out=0,in=180] (two.south west) --
-    (two.south east) [rounded corners] --
-    (one.north east) -- 
-    (one.north west) [sharp corners] -- cycle;
-\node[text=white,anchor=north east,align=center, minimum height=20pt, text height=2ex] (three) at (one.north east) {#3 \hspace*{.5mm}};
-\end{tikzpicture} 
-\end{figure}
-}
-
 
 \usetikzlibrary{positioning}
 \usetheme{metropolis}           % Use metropolis theme
@@ -179,29 +154,58 @@
 
   \begin{frame}
       \frametitle{水位线}
-\mybox[5cm]{red!70!black}{水位线定义}{Flink认为小于水位线的事件都已到达}
+      \begin{tcolorbox}
+      	Flink认为时间戳小于水位线的事件都已到达
+      \end{tcolorbox}
   \end{frame}
 
 \begin{frame}
 	\frametitle{水位线}
+	\begin{tcolorbox}
+		水位线是一种逻辑时钟
+	\end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\begin{tcolorbox}
+		水位线由程序员编程插入到数据流中
+	\end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\begin{tcolorbox}
+		水位线是一种特殊的事件
+	\end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\begin{tcolorbox}
+		在事件时间的世界里，水位线就是时间
+	\end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
+	\begin{tcolorbox}
+		水位线 = 观察到的最大时间戳 - 最大延迟时间
+	\end{tcolorbox}
+\end{frame}
+
+\begin{frame}
+	\frametitle{窗口}
+	\begin{itemize}
+		\item 左闭右开区间
+		\item $\left[ 0s,5s \right] \text{不包含}  5s \text{，其实是} \left[ 0,4999ms \right]$
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{水位线}
 	
-	\mybox[5cm]{red!70!black}{水位线定义}{水位线是一种逻辑时钟}
-	
-\end{frame}
-
-\begin{frame}
-	\frametitle{水位线}
-	\mybox[5cm]{red!70!black}{水位线定义}{水位线由程序员编程插入到数据流中}
-\end{frame}
-
-\begin{frame}
-	\frametitle{水位线}
-	\mybox[5cm]{red!70!black}{水位线定义}{水位线是一种特殊的事件}
-\end{frame}
-
-\begin{frame}
-	\frametitle{水位线}
-	\mybox[5cm]{red!70!black}{水位线定义}{在事件时间的世界里，水位线就是时间}
+	\textbf{水位线超过窗口结束时间，窗口闭合，默认情况下，迟到元素被抛弃}
 \end{frame}
 
   \begin{frame}
@@ -227,7 +231,7 @@
 
       \begin{figure}
         \centering
-        \includegraphics[width=0.6\textwidth]{image29.png}
+        \includegraphics[width=0.6\textwidth]{image51.png}
         \caption{水位线的特点}
       \end{figure}
   
