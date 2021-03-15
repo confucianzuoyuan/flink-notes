@@ -1,0 +1,27 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{LoginEvent} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{userId}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{ipAddress}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{eventType}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{eventTime}\PYG{p}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{LoginEvent}\PYG{p}{(}\PYG{n}{String} \PYG{n}{userId}\PYG{p}{,} \PYG{n}{String} \PYG{n}{ipAddress}\PYG{p}{,} \PYG{n}{String} \PYG{n}{eventType}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{eventTime}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{userId} \PYG{o}{=} \PYG{n}{userId}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{ipAddress} \PYG{o}{=} \PYG{n}{ipAddress}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{eventType} \PYG{o}{=} \PYG{n}{eventType}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{eventTime} \PYG{o}{=} \PYG{n}{eventTime}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{LoginEvent}\PYG{p}{()} \PYG{p}{\PYGZob{}\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{toString}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}LoginEvent\PYGZob{}\PYGZdq{}} \PYG{o}{+}
+            \PYG{l+s}{\PYGZdq{}userId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{userId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+            \PYG{l+s}{\PYGZdq{}, ipAddress=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{ipAddress} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+            \PYG{l+s}{\PYGZdq{}, eventType=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{eventType} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+            \PYG{l+s}{\PYGZdq{}, eventTime=\PYGZdq{}} \PYG{o}{+} \PYG{n}{eventTime} \PYG{o}{+}
+            \PYG{l+s+sc}{\PYGZsq{}\PYGZcb{}\PYGZsq{}}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

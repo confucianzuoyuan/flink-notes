@@ -1,0 +1,68 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{OrderTimeoutDetect} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setStreamTimeCharacteristic}\PYG{p}{(}\PYG{n}{TimeCharacteristic}\PYG{p}{.}\PYG{n+na}{EventTime}\PYG{p}{);}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}
+            \PYG{p}{.}\PYG{n+na}{fromElements}\PYG{p}{(}
+                \PYG{k}{new} \PYG{n}{OrderEvent}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}order\PYGZus{}1\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}create\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{1000L}\PYG{p}{),}
+                \PYG{k}{new} \PYG{n}{OrderEvent}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}order\PYGZus{}2\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}create\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{2000L}\PYG{p}{),}
+                \PYG{k}{new} \PYG{n}{OrderEvent}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}order\PYGZus{}1\PYGZdq{}}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}pay\PYGZdq{}}\PYG{p}{,} \PYG{l+m+mi}{3000L}\PYG{p}{)}
+            \PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}
+                \PYG{n}{WatermarkStrategy}\PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                    \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                        \PYG{n+nd}{@Override}
+                        \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{OrderEvent} \PYG{n}{element}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{recordTimestamp}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                            \PYG{k}{return} \PYG{n}{element}\PYG{p}{.}\PYG{n+na}{eventTime}\PYG{p}{;}
+                        \PYG{p}{\PYGZcb{}}
+                    \PYG{p}{\PYGZcb{})}
+            \PYG{p}{);}
+
+        \PYG{n}{Pattern}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{p}{,} \PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}} \PYG{n}{pattern} \PYG{o}{=} \PYG{n}{Pattern}
+            \PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{n}{begin}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}create\PYGZdq{}}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleCondition}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{boolean} \PYG{n+nf}{filter}\PYG{p}{(}\PYG{n}{OrderEvent} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{eventType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}create\PYGZdq{}}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{next}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}pay\PYGZdq{}}\PYG{p}{)}
+            \PYG{p}{.}\PYG{n+na}{where}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SimpleCondition}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{boolean} \PYG{n+nf}{filter}\PYG{p}{(}\PYG{n}{OrderEvent} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{eventType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}pay\PYGZdq{}}\PYG{p}{);}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{})}
+            \PYG{p}{.}\PYG{n+na}{within}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{seconds}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{));}
+
+        \PYG{n}{PatternStream}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}} \PYG{n}{patternStream} \PYG{o}{=} \PYG{n}{CEP}\PYG{p}{.}\PYG{n+na}{pattern}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{orderId}\PYG{p}{),} \PYG{n}{pattern}\PYG{p}{);}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{result} \PYG{o}{=} \PYG{n}{patternStream}
+            \PYG{p}{.}\PYG{n+na}{select}\PYG{p}{(}
+                \PYG{k}{new} \PYG{n}{OutputTag}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}order\PYGZhy{}timeout\PYGZdq{}}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{p}{\PYGZcb{},}
+                \PYG{k}{new} \PYG{n}{PatternTimeoutFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                    \PYG{n+nd}{@Override}
+                    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{timeout}\PYG{p}{(}\PYG{n}{Map}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{List}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{map}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{l}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}订单ID为 \PYGZdq{}} \PYG{o}{+} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}create\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{).}\PYG{n+na}{orderId} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} 没有支付！\PYGZdq{}}\PYG{p}{;}
+                    \PYG{p}{\PYGZcb{}}
+                \PYG{p}{\PYGZcb{},}
+                \PYG{k}{new} \PYG{n}{PatternSelectFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                    \PYG{n+nd}{@Override}
+                    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{select}\PYG{p}{(}\PYG{n}{Map}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{List}\PYG{o}{\PYGZlt{}}\PYG{n}{OrderEvent}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{map}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}订单ID为 \PYGZdq{}} \PYG{o}{+} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}pay\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{).}\PYG{n+na}{orderId} \PYG{o}{+} \PYG{l+s}{\PYGZdq{} 已经支付！\PYGZdq{}}\PYG{p}{;}
+                    \PYG{p}{\PYGZcb{}}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{);}
+
+        \PYG{n}{result}\PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{result}\PYG{p}{.}\PYG{n+na}{getSideOutput}\PYG{p}{(}\PYG{k}{new} \PYG{n}{OutputTag}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}order\PYGZhy{}timeout\PYGZdq{}}\PYG{p}{)} \PYG{p}{\PYGZob{}\PYGZcb{}).}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

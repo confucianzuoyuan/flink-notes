@@ -1,0 +1,25 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{OrderEvent} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{orderId}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{eventType}\PYG{p}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{eventTime}\PYG{p}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{OrderEvent}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{OrderEvent}\PYG{p}{(}\PYG{n}{String} \PYG{n}{orderId}\PYG{p}{,} \PYG{n}{String} \PYG{n}{eventType}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{eventTime}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{orderId} \PYG{o}{=} \PYG{n}{orderId}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{eventType} \PYG{o}{=} \PYG{n}{eventType}\PYG{p}{;}
+        \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{eventTime} \PYG{o}{=} \PYG{n}{eventTime}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{toString}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}OrderEvent\PYGZob{}\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}orderId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{orderId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, eventType=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{eventType} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, eventTime=\PYGZdq{}} \PYG{o}{+} \PYG{n}{eventTime} \PYG{o}{+}
+                \PYG{l+s+sc}{\PYGZsq{}\PYGZcb{}\PYGZsq{}}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
