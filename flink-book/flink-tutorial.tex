@@ -4687,6 +4687,155 @@ DataSet<Tuple2<String, Integer>> dsTuple =
   tableEnv.toDataSet(table, tupleType);
 \end{minted}
 
+\subsection{数据类型到 Table Schema 的映射}
+
+Flink 的 DataStream 和 DataSet APIs 支持多样的数据类型。例如 Tuple（Scala 内置以及Flink Java tuple）、POJO 类型、Scala case class 类型以及 Flink 的 Row 类型等允许嵌套且有多个可在表的表达式中访问的字段的复合数据类型。其他类型被视为原子类型。下面，我们讨论 Table API 如何将这些数据类型类型转换为内部 row 表示形式，并提供将 DataStream 转换成 Table 的样例。
+
+数据类型到 table schema 的映射有两种方式：基于字段位置或基于字段名称。
+
+\textbf{基于位置映射}
+
+基于位置的映射可在保持字段顺序的同时为字段提供更有意义的名称。这种映射方式可用于具有特定的字段顺序的复合数据类型以及原子类型。如 tuple、row 以及 case class 这些复合数据类型都有这样的字段顺序。然而，POJO 类型的字段则必须通过名称映射。可以将字段投影出来，但不能使用as重命名。
+
+定义基于位置的映射时，输入数据类型中一定不能存在指定的名称，否则 API 会假定应该基于字段名称进行映射。如果未指定任何字段名称，则使用默认的字段名称和复合数据类型的字段顺序，或者使用 f0 表示原子类型。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section;
+
+DataStream<Tuple2<Long, Integer>> stream = ...
+
+// convert DataStream into Table with default field names "f0" and "f1"
+Table table = tableEnv.fromDataStream(stream);
+
+// convert DataStream into Table with field "myLong" only
+Table table = tableEnv.fromDataStream(stream, $("myLong"));
+
+// convert DataStream into Table with field names "myLong" and "myInt"
+Table table = tableEnv.fromDataStream(stream, $("myLong"), $("myInt"));
+\end{minted}
+
+\textbf{基于名称的映射}
+
+基于名称的映射适用于任何数据类型包括 POJO 类型。这是定义 table schema 映射最灵活的方式。映射中的所有字段均按名称引用，并且可以通过 as 重命名。字段可以被重新排序和映射。
+
+若果没有指定任何字段名称，则使用默认的字段名称和复合数据类型的字段顺序，或者使用 f0 表示原子类型。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+DataStream<Tuple2<Long, Integer>> stream = ...
+
+// convert DataStream into Table with default field names "f0" and "f1"
+Table table = tableEnv.fromDataStream(stream);
+
+// convert DataStream into Table with field "f1" only
+Table table = tableEnv.fromDataStream(stream, $("f1"));
+
+// convert DataStream into Table with swapped fields
+Table table = tableEnv.fromDataStream(stream, $("f1"), $("f0"));
+
+// convert DataStream into Table with swapped fields and field names "myInt" and "myLong"
+Table table = tableEnv.fromDataStream(stream, $("f1").as("myInt"), $("f0").as("myLong"));
+\end{minted}
+
+\textbf{原子类型}
+
+Flink 将基础数据类型（Integer、Double、String）或者通用数据类型（不可再拆分的数据类型）视为原子类型。原子类型的 DataStream 或者 DataSet 会被转换成只有一条属性的 Table。属性的数据类型可以由原子类型推断出，还可以重新命名属性。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+DataStream<Long> stream = ...
+
+// convert DataStream into Table with default field name "f0"
+Table table = tableEnv.fromDataStream(stream);
+
+// convert DataStream into Table with field name "myLong"
+Table table = tableEnv.fromDataStream(stream, $("myLong"));
+\end{minted}
+
+\textbf{Tuple类型}
+
+Flink 支持 Scala 的内置 tuple 类型并给 Java 提供自己的 tuple 类型。两种 tuple 的 DataStream 和 DataSet 都能被转换成表。可以通过提供所有字段名称来重命名字段（基于位置映射）。如果没有指明任何字段名称，则会使用默认的字段名称。如果引用了原始字段名称（对于 Flink tuple 为f0、f1 ……），则 API 会假定映射是基于名称的而不是基于位置的。基于名称的映射可以通过 as 对字段和投影进行重新排序。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+DataStream<Tuple2<Long, String>> stream = ...
+
+// convert DataStream into Table with default field names "f0", "f1"
+Table table = tableEnv.fromDataStream(stream);
+
+// convert DataStream into Table with renamed field names "myLong", "myString" (position-based)
+Table table = tableEnv.fromDataStream(stream, $("myLong"), $("myString"));
+
+// convert DataStream into Table with reordered fields "f1", "f0" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("f1"), $("f0"));
+
+// convert DataStream into Table with projected field "f1" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("f1"));
+
+// convert DataStream into Table with reordered and aliased fields "myString", "myLong" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("f1").as("myString"), $("f0").as("myLong"));
+\end{minted}
+
+\textbf{POJO 类型}
+
+Flink 支持 POJO 类型作为复合类型。确定 POJO 类型的规则记录在这里.
+
+在不指定字段名称的情况下将 POJO 类型的 DataStream 或 DataSet 转换成 Table 时，将使用原始 POJO 类型字段的名称。名称映射需要原始名称，并且不能按位置进行。字段可以使用别名（带有 as 关键字）来重命名，重新排序和投影。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// Person is a POJO with fields "name" and "age"
+DataStream<Person> stream = ...
+
+// convert DataStream into Table with default field names "age", "name" (fields are ordered by name!)
+Table table = tableEnv.fromDataStream(stream);
+
+// convert DataStream into Table with renamed fields "myAge", "myName" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("age").as("myAge"), $("name").as("myName"));
+
+// convert DataStream into Table with projected field "name" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("name"));
+
+// convert DataStream into Table with projected and renamed field "myName" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("name").as("myName"));
+\end{minted}
+
+\textbf{Row类型}
+
+Row 类型支持任意数量的字段以及具有 null 值的字段。字段名称可以通过 RowTypeInfo 指定，也可以在将 Row 的 DataStream 或 DataSet 转换为 Table 时指定。Row 类型的字段映射支持基于名称和基于位置两种方式。字段可以通过提供所有字段的名称的方式重命名（基于位置映射）或者分别选择进行投影/排序/重命名（基于名称映射）。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// DataStream of Row with two fields "name" and "age" specified in `RowTypeInfo`
+DataStream<Row> stream = ...
+
+// convert DataStream into Table with default field names "name", "age"
+Table table = tableEnv.fromDataStream(stream);
+
+// convert DataStream into Table with renamed field names "myName", "myAge" (position-based)
+Table table = tableEnv.fromDataStream(stream, $("myName"), $("myAge"));
+
+// convert DataStream into Table with renamed fields "myName", "myAge" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("name").as("myName"), $("age").as("myAge"));
+
+// convert DataStream into Table with projected field "name" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("name"));
+
+// convert DataStream into Table with projected and renamed field "myName" (name-based)
+Table table = tableEnv.fromDataStream(stream, $("name").as("myName"));
+\end{minted}
+
 \chapter{案例集}
 
 \section{数据倾斜如何解决}

@@ -1,0 +1,19 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently}
+\PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// Person is a POJO with fields \PYGZdq{}name\PYGZdq{} and \PYGZdq{}age\PYGZdq{}}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Person}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...}
+
+\PYG{c+c1}{// convert DataStream into Table with default field names \PYGZdq{}age\PYGZdq{}, \PYGZdq{}name\PYGZdq{} (fields are ordered by name!)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{);}
+
+\PYG{c+c1}{// convert DataStream into Table with renamed fields \PYGZdq{}myAge\PYGZdq{}, \PYGZdq{}myName\PYGZdq{} (name\PYGZhy{}based)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}age\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myAge\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}name\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myName\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// convert DataStream into Table with projected field \PYGZdq{}name\PYGZdq{} (name\PYGZhy{}based)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}name\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// convert DataStream into Table with projected and renamed field \PYGZdq{}myName\PYGZdq{} (name\PYGZhy{}based)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}name\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myName\PYGZdq{}}\PYG{p}{));}
+\end{Verbatim}

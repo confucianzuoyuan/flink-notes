@@ -1,0 +1,15 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently}
+\PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section;}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...}
+
+\PYG{c+c1}{// convert DataStream into Table with default field names \PYGZdq{}f0\PYGZdq{} and \PYGZdq{}f1\PYGZdq{}}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{);}
+
+\PYG{c+c1}{// convert DataStream into Table with field \PYGZdq{}myLong\PYGZdq{} only}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myLong\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// convert DataStream into Table with field names \PYGZdq{}myLong\PYGZdq{} and \PYGZdq{}myInt\PYGZdq{}}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myLong\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myInt\PYGZdq{}}\PYG{p}{));}
+\end{Verbatim}

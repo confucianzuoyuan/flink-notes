@@ -1,0 +1,12 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently}
+\PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...}
+
+\PYG{c+c1}{// convert DataStream into Table with default field name \PYGZdq{}f0\PYGZdq{}}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{);}
+
+\PYG{c+c1}{// convert DataStream into Table with field name \PYGZdq{}myLong\PYGZdq{}}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myLong\PYGZdq{}}\PYG{p}{));}
+\end{Verbatim}

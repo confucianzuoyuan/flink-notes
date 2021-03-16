@@ -1,0 +1,21 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently}
+\PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...}
+
+\PYG{c+c1}{// convert DataStream into Table with default field names \PYGZdq{}f0\PYGZdq{}, \PYGZdq{}f1\PYGZdq{}}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{);}
+
+\PYG{c+c1}{// convert DataStream into Table with renamed field names \PYGZdq{}myLong\PYGZdq{}, \PYGZdq{}myString\PYGZdq{} (position\PYGZhy{}based)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myLong\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myString\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// convert DataStream into Table with reordered fields \PYGZdq{}f1\PYGZdq{}, \PYGZdq{}f0\PYGZdq{} (name\PYGZhy{}based)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f0\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// convert DataStream into Table with projected field \PYGZdq{}f1\PYGZdq{} (name\PYGZhy{}based)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// convert DataStream into Table with reordered and aliased fields \PYGZdq{}myString\PYGZdq{}, \PYGZdq{}myLong\PYGZdq{} (name\PYGZhy{}based)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f1\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myString\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}f0\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}myLong\PYGZdq{}}\PYG{p}{));}
+\end{Verbatim}
