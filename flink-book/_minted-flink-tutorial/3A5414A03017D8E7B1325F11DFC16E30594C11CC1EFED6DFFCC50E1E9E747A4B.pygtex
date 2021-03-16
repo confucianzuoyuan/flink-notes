@@ -1,0 +1,13 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{CREATE} \PYG{n}{TABLE} \PYG{n+nf}{user\PYGZus{}actions} \PYG{p}{(}
+  \PYG{n}{user\PYGZus{}name} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{n}{data} \PYG{n}{STRING}\PYG{p}{,}
+  \PYG{n}{user\PYGZus{}action\PYGZus{}time} \PYG{n}{AS} \PYG{n+nf}{PROCTIME}\PYG{p}{()} \PYG{o}{\PYGZhy{}\PYGZhy{}} \PYG{n}{声明一个额外的列作为处理时间属性}
+\PYG{p}{)} \PYG{n}{WITH} \PYG{p}{(}
+  \PYG{p}{...}
+\PYG{p}{);}
+
+\PYG{n}{SELECT} \PYG{n+nf}{TUMBLE\PYGZus{}START}\PYG{p}{(}\PYG{n}{user\PYGZus{}action\PYGZus{}time}\PYG{p}{,} \PYG{n}{INTERVAL} \PYG{err}{\PYGZsq{}}\PYG{l+m+mi}{10}\PYG{err}{\PYGZsq{}} \PYG{n}{MINUTE}\PYG{p}{),} \PYG{n}{COUNT}\PYG{p}{(}\PYG{n}{DISTINCT} \PYG{n}{user\PYGZus{}name}\PYG{p}{)}
+\PYG{n}{FROM} \PYG{n}{user\PYGZus{}actions}
+\PYG{n}{GROUP} \PYG{n}{BY} \PYG{n+nf}{TUMBLE}\PYG{p}{(}\PYG{n}{user\PYGZus{}action\PYGZus{}time}\PYG{p}{,} \PYG{n}{INTERVAL} \PYG{err}{\PYGZsq{}}\PYG{l+m+mi}{10}\PYG{err}{\PYGZsq{}} \PYG{n}{MINUTE}\PYG{p}{);}
+\end{Verbatim}

@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{c+c1}{// 声明一个额外的字段作为时间属性字段}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}name\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}data\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}action\PYGZus{}time\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{proctime}\PYG{p}{());}
+
+\PYG{n}{WindowedTable} \PYG{n}{windowedTable} \PYG{o}{=} \PYG{n}{table}\PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}
+        \PYG{n}{Tumble}\PYG{p}{.}\PYG{n+na}{over}\PYG{p}{(}\PYG{n}{lit}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{).}\PYG{n+na}{minutes}\PYG{p}{())}
+            \PYG{p}{.}\PYG{n+na}{on}\PYG{p}{(}\PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}user\PYGZus{}action\PYGZus{}time\PYGZdq{}}\PYG{p}{))}
+            \PYG{p}{.}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}userActionWindow\PYGZdq{}}\PYG{p}{));}
+\end{Verbatim}
