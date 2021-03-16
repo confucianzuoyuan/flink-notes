@@ -57,9 +57,9 @@
             \PYG{p}{.}\PYG{n+na}{select}\PYG{p}{(}\PYG{k}{new} \PYG{n}{PatternSelectFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{p}{,} \PYG{n}{Tuple4}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
                 \PYG{n+nd}{@Override}
                 \PYG{k+kd}{public} \PYG{n}{Tuple4}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n+nf}{select}\PYG{p}{(}\PYG{n}{Map}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{List}\PYG{o}{\PYGZlt{}}\PYG{n}{LoginEvent}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{map}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
-                    \PYG{n}{LoginEvent} \PYG{n}{first} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}first\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{iterator}\PYG{p}{().}\PYG{n+na}{next}\PYG{p}{();}
-                    \PYG{n}{LoginEvent} \PYG{n}{second} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}second\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{iterator}\PYG{p}{().}\PYG{n+na}{next}\PYG{p}{();}
-                    \PYG{n}{LoginEvent} \PYG{n}{third} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}third\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{iterator}\PYG{p}{().}\PYG{n+na}{next}\PYG{p}{();}
+                    \PYG{n}{LoginEvent} \PYG{n}{first} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}first\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
+                    \PYG{n}{LoginEvent} \PYG{n}{second} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}second\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
+                    \PYG{n}{LoginEvent} \PYG{n}{third} \PYG{o}{=} \PYG{n}{map}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}third\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{get}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
                     \PYG{k}{return} \PYG{n}{Tuple4}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{first}\PYG{p}{.}\PYG{n+na}{userId}\PYG{p}{,} \PYG{n}{first}\PYG{p}{.}\PYG{n+na}{ipAddress}\PYG{p}{,} \PYG{n}{second}\PYG{p}{.}\PYG{n+na}{ipAddress}\PYG{p}{,} \PYG{n}{third}\PYG{p}{.}\PYG{n+na}{ipAddress}\PYG{p}{);}
                 \PYG{p}{\PYGZcb{}}
             \PYG{p}{\PYGZcb{})}
