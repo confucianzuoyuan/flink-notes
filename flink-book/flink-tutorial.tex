@@ -3177,8 +3177,8 @@ Flink提供了两种构建模块来实现事务性sink连接器：write-ahead-lo
     \toprule
       & 不可重置的源 & 可重置的源 \\
     \midrule
-    any sink & at-most-once & at-least-once \\
-    幂等性sink & at-most-once & exactly-once（当从任务失败中恢复时，存在暂时的不一致性） \\
+    Any Sink & at-most-once & at-least-once \\
+    幂等性sink & at-most-once & exactly-once \\
     预写式日志sink & at-most-once & at-least-once \\
     2PC sink & at-most-once & exactly-once \\
     \bottomrule
@@ -4835,6 +4835,165 @@ Table table = tableEnv.fromDataStream(stream, $("name"));
 // convert DataStream into Table with projected and renamed field "myName" (name-based)
 Table table = tableEnv.fromDataStream(stream, $("name").as("myName"));
 \end{minted}
+
+\section{流式概念}
+
+Flink 的 Table API 和 SQL 是流批统一的 API。 这意味着 Table API \& SQL 在无论有限的批式输入还是无限的流式输入下，都具有相同的语义。 因为传统的关系代数以及 SQL 最开始都是为了批式处理而设计的， 关系型查询在流式场景下不如在批式场景下容易懂。
+
+\subsection{动态表 (Dynamic Table)}
+
+SQL 和关系代数在设计时并未考虑流数据。因此，在关系代数(和 SQL)之间几乎没有概念上的差异。
+
+本文会讨论这种差异，并介绍 Flink 如何在无界数据集上实现与数据库引擎在有界数据上的处理具有相同的语义。
+
+\textbf{DataStream上的关系查询}
+
+下表比较了传统的关系代数和流处理与输入数据、执行和输出结果的关系。
+
+\begin{table}[htbp]
+  \centering
+  \caption{比较}
+    \begin{tabular}{ll}
+    \toprule
+    关系代数 / SQL  & 流处理 \\
+    \midrule
+    关系(或表)是有界(多)元组集合 & 流是一个无限元组序列 \\
+    对批数据(例如关系数据库中的表)执行的查询可以访问完整的输入数据 & 流式查询在启动时不能访问所有数据，必须“等待”数据流入 \\
+    批处理查询在产生固定大小的结果后终止 & 流查询不断地根据接收到的记录更新其结果，并且始终不会结束 \\
+    \bottomrule
+    \end{tabular}%
+  \label{tab:theorem-class}%
+\end{table}%
+
+尽管存在这些差异，但是使用关系查询和 SQL 处理流并不是不可能的。高级关系数据库系统提供了一个称为 物化视图(Materialized Views) 的特性。物化视图被定义为一条 SQL 查询，就像常规的虚拟视图一样。与虚拟视图相反，物化视图缓存查询的结果，因此在访问视图时不需要对查询进行计算。缓存的一个常见难题是防止缓存为过期的结果提供服务。当其定义查询的基表被修改时，物化视图将过期。 即时视图维护(Eager View Maintenance) 是一种一旦更新了物化视图的基表就立即更新视图的技术。
+
+如果我们考虑以下问题，那么即时视图维护和流上的SQL查询之间的联系就会变得显而易见：
+
+\begin{itemize}
+    \item 数据库表是 INSERT、UPDATE 和 DELETE DML 语句的 stream 的结果，通常称为 changelog stream 。
+    \item 物化视图被定义为一条 SQL 查询。为了更新视图，查询不断地处理视图的基本关系的changelog 流。
+    \item 物化视图是流式 SQL 查询的结果。
+\end{itemize}
+
+了解了这些要点之后，我们将在下一节中介绍 动态表(Dynamic tables) 的概念。
+
+\textbf{动态表 \& 连续查询(Continuous Query)}
+
+动态表 是 Flink 的支持流数据的 Table API 和 SQL 的核心概念。与表示批处理数据的静态表不同，动态表是随时间变化的。可以像查询静态批处理表一样查询它们。查询动态表将生成一个 连续查询 。一个连续查询永远不会终止，结果会生成一个动态表。查询不断更新其(动态)结果表，以反映其(动态)输入表上的更改。本质上，动态表上的连续查询非常类似于定义物化视图的查询。
+
+需要注意的是，连续查询的结果在语义上总是等价于以批处理模式在输入表快照上执行的相同查询的结果。
+
+下图显示了流、动态表和连续查询之间的关系：
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/stream-query-stream.png}
+    \caption{动态表}
+\end{figure}
+
+\begin{enumerate}
+    \item 将流转换为动态表。
+    \item 在动态表上计算一个连续查询，生成一个新的动态表。
+    \item 生成的动态表被转换回流。
+\end{enumerate}
+
+\begin{note}
+    动态表首先是一个逻辑概念。在查询执行期间不一定(完全)物化动态表。
+\end{note}
+
+在下面，我们将解释动态表和连续查询的概念，并使用具有以下模式的单击事件流：
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+[
+  user:  VARCHAR,   // 用户名
+  cTime: TIMESTAMP, // 访问 URL 的时间
+  url:   VARCHAR    // 用户访问的 URL
+]
+\end{minted}
+
+\textbf{在流上定义表}
+
+为了使用关系查询处理流，必须将其转换成 Table。从概念上讲，流的每条记录都被解释为对结果表的 INSERT 操作。本质上我们正在从一个 INSERT-only 的 changelog 流构建表。
+
+下图显示了单击事件流(左侧)如何转换为表(右侧)。当插入更多的单击流记录时，结果表将不断增长。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/append-mode.png}
+    \caption{流转换成表}
+\end{figure}
+
+\begin{note}
+    在流上定义的表在内部没有物化。
+\end{note}
+
+\textit{连续查询}
+
+在动态表上计算一个连续查询，并生成一个新的动态表。与批处理查询不同，连续查询从不终止，并根据其输入表上的更新更新其结果表。在任何时候，连续查询的结果在语义上与以批处理模式在输入表快照上执行的相同查询的结果相同。
+
+在接下来的代码中，我们将展示 clicks 表上的两个示例查询，这个表是在点击事件流上定义的。
+
+第一个查询是一个简单的 GROUP-BY COUNT 聚合查询。它基于 user 字段对 clicks 表进行分组，并统计访问的 URL 的数量。下面的图显示了当 clicks 表被附加的行更新时，查询是如何被评估的。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/query-groupBy-cnt.png}
+    \caption{查询}
+\end{figure}
+
+当查询开始，clicks 表(左侧)是空的。当第一行数据被插入到 clicks 表时，查询开始计算结果表。第一行数据 [Mary,./home] 插入后，结果表(右侧，上部)由一行 [Mary, 1] 组成。当第二行 [Bob, ./cart] 插入到 clicks 表时，查询会更新结果表并插入了一行新数据 [Bob, 1]。第三行 [Mary, ./prod?id=1] 将产生已计算的结果行的更新，[Mary, 1] 更新成 [Mary, 2]。最后，当第四行数据加入 clicks 表时，查询将第三行 [Liz, 1] 插入到结果表中。
+
+第二条查询与第一条类似，但是除了用户属性之外，还将 clicks 分组至每小时滚动窗口中，然后计算 url 数量(基于时间的计算，例如基于特定时间属性的窗口，后面会讨论)。同样，该图显示了不同时间点的输入和输出，以可视化动态表的变化特性。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/query-groupBy-window-cnt.png}
+    \caption{查询}
+\end{figure}
+
+与前面一样，左边显示了输入表 clicks。查询每小时持续计算结果并更新结果表。clicks表包含四行带有时间戳(cTime)的数据，时间戳在 12:00:00 和 12:59:59 之间。查询从这个输入计算出两个结果行(每个 user 一个)，并将它们附加到结果表中。对于 13:00:00 和 13:59:59 之间的下一个窗口，clicks 表包含三行，这将导致另外两行被追加到结果表。随着时间的推移，更多的行被添加到 click 中，结果表将被更新。
+
+\textit{更新和追加查询}
+
+虽然这两个示例查询看起来非常相似(都计算分组计数聚合)，但它们在一个重要方面不同：
+
+\begin{itemize}
+    \item 第一个查询更新先前输出的结果，即定义结果表的 changelog 流包含 INSERT 和 UPDATE 操作。
+    \item 第二个查询只附加到结果表，即结果表的 changelog 流只包含 INSERT 操作。
+\end{itemize}
+
+一个查询是产生一个只追加的表还是一个更新的表有一些含义：
+
+\begin{itemize}
+    \item 产生更新更改的查询通常必须维护更多的状态(请参阅以下部分)。
+    \item 将 append-only 的表转换为流与将已更新的表转换为流是不同的。
+\end{itemize}
+
+\textbf{表到流的转换}
+
+动态表可以像普通数据库表一样通过 INSERT、UPDATE 和 DELETE 来不断修改。它可能是一个只有一行、不断更新的表，也可能是一个 insert-only 的表，没有 UPDATE 和 DELETE 修改，或者介于两者之间的其他表。
+
+在将动态表转换为流或将其写入外部系统时，需要对这些更改进行编码。Flink的 Table API 和 SQL 支持三种方式来编码一个动态表的变化：
+
+\begin{itemize}
+    \item Append-only 流： 仅通过 INSERT 操作修改的动态表可以通过输出插入的行转换为流。
+    \item Retract 流： retract 流包含两种类型的 message： add messages 和 retract messages 。通过将INSERT 操作编码为 add message、将 DELETE 操作编码为 retract message、将 UPDATE 操作编码为更新(先前)行的 retract message 和更新(新)行的 add message，将动态表转换为 retract 流。下图显示了将动态表转换为 retract 流的过程。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/undo-redo-mode.png}
+    \caption{查询}
+\end{figure}
+    \item Upsert 流: upsert 流包含两种类型的 message： upsert messages 和delete messages。转换为 upsert 流的动态表需要(可能是组合的)唯一键。通过将 INSERT 和 UPDATE 操作编码为 upsert message，将 DELETE 操作编码为 delete message ，将具有唯一键的动态表转换为流。消费流的算子需要知道唯一键的属性，以便正确地应用 message。与 retract 流的主要区别在于 UPDATE 操作是用单个 message 编码的，因此效率更高。下图显示了将动态表转换为 upsert 流的过程。
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/redo-mode.png}
+    \caption{查询}
+\end{figure}
+\end{itemize}
+
+\begin{note}
+    在将动态表转换为 DataStream 时，只支持 append 流和 retract 流。
+\end{note}
 
 \chapter{案例集}
 

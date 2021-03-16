@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{o}{[}
+  \PYG{n}{user}\PYG{p}{:}  \PYG{n}{VARCHAR}\PYG{p}{,}   \PYG{c+c1}{// 用户名}
+  \PYG{n}{cTime}\PYG{p}{:} \PYG{n}{TIMESTAMP}\PYG{p}{,} \PYG{c+c1}{// 访问 URL 的时间}
+  \PYG{n}{url}\PYG{p}{:}   \PYG{n}{VARCHAR}    \PYG{c+c1}{// 用户访问的 URL}
+\PYG{o}{]}
+\end{Verbatim}
