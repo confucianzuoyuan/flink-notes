@@ -1,0 +1,17 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get BatchTableEnvironment}
+\PYG{n}{BatchTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{n}{BatchTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{env}\PYG{p}{);}
+
+\PYG{c+c1}{// Table with two fields (String name, Integer age)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{p}{...}
+
+\PYG{c+c1}{// convert the Table into a DataSet of Row by specifying a class}
+\PYG{n}{DataSet}\PYG{o}{\PYGZlt{}}\PYG{n}{Row}\PYG{o}{\PYGZgt{}} \PYG{n}{dsRow} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{toDataSet}\PYG{p}{(}\PYG{n}{table}\PYG{p}{,} \PYG{n}{Row}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{);}
+
+\PYG{c+c1}{// convert the Table into a DataSet of Tuple2\PYGZlt{}String, Integer\PYGZgt{} via a TypeInformation}
+\PYG{n}{TupleTypeInfo}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{tupleType} \PYG{o}{=} \PYG{k}{new} \PYG{n}{TupleTypeInfo}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{(}
+  \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{STRING}\PYG{p}{(),}
+  \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{INT}\PYG{p}{());}
+\PYG{n}{DataSet}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{dsTuple} \PYG{o}{=}
+  \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{toDataSet}\PYG{p}{(}\PYG{n}{table}\PYG{p}{,} \PYG{n}{tupleType}\PYG{p}{);}
+\end{Verbatim}

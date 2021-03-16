@@ -4,7 +4,7 @@
         \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
         \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
 
-        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Event}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
+        \PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{());}
 
         \PYG{n}{FlinkJedisPoolConfig} \PYG{n}{conf} \PYG{o}{=} \PYG{k}{new} \PYG{n}{FlinkJedisPoolConfig}\PYG{p}{.}\PYG{n+na}{Builder}\PYG{p}{().}\PYG{n+na}{setHost}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}localhost\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{build}\PYG{p}{();}
 
@@ -26,7 +26,7 @@
 
         \PYG{n+nd}{@Override}
         \PYG{k+kd}{public} \PYG{n}{RedisCommandDescription} \PYG{n+nf}{getCommandDescription}\PYG{p}{()} \PYG{p}{\PYGZob{}}
-            \PYG{k}{return} \PYG{k}{new} \PYG{n}{RedisCommandDescription}\PYG{p}{(}\PYG{n}{RedisCommand}\PYG{p}{.}\PYG{n+na}{HSET}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}event\PYGZdq{}}\PYG{p}{);}
+            \PYG{k}{return} \PYG{k}{new} \PYG{n}{RedisCommandDescription}\PYG{p}{(}\PYG{n}{RedisCommand}\PYG{p}{.}\PYG{n+na}{HSET}\PYG{p}{,} \PYG{l+s}{\PYGZdq{}sensor\PYGZdq{}}\PYG{p}{);}
         \PYG{p}{\PYGZcb{}}
     \PYG{p}{\PYGZcb{}}
 \PYG{p}{\PYGZcb{}}

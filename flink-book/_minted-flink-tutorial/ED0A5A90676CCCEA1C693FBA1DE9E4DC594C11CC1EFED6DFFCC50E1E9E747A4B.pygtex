@@ -1,0 +1,8 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{tableEnvironment}
+    \PYG{p}{.}\PYG{n+na}{connect}\PYG{p}{(...)}
+    \PYG{p}{.}\PYG{n+na}{withFormat}\PYG{p}{(...)}
+    \PYG{p}{.}\PYG{n+na}{withSchema}\PYG{p}{(...)}
+    \PYG{p}{.}\PYG{n+na}{inAppendMode}\PYG{p}{()}
+    \PYG{p}{.}\PYG{n+na}{createTemporaryTable}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}MyTable\PYGZdq{}}\PYG{p}{)}
+\end{Verbatim}

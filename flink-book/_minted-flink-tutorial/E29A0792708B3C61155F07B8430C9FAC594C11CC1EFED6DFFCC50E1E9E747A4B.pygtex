@@ -1,0 +1,18 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// create a TableEnvironment for specific planner batch or streaming}
+\PYG{n}{TableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// create an input Table}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}CREATE TEMPORARY TABLE table1 ... WITH ( \PYGZsq{}connector\PYGZsq{} = ... )\PYGZdq{}}\PYG{p}{);}
+\PYG{c+c1}{// register an output Table}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}CREATE TEMPORARY TABLE outputTable ... WITH ( \PYGZsq{}connector\PYGZsq{} = ... )\PYGZdq{}}\PYG{p}{);}
+
+\PYG{c+c1}{// create a Table object from a Table API query}
+\PYG{n}{Table} \PYG{n}{table2} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{from}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}table1\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{select}\PYG{p}{(...);}
+\PYG{c+c1}{// create a Table object from a SQL query}
+\PYG{n}{Table} \PYG{n}{table3} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT ... FROM table1 ... \PYGZdq{}}\PYG{p}{);}
+
+\PYG{c+c1}{// emit a Table API result Table to a TableSink, same for SQL result}
+\PYG{n}{TableResult} \PYG{n}{tableResult} \PYG{o}{=} \PYG{n}{table2}\PYG{p}{.}\PYG{n+na}{executeInsert}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}outputTable\PYGZdq{}}\PYG{p}{);}
+\PYG{n}{tableResult}\PYG{p}{...}
+\end{Verbatim}

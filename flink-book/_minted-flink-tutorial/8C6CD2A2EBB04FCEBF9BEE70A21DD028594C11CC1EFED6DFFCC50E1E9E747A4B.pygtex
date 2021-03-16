@@ -1,0 +1,43 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// **********************}
+\PYG{c+c1}{// FLINK STREAMING QUERY}
+\PYG{c+c1}{// **********************}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.environment.StreamExecutionEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.EnvironmentSettings}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.bridge.java.StreamTableEnvironment}\PYG{p}{;}
+
+\PYG{n}{EnvironmentSettings} \PYG{n}{fsSettings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{useOldPlanner}\PYG{p}{().}\PYG{n+na}{inStreamingMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+\PYG{n}{StreamExecutionEnvironment} \PYG{n}{fsEnv} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+\PYG{n}{StreamTableEnvironment} \PYG{n}{fsTableEnv} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{fsEnv}\PYG{p}{,} \PYG{n}{fsSettings}\PYG{p}{);}
+\PYG{c+c1}{// or TableEnvironment fsTableEnv = TableEnvironment.create(fsSettings);}
+
+\PYG{c+c1}{// ******************}
+\PYG{c+c1}{// FLINK BATCH QUERY}
+\PYG{c+c1}{// ******************}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.api.java.ExecutionEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.bridge.java.BatchTableEnvironment}\PYG{p}{;}
+
+\PYG{n}{ExecutionEnvironment} \PYG{n}{fbEnv} \PYG{o}{=} \PYG{n}{ExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+\PYG{n}{BatchTableEnvironment} \PYG{n}{fbTableEnv} \PYG{o}{=} \PYG{n}{BatchTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{fbEnv}\PYG{p}{);}
+
+\PYG{c+c1}{// **********************}
+\PYG{c+c1}{// BLINK STREAMING QUERY}
+\PYG{c+c1}{// **********************}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.streaming.api.environment.StreamExecutionEnvironment}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.EnvironmentSettings}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.bridge.java.StreamTableEnvironment}\PYG{p}{;}
+
+\PYG{n}{StreamExecutionEnvironment} \PYG{n}{bsEnv} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+\PYG{n}{EnvironmentSettings} \PYG{n}{bsSettings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{useBlinkPlanner}\PYG{p}{().}\PYG{n+na}{inStreamingMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+\PYG{n}{StreamTableEnvironment} \PYG{n}{bsTableEnv} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{bsEnv}\PYG{p}{,} \PYG{n}{bsSettings}\PYG{p}{);}
+\PYG{c+c1}{// or TableEnvironment bsTableEnv = TableEnvironment.create(bsSettings);}
+
+\PYG{c+c1}{// ******************}
+\PYG{c+c1}{// BLINK BATCH QUERY}
+\PYG{c+c1}{// ******************}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.EnvironmentSettings}\PYG{p}{;}
+\PYG{k+kn}{import} \PYG{n+nn}{org.apache.flink.table.api.TableEnvironment}\PYG{p}{;}
+
+\PYG{n}{EnvironmentSettings} \PYG{n}{bbSettings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{useBlinkPlanner}\PYG{p}{().}\PYG{n+na}{inBatchMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+\PYG{n}{TableEnvironment} \PYG{n}{bbTableEnv} \PYG{o}{=} \PYG{n}{TableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{bbSettings}\PYG{p}{);}
+\end{Verbatim}

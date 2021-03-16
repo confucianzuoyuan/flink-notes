@@ -1,0 +1,23 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{TableEnvironment} \PYG{n}{tEnv} \PYG{o}{=} \PYG{p}{...;}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{useCatalog}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}custom\PYGZus{}catalog\PYGZdq{}}\PYG{p}{);}
+\PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{useDatabase}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}custom\PYGZus{}database\PYGZdq{}}\PYG{p}{);}
+
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{p}{...;}
+
+\PYG{c+c1}{// register the view named \PYGZsq{}exampleView\PYGZsq{} in the catalog named \PYGZsq{}custom\PYGZus{}catalog\PYGZsq{}}
+\PYG{c+c1}{// in the database named \PYGZsq{}custom\PYGZus{}database\PYGZsq{}}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}exampleView\PYGZdq{}}\PYG{p}{,} \PYG{n}{table}\PYG{p}{);}
+
+\PYG{c+c1}{// register the view named \PYGZsq{}exampleView\PYGZsq{} in the catalog named \PYGZsq{}custom\PYGZus{}catalog\PYGZsq{}}
+\PYG{c+c1}{// in the database named \PYGZsq{}other\PYGZus{}database\PYGZsq{}}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}other\PYGZus{}database.exampleView\PYGZdq{}}\PYG{p}{,} \PYG{n}{table}\PYG{p}{);}
+
+\PYG{c+c1}{// register the view named \PYGZsq{}example.View\PYGZsq{} in the catalog named \PYGZsq{}custom\PYGZus{}catalog\PYGZsq{}}
+\PYG{c+c1}{// in the database named \PYGZsq{}custom\PYGZus{}database\PYGZsq{}}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}`example.View`\PYGZdq{}}\PYG{p}{,} \PYG{n}{table}\PYG{p}{);}
+
+\PYG{c+c1}{// register the view named \PYGZsq{}exampleView\PYGZsq{} in the catalog named \PYGZsq{}other\PYGZus{}catalog\PYGZsq{}}
+\PYG{c+c1}{// in the database named \PYGZsq{}other\PYGZus{}database\PYGZsq{}}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}other\PYGZus{}catalog.other\PYGZus{}database.exampleView\PYGZdq{}}\PYG{p}{,} \PYG{n}{table}\PYG{p}{);}
+\end{Verbatim}

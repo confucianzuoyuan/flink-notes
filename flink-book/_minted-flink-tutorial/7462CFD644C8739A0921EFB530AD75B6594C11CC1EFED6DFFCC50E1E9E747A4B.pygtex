@@ -1,0 +1,10 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a TableEnvironment}
+\PYG{n}{TableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// table is the result of a simple projection query}
+\PYG{n}{Table} \PYG{n}{projTable} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{from}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}X\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{select}\PYG{p}{(...);}
+
+\PYG{c+c1}{// register the Table projTable as table \PYGZdq{}projectedTable\PYGZdq{}}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}projectedTable\PYGZdq{}}\PYG{p}{,} \PYG{n}{projTable}\PYG{p}{);}
+\end{Verbatim}

@@ -1,0 +1,25 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get StreamTableEnvironment.}
+\PYG{n}{StreamTableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// Table with two fields (String name, Integer age)}
+\PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{p}{...}
+
+\PYG{c+c1}{// convert the Table into an append DataStream of Row by specifying the class}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Row}\PYG{o}{\PYGZgt{}} \PYG{n}{dsRow} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{toAppendStream}\PYG{p}{(}\PYG{n}{table}\PYG{p}{,} \PYG{n}{Row}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{);}
+
+\PYG{c+c1}{// convert the Table into an append DataStream of Tuple2\PYGZlt{}String, Integer\PYGZgt{}}
+\PYG{c+c1}{//   via a TypeInformation}
+\PYG{n}{TupleTypeInfo}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{tupleType} \PYG{o}{=} \PYG{k}{new} \PYG{n}{TupleTypeInfo}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{(}
+  \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{STRING}\PYG{p}{(),}
+  \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{INT}\PYG{p}{());}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{dsTuple} \PYG{o}{=}
+  \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{toAppendStream}\PYG{p}{(}\PYG{n}{table}\PYG{p}{,} \PYG{n}{tupleType}\PYG{p}{);}
+
+\PYG{c+c1}{// convert the Table into a retract DataStream of Row.}
+\PYG{c+c1}{//   A retract stream of type X is a DataStream\PYGZlt{}Tuple2\PYGZlt{}Boolean, X\PYGZgt{}\PYGZgt{}.}
+\PYG{c+c1}{//   The boolean field indicates the type of the change.}
+\PYG{c+c1}{//   True is INSERT, false is DELETE.}
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{Boolean}\PYG{p}{,} \PYG{n}{Row}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{retractStream} \PYG{o}{=}
+  \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{toRetractStream}\PYG{p}{(}\PYG{n}{table}\PYG{p}{,} \PYG{n}{Row}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{);}
+\end{Verbatim}

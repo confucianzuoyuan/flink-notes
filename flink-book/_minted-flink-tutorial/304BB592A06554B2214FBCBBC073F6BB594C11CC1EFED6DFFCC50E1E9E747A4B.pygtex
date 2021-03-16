@@ -1,0 +1,20 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a TableEnvironment}
+\PYG{n}{TableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// create an output Table}
+\PYG{k+kd}{final} \PYG{n}{Schema} \PYG{n}{schema} \PYG{o}{=} \PYG{k}{new} \PYG{n}{Schema}\PYG{p}{()}
+    \PYG{p}{.}\PYG{n+na}{field}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}a\PYGZdq{}}\PYG{p}{,} \PYG{n}{DataTypes}\PYG{p}{.}\PYG{n+na}{INT}\PYG{p}{())}
+    \PYG{p}{.}\PYG{n+na}{field}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}b\PYGZdq{}}\PYG{p}{,} \PYG{n}{DataTypes}\PYG{p}{.}\PYG{n+na}{STRING}\PYG{p}{())}
+    \PYG{p}{.}\PYG{n+na}{field}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}c\PYGZdq{}}\PYG{p}{,} \PYG{n}{DataTypes}\PYG{p}{.}\PYG{n+na}{BIGINT}\PYG{p}{());}
+
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{connect}\PYG{p}{(}\PYG{k}{new} \PYG{n}{FileSystem}\PYG{p}{().}\PYG{n+na}{path}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}/path/to/file\PYGZdq{}}\PYG{p}{))}
+    \PYG{p}{.}\PYG{n+na}{withFormat}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Csv}\PYG{p}{().}\PYG{n+na}{fieldDelimiter}\PYG{p}{(}\PYG{l+s+sc}{\PYGZsq{}|\PYGZsq{}}\PYG{p}{).}\PYG{n+na}{deriveSchema}\PYG{p}{())}
+    \PYG{p}{.}\PYG{n+na}{withSchema}\PYG{p}{(}\PYG{n}{schema}\PYG{p}{)}
+    \PYG{p}{.}\PYG{n+na}{createTemporaryTable}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}CsvSinkTable\PYGZdq{}}\PYG{p}{);}
+
+\PYG{c+c1}{// compute a result Table using Table API operators and/or SQL queries}
+\PYG{n}{Table} \PYG{n}{result} \PYG{o}{=} \PYG{p}{...}
+\PYG{c+c1}{// emit the result Table to the registered TableSink}
+\PYG{n}{result}\PYG{p}{.}\PYG{n+na}{executeInsert}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}CsvSinkTable\PYGZdq{}}\PYG{p}{);}
+\end{Verbatim}

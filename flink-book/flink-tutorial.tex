@@ -3231,7 +3231,7 @@ properties.setProperty("value.deserializer", "org.apache.kafka.common.serializat
 properties.setProperty("auto.offset.reset", "latest");
 
 env
-    .addSource(new FlinkKafkaConsumer011<String>(
+    .addSource(new FlinkKafkaConsumer<String>(
         "atguigu",
         new SimpleStringSchema(),
         properties
@@ -3254,7 +3254,7 @@ Properties properties = new Properties();
 properties.put("bootstrap.servers", "localhost:9092");
 stream
     .addSink(
-        new FlinkKafkaProducer011<String>(
+        new FlinkKafkaProducer<String>(
             "test",
             new SimpleStringSchema(),
             properties
@@ -3298,10 +3298,15 @@ prop.setProperty("bootstrap.servers", brokerList);
 
 //第二种解决方案，设置kafka的最大事务超时时间
 
-//FlinkKafkaProducer011<String> myProducer = new FlinkKafkaProducer<>(brokerList, topic, new SimpleStringSchema());
+//FlinkKafkaProducer<String> myProducer = new FlinkKafkaProducer<>(brokerList, topic, new SimpleStringSchema());
 
 //使用仅一次语义的kafkaProducer
-FlinkKafkaProducer<String> myProducer = new FlinkKafkaProducer<>(topic, new KeyedSerializationSchemaWrapper<String>(new SimpleStringSchema()), prop, FlinkKafkaProducer011.Semantic.EXACTLY_ONCE);
+FlinkKafkaProducer<String> myProducer = new FlinkKafkaProducer<>(
+    topic,
+    new KeyedSerializationSchemaWrapper<String>(new SimpleStringSchema()),
+    prop,
+    FlinkKafkaProducer.Semantic.EXACTLY_ONCE
+);
 text.addSink(myProducer);
 \end{minted}
 
@@ -3325,7 +3330,7 @@ public class WriteToRedisExample {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        DataStream<Event> stream = env.addSource(new SensorSource());
+        DataStream<SensorReading> stream = env.addSource(new SensorSource());
 
         FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("localhost").build();
 
@@ -3347,7 +3352,7 @@ public class WriteToRedisExample {
 
         @Override
         public RedisCommandDescription getCommandDescription() {
-            return new RedisCommandDescription(RedisCommand.HSET, "event");
+            return new RedisCommandDescription(RedisCommand.HSET, "sensor");
         }
     }
 }
@@ -4229,6 +4234,457 @@ public class OrderTimeoutDetect {
         env.execute();
     }
 }
+\end{minted}
+
+\chapter{Flink Table API \& SQL}
+
+\section{什么是Table API和Flink SQL}
+
+Flink本身是批流统一的处理框架，所以Table API和SQL，就是批流统一的上层处理API。目前功能尚未完善，处于活跃的开发阶段。
+
+Table API是一套内嵌在Java和Scala语言中的查询API，它允许我们以非常直观的方式，组合来自一些关系运算符的查询（比如select、filter和join）。而对于Flink SQL，就是直接可以在代码中写SQL，来实现一些查询（Query）操作。Flink的SQL支持，基于实现了SQL标准的Apache Calcite（Apache开源SQL解析工具）。
+
+无论输入是批输入还是流式输入，在这两套API中，指定的查询都具有相同的语义，得到相同的结果。
+
+\section{需要引入的依赖}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{xml}
+<dependency>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
+    <version>${flink.version}</version>
+</dependency>
+
+<dependency>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-table-planner-blink_${scala.binary.version}</artifactId>
+    <version>${flink.version}</version>
+</dependency>
+\end{minted}
+
+内部实现上，部分 table 相关的代码是用 Scala 实现的。所以，下面的依赖也需要添加到你的程序里，不管是批式还是流式的程序：
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{xml}
+<dependency>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-streaming-scala_${scala.binary.version}</artifactId>
+    <version>${flink.version}</version>
+</dependency>
+\end{minted}
+
+\textbf{扩展依赖}
+
+如果你想实现自定义格式来解析 Kafka 数据，或者自定义函数，下面的依赖就足够了，编译出来的 jar 文件可以直接给 SQL Client 使用：
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{xml}
+<dependency>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-table-common</artifactId>
+    <version>${flink.version}</version>
+</dependency>
+\end{minted}
+
+当前，本模块包含以下可以扩展的接口：
+
+\begin{itemize}
+	\item SerializationSchemaFactory
+	\item DeserializationSchemaFactory
+	\item ScalarFunction
+	\item TableFunction
+	\item AggregateFunction
+\end{itemize}
+
+\section{概念与通用 API}
+
+\subsection{Table API 和 SQL 程序的结构}
+
+所有用于批处理和流处理的 Table API 和 SQL 程序都遵循相同的模式。下面的代码示例展示了 Table API 和 SQL 程序的通用结构。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// create a TableEnvironment for specific planner batch or streaming
+TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// create an input Table
+tableEnv.executeSql("CREATE TEMPORARY TABLE table1 ... WITH ( 'connector' = ... )");
+// register an output Table
+tableEnv.executeSql("CREATE TEMPORARY TABLE outputTable ... WITH ( 'connector' = ... )");
+
+// create a Table object from a Table API query
+Table table2 = tableEnv.from("table1").select(...);
+// create a Table object from a SQL query
+Table table3 = tableEnv.sqlQuery("SELECT ... FROM table1 ... ");
+
+// emit a Table API result Table to a TableSink, same for SQL result
+TableResult tableResult = table2.executeInsert("outputTable");
+tableResult...
+\end{minted}
+
+\subsection{创建 TableEnvironment}
+
+TableEnvironment 是 Table API 和 SQL 的核心概念。它负责:
+
+\begin{itemize}
+	\item 在内部的catalog中注册Table
+	\item 注册外部的catalog
+	\item 加载可插拔模块
+	\item 执行SQL查询
+	\item 注册自定义函数 （scalar、table或aggregation）
+	\item 将DataStream或DataSet转换成Table
+	\item 持有对ExecutionEnvironment或StreamExecutionEnvironment的引用
+\end{itemize}
+
+Table 总是与特定的 TableEnvironment 绑定。不能在同一条查询中使用不同 TableEnvironment 中的表，例如，对它们进行 join 或 union 操作。
+
+TableEnvironment 可以通过静态方法 BatchTableEnvironment.create() 或者 StreamTableEnvironment.create() 在 StreamExecutionEnvironment 或者 ExecutionEnvironment 中创建，TableConfig 是可选项。TableConfig可用于配置TableEnvironment或定制的查询优化和转换过程。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// **********************
+// FLINK STREAMING QUERY
+// **********************
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+
+EnvironmentSettings fsSettings = EnvironmentSettings.newInstance().useOldPlanner().inStreamingMode().build();
+StreamExecutionEnvironment fsEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+StreamTableEnvironment fsTableEnv = StreamTableEnvironment.create(fsEnv, fsSettings);
+// or TableEnvironment fsTableEnv = TableEnvironment.create(fsSettings);
+
+// ******************
+// FLINK BATCH QUERY
+// ******************
+import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.table.api.bridge.java.BatchTableEnvironment;
+
+ExecutionEnvironment fbEnv = ExecutionEnvironment.getExecutionEnvironment();
+BatchTableEnvironment fbTableEnv = BatchTableEnvironment.create(fbEnv);
+
+// **********************
+// BLINK STREAMING QUERY
+// **********************
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+
+StreamExecutionEnvironment bsEnv = StreamExecutionEnvironment.getExecutionEnvironment();
+EnvironmentSettings bsSettings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build();
+StreamTableEnvironment bsTableEnv = StreamTableEnvironment.create(bsEnv, bsSettings);
+// or TableEnvironment bsTableEnv = TableEnvironment.create(bsSettings);
+
+// ******************
+// BLINK BATCH QUERY
+// ******************
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.TableEnvironment;
+
+EnvironmentSettings bbSettings = EnvironmentSettings.newInstance().useBlinkPlanner().inBatchMode().build();
+TableEnvironment bbTableEnv = TableEnvironment.create(bbSettings);
+\end{minted}
+
+\subsection{在Catalog中创建表}
+
+TableEnvironment维护着一个由标识符（identifier）创建的表catalog的映射。标识符由三个部分组成：catalog名称、数据库名称以及对象名称。如果catalog或者数据库没有指明，就会使用当前默认值。
+
+Table 可以是虚拟的（视图 VIEWS）也可以是常规的（表 TABLES）。视图VIEWS可以从已经存在的Table中创建，一般是Table API或者SQL的查询结果。表TABLES描述的是外部数据，例如文件、数据库表或者消息队列。
+
+\textbf{临时表（Temporary Table）和永久表（Permanent Table）}
+
+表可以是临时的，并与单个Flink会话（session）的生命周期相关，也可以是永久的，并且在多个Flink会话和群集（cluster）中可见。
+
+永久表需要catalog（例如Hive Metastore）以维护表的元数据。一旦永久表被创建，它将对任何连接到catalog的Flink会话可见且持续存在，直至被明确删除。
+
+另一方面，临时表通常保存于内存中并且仅在创建它们的Flink会话持续期间存在。这些表对于其它会话是不可见的。它们不与任何catalog或者数据库绑定但可以在一个命名空间（namespace）中创建。即使它们对应的数据库被删除，临时表也不会被删除。
+
+\subsection{创建表}
+
+\textbf{虚拟表}
+
+在 SQL 的术语中，Table API 的对象对应于视图（虚拟表）。它封装了一个逻辑查询计划。它可以通过以下方法在 catalog 中创建：
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a TableEnvironment
+TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// table is the result of a simple projection query 
+Table projTable = tableEnv.from("X").select(...);
+
+// register the Table projTable as table "projectedTable"
+tableEnv.createTemporaryView("projectedTable", projTable);
+\end{minted}
+
+\textbf{Connector Tables}
+
+另外一个方式去创建 TABLE 是通过 connector 声明。Connector 描述了存储表数据的外部系统。存储系统例如 Apache Kafka 或者常规的文件系统都可以通过这种方式来声明。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+tableEnvironment
+    .connect(...)
+    .withFormat(...)
+    .withSchema(...)
+    .inAppendMode()
+    .createTemporaryTable("MyTable")
+\end{minted}
+
+\subsection{扩展表标识符}
+
+表总是通过三元标识符注册，包括 catalog 名、数据库名和表名。
+
+用户可以指定一个 catalog 和数据库作为 “当前catalog” 和”当前数据库”。有了这些，那么刚刚提到的三元标识符的前两个部分就可以被省略了。如果前两部分的标识符没有指定， 那么会使用当前的 catalog 和当前数据库。用户也可以通过 Table API 或 SQL 切换当前的 catalog 和当前的数据库。
+
+标识符遵循 SQL 标准，因此使用时需要用反引号（`）进行转义。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+TableEnvironment tEnv = ...;
+tEnv.useCatalog("custom_catalog");
+tEnv.useDatabase("custom_database");
+
+Table table = ...;
+
+// register the view named 'exampleView' in the catalog named 'custom_catalog'
+// in the database named 'custom_database' 
+tableEnv.createTemporaryView("exampleView", table);
+
+// register the view named 'exampleView' in the catalog named 'custom_catalog'
+// in the database named 'other_database' 
+tableEnv.createTemporaryView("other_database.exampleView", table);
+
+// register the view named 'example.View' in the catalog named 'custom_catalog'
+// in the database named 'custom_database' 
+tableEnv.createTemporaryView("`example.View`", table);
+
+// register the view named 'exampleView' in the catalog named 'other_catalog'
+// in the database named 'other_database' 
+tableEnv.createTemporaryView("other_catalog.other_database.exampleView", table);
+\end{minted}
+
+\subsection{查询表}
+
+\textbf{Table API}
+
+Table API 是关于 Scala 和 Java 的集成语言式查询 API。与 SQL 相反，Table API 的查询不是由字符串指定，而是在宿主语言中逐步构建。
+
+Table API 是基于 Table 类的，该类表示一个表（流或批处理），并提供使用关系操作的方法。这些方法返回一个新的 Table 对象，该对象表示对输入 Table 进行关系操作的结果。 一些关系操作由多个方法调用组成，例如 table.groupBy(...).select()，其中 groupBy(...) 指定 table 的分组，而 select(...) 在 table 分组上的投影。
+
+文档 Table API 说明了所有流处理和批处理表支持的 Table API 算子。
+
+以下示例展示了一个简单的 Table API 聚合查询：
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a TableEnvironment
+TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// register Orders table
+
+// scan registered Orders table
+Table orders = tableEnv.from("Orders");
+// compute revenue for all customers from France
+Table revenue = orders
+  .filter($("cCountry").isEqual("FRANCE"))
+  .groupBy($("cID"), $("cName")
+  .select($("cID"), $("cName"), $("revenue").sum().as("revSum"));
+
+// emit or convert Table
+// execute query
+\end{minted}
+
+\textbf{SQL}
+
+Flink SQL 是基于实现了SQL标准的 Apache Calcite 的。SQL 查询由常规字符串指定。
+
+文档 SQL 描述了Flink对流处理和批处理表的SQL支持。
+
+下面的示例演示了如何指定查询并将结果作为 Table 对象返回。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a TableEnvironment
+TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// register Orders table
+
+// compute revenue for all customers from France
+Table revenue = tableEnv.sqlQuery(
+    "SELECT cID, cName, SUM(revenue) AS revSum " +
+    "FROM Orders " +
+    "WHERE cCountry = 'FRANCE' " +
+    "GROUP BY cID, cName"
+);
+
+// emit or convert Table
+// execute query
+\end{minted}
+
+如下的示例展示了如何指定一个更新查询，将查询的结果插入到已注册的表中。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a TableEnvironment
+TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// register "Orders" table
+// register "RevenueFrance" output table
+
+// compute revenue for all customers from France and emit to "RevenueFrance"
+tableEnv.executeSql(
+    "INSERT INTO RevenueFrance " +
+    "SELECT cID, cName, SUM(revenue) AS revSum " +
+    "FROM Orders " +
+    "WHERE cCountry = 'FRANCE' " +
+    "GROUP BY cID, cName"
+);
+\end{minted}
+
+\textbf{混用 Table API 和 SQL}
+
+Table API 和 SQL 查询的混用非常简单因为它们都返回 Table 对象：
+
+\begin{itemize}
+	\item 可以在 SQL 查询返回的 Table 对象上定义 Table API 查询。
+	\item 在 TableEnvironment 中注册的结果表可以在 SQL 查询的 FROM 子句中引用，通过这种方法就可以在 Table API 查询的结果上定义 SQL 查询。
+\end{itemize}
+
+\subsection{输出表}
+
+Table 通过写入 TableSink 输出。TableSink 是一个通用接口，用于支持多种文件格式（如 CSV、Apache Parquet、Apache Avro）、存储系统（如 JDBC、Apache HBase、Apache Cassandra、Elasticsearch）或消息队列系统（如 Apache Kafka、RabbitMQ）。
+
+批处理 Table 只能写入 BatchTableSink，而流处理 Table 需要指定写入 AppendStreamTableSink，RetractStreamTableSink 或者 UpsertStreamTableSink。
+
+方法 Table.executeInsert(String tableName) 将 Table 发送至已注册的 TableSink。该方法通过名称在 catalog 中查找 TableSink 并确认Table schema 和 TableSink schema 一致。
+
+下面的示例演示如何输出 Table：
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get a TableEnvironment
+TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// create an output Table
+final Schema schema = new Schema()
+    .field("a", DataTypes.INT())
+    .field("b", DataTypes.STRING())
+    .field("c", DataTypes.BIGINT());
+
+tableEnv.connect(new FileSystem().path("/path/to/file"))
+    .withFormat(new Csv().fieldDelimiter('|').deriveSchema())
+    .withSchema(schema)
+    .createTemporaryTable("CsvSinkTable");
+
+// compute a result Table using Table API operators and/or SQL queries
+Table result = ...
+// emit the result Table to the registered TableSink
+result.executeInsert("CsvSinkTable");
+\end{minted}
+
+\subsection{与 DataStream 和 DataSet API 结合}
+
+\textbf{通过 DataSet 或 DataStream 创建视图}
+
+在 TableEnvironment 中可以将 DataStream 或 DataSet 注册成视图。结果视图的 schema 取决于注册的 DataStream 或 DataSet 的数据类型。
+
+\begin{note}
+    通过 DataStream 或 DataSet 创建的视图只能注册成临时视图。
+\end{note}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get StreamTableEnvironment
+// registration of a DataSet in a BatchTableEnvironment is equivalent
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+DataStream<Tuple2<Long, String>> stream = ...
+
+// register the DataStream as View "myTable" with fields "f0", "f1"
+tableEnv.createTemporaryView("myTable", stream);
+
+// register the DataStream as View "myTable2" with fields "myLong", "myString"
+tableEnv.createTemporaryView("myTable2", stream, $("myLong"), $("myString"));
+\end{minted}
+
+\textbf{将 DataStream 或 DataSet 转换成表}
+
+与在 TableEnvironment 注册 DataStream 或 DataSet 不同，DataStream 和 DataSet 还可以直接转换成 Table。如果你想在 Table API 的查询中使用表，这将非常便捷。
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get StreamTableEnvironment
+// registration of a DataSet in a BatchTableEnvironment is equivalent
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+DataStream<Tuple2<Long, String>> stream = ...
+
+// Convert the DataStream into a Table with default fields "f0", "f1"
+Table table1 = tableEnv.fromDataStream(stream);
+
+// Convert the DataStream into a Table with fields "myLong", "myString"
+Table table2 = tableEnv.fromDataStream(stream, $("myLong"), $("myString"));
+\end{minted}
+
+\subsection{将表转换成 DataStream 或 DataSet}
+
+Table 可以被转换成 DataStream 或 DataSet。通过这种方式，定制的 DataSet 或 DataStream 程序就可以在 Table API 或者 SQL 的查询结果上运行了。
+
+将 Table 转换为 DataStream 或者 DataSet 时，你需要指定生成的 DataStream 或者 DataSet 的数据类型，即，Table 的每行数据要转换成的数据类型。通常最方便的选择是转换成 Row 。以下列表概述了不同选项的功能：
+
+\begin{itemize}
+    \item Row: 字段按位置映射，字段数量任意，支持 null 值，无类型安全（type-safe）检查。
+    \item POJO: 字段按名称映射（POJO 必须按Table 中字段名称命名），字段数量任意，支持 null 值，无类型安全检查。
+    \item Case Class: 字段按位置映射，不支持 null 值，有类型安全检查。
+    \item Tuple: 字段按位置映射，字段数量少于 22（Scala）或者 25（Java），不支持 null 值，无类型安全检查。
+    \item Atomic Type: Table 必须有一个字段，不支持 null 值，有类型安全检查。
+\end{itemize}
+
+\textbf{将表转换成DataStream}
+
+流式查询（streaming query）的结果表会动态更新，即，当新纪录到达查询的输入流时，查询结果会改变。因此，像这样将动态查询结果转换成 DataStream 需要对表的更新方式进行编码。
+
+将 Table 转换为 DataStream 有两种模式：
+
+\begin{itemize}
+    \item Append Mode: 仅当动态 Table 仅通过INSERT更改进行修改时，才可以使用此模式，即，它仅是追加操作，并且之前输出的结果永远不会更新。
+    \item Retract Mode: 任何情形都可以使用此模式。它使用 boolean 值对 INSERT 和 DELETE 操作的数据进行标记。
+\end{itemize}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get StreamTableEnvironment. 
+StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+
+// Table with two fields (String name, Integer age)
+Table table = ...
+
+// convert the Table into an append DataStream of Row by specifying the class
+DataStream<Row> dsRow = tableEnv.toAppendStream(table, Row.class);
+
+// convert the Table into an append DataStream of Tuple2<String, Integer> 
+//   via a TypeInformation
+TupleTypeInfo<Tuple2<String, Integer>> tupleType = new TupleTypeInfo<>(
+  Types.STRING(),
+  Types.INT());
+DataStream<Tuple2<String, Integer>> dsTuple = 
+  tableEnv.toAppendStream(table, tupleType);
+
+// convert the Table into a retract DataStream of Row.
+//   A retract stream of type X is a DataStream<Tuple2<Boolean, X>>. 
+//   The boolean field indicates the type of the change. 
+//   True is INSERT, false is DELETE.
+DataStream<Tuple2<Boolean, Row>> retractStream = 
+  tableEnv.toRetractStream(table, Row.class);
+\end{minted}
+
+\subsection{将表转换成 DataSet}
+
+将 Table 转换成 DataSet 的过程如下：
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// get BatchTableEnvironment
+BatchTableEnvironment tableEnv = BatchTableEnvironment.create(env);
+
+// Table with two fields (String name, Integer age)
+Table table = ...
+
+// convert the Table into a DataSet of Row by specifying a class
+DataSet<Row> dsRow = tableEnv.toDataSet(table, Row.class);
+
+// convert the Table into a DataSet of Tuple2<String, Integer> via a TypeInformation
+TupleTypeInfo<Tuple2<String, Integer>> tupleType = new TupleTypeInfo<>(
+  Types.STRING(),
+  Types.INT());
+DataSet<Tuple2<String, Integer>> dsTuple = 
+  tableEnv.toDataSet(table, tupleType);
 \end{minted}
 
 \chapter{案例集}

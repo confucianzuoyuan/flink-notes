@@ -1,0 +1,17 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a TableEnvironment}
+\PYG{n}{TableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// register Orders table}
+
+\PYG{c+c1}{// compute revenue for all customers from France}
+\PYG{n}{Table} \PYG{n}{revenue} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}
+    \PYG{l+s}{\PYGZdq{}SELECT cID, cName, SUM(revenue) AS revSum \PYGZdq{}} \PYG{o}{+}
+    \PYG{l+s}{\PYGZdq{}FROM Orders \PYGZdq{}} \PYG{o}{+}
+    \PYG{l+s}{\PYGZdq{}WHERE cCountry = \PYGZsq{}FRANCE\PYGZsq{} \PYGZdq{}} \PYG{o}{+}
+    \PYG{l+s}{\PYGZdq{}GROUP BY cID, cName\PYGZdq{}}
+\PYG{p}{);}
+
+\PYG{c+c1}{// emit or convert Table}
+\PYG{c+c1}{// execute query}
+\end{Verbatim}

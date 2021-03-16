@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a TableEnvironment}
+\PYG{n}{TableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// register \PYGZdq{}Orders\PYGZdq{} table}
+\PYG{c+c1}{// register \PYGZdq{}RevenueFrance\PYGZdq{} output table}
+
+\PYG{c+c1}{// compute revenue for all customers from France and emit to \PYGZdq{}RevenueFrance\PYGZdq{}}
+\PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{executeSql}\PYG{p}{(}
+    \PYG{l+s}{\PYGZdq{}INSERT INTO RevenueFrance \PYGZdq{}} \PYG{o}{+}
+    \PYG{l+s}{\PYGZdq{}SELECT cID, cName, SUM(revenue) AS revSum \PYGZdq{}} \PYG{o}{+}
+    \PYG{l+s}{\PYGZdq{}FROM Orders \PYGZdq{}} \PYG{o}{+}
+    \PYG{l+s}{\PYGZdq{}WHERE cCountry = \PYGZsq{}FRANCE\PYGZsq{} \PYGZdq{}} \PYG{o}{+}
+    \PYG{l+s}{\PYGZdq{}GROUP BY cID, cName\PYGZdq{}}
+\PYG{p}{);}
+\end{Verbatim}

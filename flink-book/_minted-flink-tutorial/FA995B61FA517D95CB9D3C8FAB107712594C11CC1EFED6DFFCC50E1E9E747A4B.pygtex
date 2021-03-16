@@ -1,0 +1,17 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// get a TableEnvironment}
+\PYG{n}{TableEnvironment} \PYG{n}{tableEnv} \PYG{o}{=} \PYG{p}{...;} \PYG{c+c1}{// see \PYGZdq{}Create a TableEnvironment\PYGZdq{} section}
+
+\PYG{c+c1}{// register Orders table}
+
+\PYG{c+c1}{// scan registered Orders table}
+\PYG{n}{Table} \PYG{n}{orders} \PYG{o}{=} \PYG{n}{tableEnv}\PYG{p}{.}\PYG{n+na}{from}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Orders\PYGZdq{}}\PYG{p}{);}
+\PYG{c+c1}{// compute revenue for all customers from France}
+\PYG{n}{Table} \PYG{n}{revenue} \PYG{o}{=} \PYG{n}{orders}
+  \PYG{p}{.}\PYG{n+na}{filter}\PYG{p}{(}\PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}cCountry\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{isEqual}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}FRANCE\PYGZdq{}}\PYG{p}{))}
+  \PYG{p}{.}\PYG{n+na}{groupBy}\PYG{p}{(}\PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}cID\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}cName\PYGZdq{}}\PYG{p}{)}
+  \PYG{p}{.}\PYG{n+na}{select}\PYG{p}{(}\PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}cID\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}cName\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}revenue\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{sum}\PYG{p}{().}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}revSum\PYGZdq{}}\PYG{p}{));}
+
+\PYG{c+c1}{// emit or convert Table}
+\PYG{c+c1}{// execute query}
+\end{Verbatim}
