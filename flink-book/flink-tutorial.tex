@@ -1,5 +1,5 @@
 \documentclass[cn,11pt,chinese]{elegantbook}
-\usepackage{minted}
+\usepackage{minted,tabularx}
 
 \setcounter{tocdepth}{2}
 
@@ -4853,15 +4853,17 @@ SQL 和关系代数在设计时并未考虑流数据。因此，在关系代数(
 \begin{table}[htbp]
   \centering
   \caption{比较}
-    \begin{tabular}{ll}
+    \begin{tabularx}{\textwidth}{|X|X|}
     \toprule
     关系代数 / SQL  & 流处理 \\
     \midrule
     关系(或表)是有界(多)元组集合 & 流是一个无限元组序列 \\
+    \hline
     对批数据(例如关系数据库中的表)执行的查询可以访问完整的输入数据 & 流式查询在启动时不能访问所有数据，必须“等待”数据流入 \\
+    \hline
     批处理查询在产生固定大小的结果后终止 & 流查询不断地根据接收到的记录更新其结果，并且始终不会结束 \\
     \bottomrule
-    \end{tabular}%
+    \end{tabularx}%
   \label{tab:theorem-class}%
 \end{table}%
 
@@ -5138,6 +5140,391 @@ WindowedTable windowedTable = table.window(Tumble
 
 \section{数据倾斜如何解决}
 
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class DataSkew {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
 
+        env
+            .fromElements(
+                Tuple3.of("a", 1L, 1000L),
+                Tuple3.of("a", 1L, 2000L),
+                Tuple3.of("a", 1L, 3000L),
+                Tuple3.of("a", 1L, 4000L),
+                Tuple3.of("a", 1L, 5000L),
+                Tuple3.of("a", 1L, 6000L),
+                Tuple3.of("a", 1L, 7000L),
+                Tuple3.of("a", 1L, 8000L),
+                Tuple3.of("a", 1L, 9000L),
+                Tuple3.of("a", 1L, 10000L),
+                Tuple3.of("b", 1L, 11000L)
+            )
+            .map(new MapFunction<Tuple3<String, Long, Long>, Tuple3<String, Long, Long>>() {
+                @Override
+                public Tuple3<String, Long, Long> map(Tuple3<String, Long, Long> value) throws Exception {
+                    Random rand = new Random();
+                    return Tuple3.of(value.f0 + "-" + rand.nextInt(4), value.f1, value.f2);
+                }
+            })
+            .assignTimestampsAndWatermarks(WatermarkStrategy.<Tuple3<String, Long, Long>>forMonotonousTimestamps()
+            .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, Long, Long>>() {
+                @Override
+                public long extractTimestamp(Tuple3<String, Long, Long> element, long recordTimestamp) {
+                    return element.f2;
+                }
+            }))
+            .keyBy(r -> r.f0)
+            .process(new KeyedProcessFunction<String, Tuple3<String, Long, Long>, Tuple2<String, Long>>() {
+                private ValueState<Tuple2<String, Long>> sum;
+                private ValueState<Long> timerTs;
+                @Override
+                public void open(Configuration parameters) throws Exception {
+                    super.open(parameters);
+                    sum = getRuntimeContext().getState(new ValueStateDescriptor<Tuple2<String, Long>>("sum", Types.TUPLE(Types.STRING, Types.LONG)));
+                    timerTs = getRuntimeContext().getState(new ValueStateDescriptor<Long>("timer", Types.LONG));
+                }
+
+                @Override
+                public void processElement(Tuple3<String, Long, Long> value, Context ctx, Collector<Tuple2<String, Long>> out) throws Exception {
+                    if (sum.value() == null) {
+                        sum.update(Tuple2.of(value.f0, value.f1));
+                        ctx.timerService().registerEventTimeTimer(value.f2 + 10 * 1000L);
+                        timerTs.update(value.f2 + 10 * 1000L);
+                    } else {
+                        Long cnt = sum.value().f1;
+                        sum.update(Tuple2.of(value.f0, cnt + value.f1));
+                        if (timerTs.value() == null) {
+                            ctx.timerService().registerEventTimeTimer(value.f2 + 10 * 1000L);
+                            timerTs.update(value.f2 + 10 * 1000L);
+                        }
+                    }
+                }
+
+                @Override
+                public void onTimer(long timestamp, OnTimerContext ctx, Collector<Tuple2<String, Long>> out) throws Exception {
+                    super.onTimer(timestamp, ctx, out);
+                    out.collect(Tuple2.of(ctx.getCurrentKey(), sum.value().f1));
+                    timerTs.clear();
+                }
+            })
+            .map(new MapFunction<Tuple2<String, Long>, Tuple3<String, Integer, Long>>() {
+                @Override
+                public Tuple3<String, Integer, Long> map(Tuple2<String, Long> value) throws Exception {
+                    return Tuple3.of(value.f0.split("-")[0], Integer.parseInt(value.f0.split("-")[1]), value.f1);
+                }
+            })
+            .keyBy(r -> r.f0)
+            .process(new KeyedProcessFunction<String, Tuple3<String, Integer, Long>, Tuple2<String, Long>>() {
+                private MapState<Long, Long> mapState;
+
+                @Override
+                public void open(Configuration parameters) throws Exception {
+                    super.open(parameters);
+                    mapState = getRuntimeContext().getMapState(
+                            new MapStateDescriptor<Long, Long>("map", Types.LONG, Types.LONG)
+                    );
+                }
+
+                @Override
+                public void processElement(Tuple3<String, Integer, Long> value, Context ctx, Collector<Tuple2<String, Long>> out) throws Exception {
+                    mapState.put((long)value.f1, value.f2);
+                    long sum = 0L;
+                    for (Long v : mapState.values()) {
+                        sum += v;
+                    }
+                    out.collect(Tuple2.of(value.f0, sum));
+                }
+            })
+            .print();
+
+        env.execute();
+    }
+}
+
+\end{minted}
+
+\section{独立访客计算}
+
+\subsection{原始版}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class UV {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        env
+            .readTextFile("UserBehavior.csv")
+            .map(new MapFunction<String, UserBehavior>() {
+                @Override
+                public UserBehavior map(String value) throws Exception {
+                    String[] arr = value.split(",");
+                    return new UserBehavior(
+                            arr[0],arr[1],arr[2],arr[3],
+                            Long.parseLong(arr[4]) * 1000L
+                    );
+                }
+            })
+            .filter(r -> r.behaviorType.equals("pv"))
+            .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+            .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                @Override
+                public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                    return element.timestamp;
+                }
+            }))
+            .map(new MapFunction<UserBehavior, Tuple2<String, String>>() {
+                @Override
+                public Tuple2<String, String> map(UserBehavior value) throws Exception {
+                    return Tuple2.of("key", value.userId);
+                }
+            })
+            .keyBy(r -> r.f0)
+            .window(TumblingEventTimeWindows.of(Time.hours(1)))
+            .process(new ProcessWindowFunction<Tuple2<String, String>, String, String, TimeWindow>() {
+                @Override
+                public void process(String s, Context context, Iterable<Tuple2<String, String>> elements, Collector<String> out) throws Exception {
+                    HashSet<String> set = new HashSet<>();
+                    for (Tuple2<String, String> e : elements) {
+                        set.add(e.f1);
+                    }
+                    String start = new Timestamp(context.window().getStart()).toString();
+                    String end = new Timestamp(context.window().getEnd()).toString();
+
+                    out.collect("窗口 " + start + " ~~~ " + end + " 的UV数据是：" + set.size());
+                }
+            })
+            .print();
+
+        env.execute();
+    }
+}
+\end{minted}
+
+\subsection{改进版}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class UVImproved {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        env
+            .readTextFile("UserBehavior.csv")
+            .map(new MapFunction<String, UserBehavior>() {
+                @Override
+                public UserBehavior map(String value) throws Exception {
+                    String[] arr = value.split(",");
+                    return new UserBehavior(
+                            arr[0],arr[1],arr[2],arr[3],
+                            Long.parseLong(arr[4]) * 1000L
+                    );
+                }
+            })
+            .filter(r -> r.behaviorType.equals("pv"))
+            .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+                    .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                        @Override
+                        public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                            return element.timestamp;
+                        }
+                    }))
+            .map(new MapFunction<UserBehavior, Tuple2<String, String>>() {
+                @Override
+                public Tuple2<String, String> map(UserBehavior value) throws Exception {
+                    return Tuple2.of("key", value.userId);
+                }
+            })
+            .keyBy(r -> r.f0)
+            .window(TumblingEventTimeWindows.of(Time.hours(1)))
+            .aggregate(new Agg(), new WindowResult())
+            .print();
+
+        env.execute();
+    }
+
+    public static class Agg implements AggregateFunction<Tuple2<String, String>, HashSet<String>, Long> {
+        @Override
+        public HashSet<String> createAccumulator() {
+            return new HashSet<>();
+        }
+
+        @Override
+        public HashSet<String> add(Tuple2<String, String> value, HashSet<String> accumulator) {
+            accumulator.add(value.f1);
+            return accumulator;
+        }
+
+        @Override
+        public Long getResult(HashSet<String> accumulator) {
+            return (long) accumulator.size();
+        }
+
+        @Override
+        public HashSet<String> merge(HashSet<String> a, HashSet<String> b) {
+            return null;
+        }
+    }
+
+    public static class WindowResult extends ProcessWindowFunction<Long, String, String, TimeWindow> {
+        @Override
+        public void process(String s, Context context, Iterable<Long> elements, Collector<String> out) throws Exception {
+            String start = new Timestamp(context.window().getStart()).toString();
+            String end = new Timestamp(context.window().getEnd()).toString();
+
+            out.collect("窗口 " + start + " ~~~ " + end + " 的UV数据是：" + elements.iterator().next());
+        }
+    }
+}
+\end{minted}
+
+\subsection{布隆过滤器版}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class UVBloomFilter {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        env
+            .readTextFile("UserBehavior.csv")
+            .map(new MapFunction<String, UserBehavior>() {
+                @Override
+                public UserBehavior map(String value) throws Exception {
+                    String[] arr = value.split(",");
+                    return new UserBehavior(
+                            arr[0],arr[1],arr[2],arr[3],
+                            Long.parseLong(arr[4]) * 1000L
+                    );
+                }
+            })
+            .filter(r -> r.behaviorType.equals("pv"))
+            .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+                    .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                        @Override
+                        public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                            return element.timestamp;
+                        }
+                    }))
+            .map(new MapFunction<UserBehavior, Tuple2<String, String>>() {
+                @Override
+                public Tuple2<String, String> map(UserBehavior value) throws Exception {
+                    return Tuple2.of("key", value.userId);
+                }
+            })
+            .keyBy(r -> r.f0)
+            .window(TumblingEventTimeWindows.of(Time.hours(1)))
+            .aggregate(new Agg(), new WindowResult())
+            .print();
+
+        env.execute();
+    }
+
+    public static class Agg implements AggregateFunction<Tuple2<String, String>, Tuple2<BloomFilter<Long>, Long>, Long> {
+        @Override
+        public Tuple2<BloomFilter<Long>, Long> createAccumulator() {
+            // 假设独立用户数量是一百万，误判率是0.01
+            return Tuple2.of(BloomFilter.create(Funnels.longFunnel(), 1000000, 0.01), 0L);
+        }
+
+        @Override
+        public Tuple2<BloomFilter<Long>, Long> add(Tuple2<String, String> value, Tuple2<BloomFilter<Long>, Long> accumulator) {
+            if (!accumulator.f0.mightContain(Long.parseLong(value.f1))) {
+                // 如果userID没来过，那么执行put操作
+                accumulator.f0.put(Long.parseLong(value.f1));
+                accumulator.f1 += 1L; // UV数量加一
+                return accumulator;
+            }
+            return accumulator;
+        }
+
+        @Override
+        public Long getResult(Tuple2<BloomFilter<Long>, Long> accumulator) {
+            return accumulator.f1;
+        }
+
+        @Override
+        public Tuple2<BloomFilter<Long>, Long> merge(Tuple2<BloomFilter<Long>, Long> a, Tuple2<BloomFilter<Long>, Long> b) {
+            return null;
+        }
+    }
+
+    public static class WindowResult extends ProcessWindowFunction<Long, String, String, TimeWindow> {
+        @Override
+        public void process(String s, Context context, Iterable<Long> elements, Collector<String> out) throws Exception {
+            String start = new Timestamp(context.window().getStart()).toString();
+            String end = new Timestamp(context.window().getEnd()).toString();
+
+            out.collect("窗口 " + start + " ~~~ " + end + " 的UV数据是：" + elements.iterator().next());
+        }
+    }
+}
+\end{minted}
+
+\section{订单超时检测}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class OrderTimeoutDetectWithoutCEP {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<Tuple3<String, String, Long>> orderStream = env
+            .fromElements(
+                Tuple3.of("order-1", "create", 1000L),
+                Tuple3.of("order-2", "create", 2000L),
+                Tuple3.of("order-1", "pay", 3000L)
+            )
+            .assignTimestampsAndWatermarks(WatermarkStrategy.<Tuple3<String, String, Long>>forMonotonousTimestamps()
+                .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, String, Long>>() {
+                    @Override
+                    public long extractTimestamp(Tuple3<String, String, Long> element, long recordTimestamp) {
+                        return element.f2;
+                    }
+                }));
+
+        orderStream
+            .keyBy(r -> r.f0)
+            .process(new KeyedProcessFunction<String, Tuple3<String, String, Long>, String>() {
+                private ValueState<Tuple3<String, String, Long>> orderState;
+                @Override
+                public void open(Configuration parameters) throws Exception {
+                    super.open(parameters);
+                    orderState = getRuntimeContext().getState(
+                        new ValueStateDescriptor<Tuple3<String, String, Long>>("order-state", Types.TUPLE(Types.STRING, Types.STRING, Types.LONG))
+                    );
+                }
+
+                @Override
+                public void processElement(Tuple3<String, String, Long> value, Context ctx, Collector<String> out) throws Exception {
+                    if (value.f1.equals("pay")) {
+                        out.collect("订单ID：" + value.f0 + " 已经支付");
+                        orderState.update(value);
+                    } else if (value.f1.equals("create")) {
+                        if (orderState.value() == null) {
+                            // 说明pay事件没有在create事件之前到达
+                            ctx.timerService().registerEventTimeTimer(value.f2 + 5 * 1000L);
+                            orderState.update(value);
+                        }
+                    }
+
+                }
+
+                @Override
+                public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+                    super.onTimer(timestamp, ctx, out);
+                    if (orderState.value() != null && orderState.value().f1.equals("create")) {
+                        out.collect("订单ID：" + ctx.getCurrentKey() + " 支付超时");
+                        orderState.clear();
+                    }
+                }
+            })
+            .print();
+
+        env.execute();
+    }
+}
+\end{minted}
 
 \end{document}
