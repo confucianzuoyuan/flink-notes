@@ -1,5 +1,5 @@
 \documentclass[cn,11pt,chinese]{elegantbook}
-\usepackage{minted,tabularx}
+\usepackage{minted,tabularx,tikz}
 
 \setcounter{tocdepth}{2}
 
@@ -5379,6 +5379,182 @@ public class UVImproved {
 }
 \end{minted}
 
+\subsection{布隆过滤器理论}
+
+\textbf{什么是布隆过滤器}
+
+本质上布隆过滤器是一种数据结构，比较巧妙的概率型数据结构（probabilistic data structure），特点是高效地插入和查询，可以用来告诉你 “某样东西一定不存在或者可能存在”。
+
+相比于传统的 List、Set、Map 等数据结构，它更高效、占用空间更少，但是缺点是其返回的结果是概率性的，而不是确切的。
+
+\textbf{实现原理}
+
+\textit{HashMap的问题}
+
+讲述布隆过滤器的原理之前，我们先思考一下，通常你判断某个元素是否存在用的是什么？应该蛮多人回答 HashMap 吧，确实可以将值映射到 HashMap 的 Key，然后可以在 O(1) 的时间复杂度内返回结果，效率奇高。但是 HashMap 的实现也有缺点，例如存储容量占比高，考虑到负载因子的存在，通常空间是不能被用满的，而一旦你的值很多例如上亿的时候，那 HashMap 占据的内存大小就变得很可观了。
+
+还比如说你的数据集存储在远程服务器上，本地服务接受输入，而数据集非常大不可能一次性读进内存构建 HashMap 的时候，也会存在问题。
+
+\textit{布隆过滤器数据结构}
+
+布隆过滤器是一个 bit 向量或者说 bit 数组，长这样：
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        \draw (0,0) rectangle (1,1) node[pos=.5] {0};
+        \draw (1,0) rectangle (2,1) node[pos=.5] {0};
+        \draw (2,0) rectangle (3,1) node[pos=.5] {0};
+        \draw (3,0) rectangle (4,1) node[pos=.5] {0};
+        \draw (4,0) rectangle (5,1) node[pos=.5] {0};
+        \draw (5,0) rectangle (6,1) node[pos=.5] {0};
+        \draw (6,0) rectangle (7,1) node[pos=.5] {0};
+        \draw (7,0) rectangle (8,1) node[pos=.5] {0};
+        \draw[fill=pink] (0.2,-1) rectangle (0.8,-0.5) node[pos=.5] {1};
+        \draw[fill=pink] (1.2,-1) rectangle (1.8,-0.5) node[pos=.5] {2};
+        \draw[fill=pink] (2.2,-1) rectangle (2.8,-0.5) node[pos=.5] {3};
+        \draw[fill=pink] (3.2,-1) rectangle (3.8,-0.5) node[pos=.5] {4};
+        \draw[fill=pink] (4.2,-1) rectangle (4.8,-0.5) node[pos=.5] {5};
+        \draw[fill=pink] (5.2,-1) rectangle (5.8,-0.5) node[pos=.5] {6};
+        \draw[fill=pink] (6.2,-1) rectangle (6.8,-0.5) node[pos=.5] {7};
+        \draw[fill=pink] (7.2,-1) rectangle (7.8,-0.5) node[pos=.5] {8};
+    \end{tikzpicture}
+    \caption{数组和索引}
+\end{figure}
+
+如果我们要映射一个值到布隆过滤器中，我们需要使用多个不同的哈希函数生成多个哈希值，并对每个生成的哈希值指向的 bit 位置 1，例如针对值 “baidu” 和三个不同的哈希函数分别生成了哈希值 1、4、7，则上图转变为：
+
+\begin{figure}[htbp]
+    \centering
+\begin{tikzpicture}
+\draw[fill=green!40] (0,0) rectangle (1,1) node[pos=.5] {1};
+\draw (1,0) rectangle (2,1) node[pos=.5] {0};
+\draw (2,0) rectangle (3,1) node[pos=.5] {0};
+\draw[fill=green!40] (3,0) rectangle (4,1) node[pos=.5] {1};
+\draw (4,0) rectangle (5,1) node[pos=.5] {0};
+\draw (5,0) rectangle (6,1) node[pos=.5] {0};
+\draw[fill=green!40] (6,0) rectangle (7,1) node[pos=.5] {1};
+\draw (7,0) rectangle (8,1) node[pos=.5] {0};
+
+\draw[fill=pink] (0.2,-1) rectangle (0.8,-0.5) node[pos=.5] {1};
+\draw[fill=pink] (1.2,-1) rectangle (1.8,-0.5) node[pos=.5] {2};
+\draw[fill=pink] (2.2,-1) rectangle (2.8,-0.5) node[pos=.5] {3};
+\draw[fill=pink] (3.2,-1) rectangle (3.8,-0.5) node[pos=.5] {4};
+\draw[fill=pink] (4.2,-1) rectangle (4.8,-0.5) node[pos=.5] {5};
+\draw[fill=pink] (5.2,-1) rectangle (5.8,-0.5) node[pos=.5] {6};
+\draw[fill=pink] (6.2,-1) rectangle (6.8,-0.5) node[pos=.5] {7};
+\draw[fill=pink] (7.2,-1) rectangle (7.8,-0.5) node[pos=.5] {8};
+
+\draw[fill=blue!30] (3,5) rectangle (5,6) node[pos=.5] {baidu};
+
+\draw[->] (4,5) -- (0.5,1);
+
+\draw[->] (4,5) -- (3.5,1);
+
+\draw[->] (4,5) -- (6.5,1);
+
+\node at  (2,3.5) {Hash1};
+
+\node at  (3,2.5) {Hash2};
+
+\node at  (6,3.5) {Hash3};
+
+\end{tikzpicture}
+    \caption{"baidu"来了之后}
+\end{figure}
+
+Ok，我们现在再存一个值 “tencent”，如果哈希函数返回 3、4、8 的话，图继续变为：
+
+\begin{figure}[htbp]
+    \centering
+\begin{tikzpicture}
+\draw[fill=green!40] (0,0) rectangle (1,1) node[pos=.5] {1};
+\draw (1,0) rectangle (2,1) node[pos=.5] {0};
+\draw[fill=purple!60] (2,0) rectangle (3,1) node[pos=.5] {1};
+\draw[fill=purple!60] (3,0) rectangle (4,1) node[pos=.5] {1};
+\draw (4,0) rectangle (5,1) node[pos=.5] {0};
+\draw (5,0) rectangle (6,1) node[pos=.5] {0};
+\draw[fill=green!40] (6,0) rectangle (7,1) node[pos=.5] {1};
+\draw[fill=purple!60] (7,0) rectangle (8,1) node[pos=.5] {1};
+
+\draw[fill=pink] (0.2,-1) rectangle (0.8,-0.5) node[pos=.5] {1};
+\draw[fill=pink] (1.2,-1) rectangle (1.8,-0.5) node[pos=.5] {2};
+\draw[fill=pink] (2.2,-1) rectangle (2.8,-0.5) node[pos=.5] {3};
+\draw[fill=pink] (3.2,-1) rectangle (3.8,-0.5) node[pos=.5] {4};
+\draw[fill=pink] (4.2,-1) rectangle (4.8,-0.5) node[pos=.5] {5};
+\draw[fill=pink] (5.2,-1) rectangle (5.8,-0.5) node[pos=.5] {6};
+\draw[fill=pink] (6.2,-1) rectangle (6.8,-0.5) node[pos=.5] {7};
+\draw[fill=pink] (7.2,-1) rectangle (7.8,-0.5) node[pos=.5] {8};
+
+\draw[fill=blue!30] (3,5) rectangle (5,6) node[pos=.5] {tencent};
+
+\draw[->] (4,5) -- (2.5,1);
+
+\draw[->] (4,5) -- (3.5,1);
+
+\draw[->] (4,5) -- (7.5,1);
+
+\node at  (2.8,3.5) {Hash1};
+
+\node at  (4.4,2.5) {Hash2};
+
+\node at  (6,3.5) {Hash3};
+
+\end{tikzpicture}
+    \caption{"tencent"来了之后}
+\end{figure}
+
+值得注意的是，4 这个 bit 位由于两个值的哈希函数都返回了这个 bit 位，因此它被覆盖了。现在我们如果想查询 “dianping” 这个值是否存在，哈希函数返回了 1、5、8三个值，结果我们发现 5 这个 bit 位上的值为 0，说明没有任何一个值映射到这个 bit 位上，因此我们可以很确定地说 “dianping” 这个值不存在。而当我们需要查询 “baidu” 这个值是否存在的话，那么哈希函数必然会返回 1、4、7，然后我们检查发现这三个 bit 位上的值均为 1，那么我们可以说 “baidu” 存在了么？答案是不可以，只能是 “baidu” 这个值可能存在。
+
+这是为什么呢？答案跟简单，因为随着增加的值越来越多，被置为 1 的 bit 位也会越来越多，这样某个值 “taobao” 即使没有被存储过，但是万一哈希函数返回的三个 bit 位都被其他值置位了 1 ，那么程序还是会判断 “taobao” 这个值存在。
+
+\textbf{如何选择哈希函数个数和布隆过滤器长度}
+
+很显然，过小的布隆过滤器很快所有的 bit 位均为 1，那么查询任何值都会返回“可能存在”，起不到过滤的目的了。布隆过滤器的长度会直接影响误报率，布隆过滤器越长其误报率越小。
+
+另外，哈希函数的个数也需要权衡，个数越多则布隆过滤器 bit 位置位 1 的速度越快，且布隆过滤器的效率越低；但是如果太少的话，那我们的误报率会变高。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/bloomfilter.png}
+    \caption{参数的影响}
+\end{figure}
+
+如何选择适合业务的 k 和 m 值呢，这里直接贴一个公式：
+
+\begin{align}
+    m = - \frac{n \ln p}{(\ln 2)^2} \\
+    k = \frac{m}{n} \ln 2
+\end{align}
+
+如何推导这个公式这里只是提一句，因为对于使用来说并没有太大的意义，你让一个高中生来推会推得很快。k 次哈希函数某一 bit 位未被置为 1 的概率为：
+
+\begin{equation}
+    (1 - \frac{1}{m})^k
+\end{equation}
+
+插入n个元素后依旧为 0 的概率和为 1 的概率分别是：
+
+$(1 - \frac{1}{m})^{nk}$和$1-(1-\frac{1}{m})^{nk}$。
+
+标明某个元素是否在集合中所需的 k 个位置都按照如上的方法设置为 1，但是该方法可能会使算法错误的认为某一原本不在集合中的元素却被检测为在该集合中（False Positives），该概率由以下公式确定
+
+\begin{equation}
+    [1-(1-\frac{1}{m})^{nk}]^k \approx (1 - e^{\frac{-kn}{m}})^k
+\end{equation}
+
+\textbf{最佳实践}
+
+常见的适用常见有，利用布隆过滤器减少磁盘 IO 或者网络请求，因为一旦一个值必定不存在的话，我们可以不用进行后续昂贵的查询请求。
+
+另外，既然你使用布隆过滤器来加速查找和判断是否存在，那么性能很低的哈希函数不是个好选择，推荐 MurmurHash、Fnv 这些。
+
+\textit{大Value拆分}
+
+Redis 因其支持 setbit 和 getbit 操作，且纯内存性能高等特点，因此天然就可以作为布隆过滤器来使用。但是布隆过滤器的不当使用极易产生大 Value，增加 Redis 阻塞风险，因此生成环境中建议对体积庞大的布隆过滤器进行拆分。
+
+拆分的形式方法多种多样，但是本质是不要将 Hash(Key) 之后的请求分散在多个节点的多个小 bitmap 上，而是应该拆分成多个小 bitmap 之后，对一个 Key 的所有哈希函数都落在这一个小 bitmap 上。
+
 \subsection{布隆过滤器版}
 
 \begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
@@ -5525,6 +5701,11 @@ public class OrderTimeoutDetectWithoutCEP {
         env.execute();
     }
 }
+\end{minted}
+
+\section{实时对帐}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
 \end{minted}
 
 \end{document}
