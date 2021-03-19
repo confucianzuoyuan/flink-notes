@@ -5860,6 +5860,362 @@ public class OrderTimeoutDetectWithoutCEP {
 \section{实时对帐}
 
 \begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class TwoStreamJoin {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<Tuple3<String, String, Long>> orderStream = env
+                .fromElements(
+                        Tuple3.of("order-1", "pay", 1000L),
+                        Tuple3.of("order-2", "pay", 2000L)
+                )
+                .assignTimestampsAndWatermarks(WatermarkStrategy.<Tuple3<String, String, Long>>forMonotonousTimestamps()
+                        .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, String, Long>>() {
+                            @Override
+                            public long extractTimestamp(Tuple3<String, String, Long> element, long recordTimestamp) {
+                                return element.f2;
+                            }
+                        }));
+
+        SingleOutputStreamOperator<Tuple3<String, String, Long>> payStream = env
+                .fromElements(
+                        Tuple3.of("order-1", "weixin", 3000L),
+                        Tuple3.of("order-3", "weixin", 4000L)
+                )
+                .assignTimestampsAndWatermarks(WatermarkStrategy.<Tuple3<String, String, Long>>forMonotonousTimestamps()
+                        .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, String, Long>>() {
+                            @Override
+                            public long extractTimestamp(Tuple3<String, String, Long> element, long recordTimestamp) {
+                                return element.f2;
+                            }
+                        }));
+
+        SingleOutputStreamOperator<String> result = orderStream
+                .keyBy(r -> r.f0)
+                .connect(payStream.keyBy(r -> r.f0))
+                .process(new MatchFunction());
+
+        result.print();
+
+        env.execute();
+    }
+
+    public static class MatchFunction extends CoProcessFunction<Tuple3<String, String, Long>, Tuple3<String, String, Long>, String> {
+        private ValueState<Tuple3<String, String, Long>> orderState;
+        private ValueState<Tuple3<String, String, Long>> payState;
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            super.open(parameters);
+            orderState = getRuntimeContext().getState(new ValueStateDescriptor<Tuple3<String, String, Long>>("order", Types.TUPLE(Types.STRING, Types.STRING, Types.LONG)));
+            payState = getRuntimeContext().getState(new ValueStateDescriptor<Tuple3<String, String, Long>>("pay", Types.TUPLE(Types.STRING, Types.STRING, Types.LONG)));
+        }
+
+        @Override
+        public void processElement1(Tuple3<String, String, Long> value, Context ctx, Collector<String> out) throws Exception {
+            if (payState.value() != null) {
+                out.collect("订单" + value.f0 + "对账成功");
+                payState.clear();
+            } else {
+                orderState.update(value); // 说明app端支付事件先到了
+                ctx.timerService().registerEventTimeTimer(value.f2 + 5000L); // order事件等待pay事件5秒钟
+            }
+        }
+
+        @Override
+        public void processElement2(Tuple3<String, String, Long> value, Context ctx, Collector<String> out) throws Exception {
+            if (orderState.value() != null) {
+                out.collect("订单" + value.f0 + "对账成功");
+                orderState.clear();
+            } else {
+                payState.update(value);
+                ctx.timerService().registerEventTimeTimer(value.f2 + 5000L); // pay事件等待order事件5秒钟
+            }
+        }
+
+        @Override
+        public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+            super.onTimer(timestamp, ctx, out);
+            if (orderState.value() != null) {
+                out.collect("订单" + orderState.value().f0 + "对账失败");
+                orderState.clear();
+            }
+            if (payState.value() != null) {
+                out.collect("订单" + payState.value().f0 + "对账失败");
+                payState.clear();
+            }
+        }
+    }
+}
+\end{minted}
+
+\section{实时热门商品}
+
+\subsection{底层API实现方式}
+
+\textit{UserBehavior POJO类}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// 用户行为的每一条数据就是一个POJO类
+public class UserBehavior {
+    public String userId;
+    public String itemId;
+    public String categoryId;
+    public String behaviorType;
+    public Long timestamp;
+
+    public UserBehavior() {
+    }
+
+    public UserBehavior(String userId, String itemId, String categoryId, String behaviorType, Long timestamp) {
+        this.userId = userId;
+        this.itemId = itemId;
+        this.categoryId = categoryId;
+        this.behaviorType = behaviorType;
+        this.timestamp = timestamp;
+    }
+
+    @Override
+    public String toString() {
+        return "UserBehavior{" +
+                "userId='" + userId + '\'' +
+                ", itemId='" + itemId + '\'' +
+                ", categoryId='" + categoryId + '\'' +
+                ", behaviorType='" + behaviorType + '\'' +
+                ", timestamp=" + new Timestamp(timestamp) +
+                '}';
+    }
+}
+\end{minted}
+
+\textit{ItemViewCount POJO类}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// 每个窗口里面，商品ID的PV数据
+public class ItemViewCount {
+    public String itemId;
+    public Long count; // pv 数据
+    public Long windowStart;
+    public Long windowEnd;
+
+    public ItemViewCount() {
+    }
+
+    public ItemViewCount(String itemId, Long count, Long windowStart, Long windowEnd) {
+        this.itemId = itemId;
+        this.count = count;
+        this.windowStart = windowStart;
+        this.windowEnd = windowEnd;
+    }
+
+    @Override
+    public String toString() {
+        return "ItemViewCount{" +
+                "itemId='" + itemId + '\'' +
+                ", count=" + count +
+                ", windowStart=" + new Timestamp(windowStart) +
+                ", windowEnd=" + new Timestamp(windowEnd) +
+                '}';
+    }
+}
+\end{minted}
+
+\textit{主体程序}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class TopNHotItems {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<UserBehavior> userBehaviorStream = env
+                .readTextFile("/Users/yuanzuo/Desktop/Flink1125SH/src/main/resources/UserBehavior.csv")
+                .map(new MapFunction<String, UserBehavior>() {
+                    @Override
+                    public UserBehavior map(String value) throws Exception {
+                        String[] arr = value.split(",");
+                        return new UserBehavior(
+                                arr[0], arr[1], arr[2], arr[3],
+                                Long.parseLong(arr[4]) * 1000L
+                        );
+                    }
+                })
+                .filter(r -> r.behaviorType.equals("pv"))
+                // 对于离线数据集来讲，flink只会插入连个水位线，开始的负无穷大，末尾的正无穷大
+                .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+                        .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                            @Override
+                            public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                                return element.timestamp;
+                            }
+                        }));
+
+        SingleOutputStreamOperator<ItemViewCount> itemViewCountStream = userBehaviorStream
+                .keyBy(r -> r.itemId)
+                // 进到了窗口的数据有什么特点？
+                // 相同的itemId
+                .window(SlidingEventTimeWindows.of(Time.hours(1), Time.minutes(5)))
+                .aggregate(new CountAgg(), new WindowResult());
+
+        SingleOutputStreamOperator<String> result = itemViewCountStream
+                // 每一条支流，属于同一个窗口的不同itemid的pv数量
+                .keyBy(r -> r.windowEnd)
+                .process(new TopN(3L));
+
+        result.print();
+
+        env.execute();
+    }
+
+    public static class CountAgg implements AggregateFunction<UserBehavior, Long, Long> {
+        @Override
+        public Long createAccumulator() {
+            return 0L;
+        }
+
+        @Override
+        public Long add(UserBehavior value, Long accumulator) {
+            return accumulator + 1L;
+        }
+
+        @Override
+        public Long getResult(Long accumulator) {
+            return accumulator;
+        }
+
+        @Override
+        public Long merge(Long a, Long b) {
+            return null;
+        }
+    }
+
+    public static class WindowResult extends ProcessWindowFunction<Long, ItemViewCount, String, TimeWindow> {
+        @Override
+        public void process(String itemId, Context ctx, Iterable<Long> elements, Collector<ItemViewCount> out) throws Exception {
+            out.collect(new ItemViewCount(itemId, elements.iterator().next(), ctx.window().getStart(), ctx.window().getEnd()));
+        }
+    }
+
+    public static class TopN extends KeyedProcessFunction<Long, ItemViewCount, String> {
+        public Long threshold;
+
+        public ListState<ItemViewCount> itemViewCountListState;
+
+        public TopN(Long threshold) {
+            this.threshold = threshold;
+        }
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            super.open(parameters);
+            itemViewCountListState = getRuntimeContext().getListState(
+                    new ListStateDescriptor<ItemViewCount>("list", Types.POJO(ItemViewCount.class))
+            );
+        }
+
+        @Override
+        public void processElement(ItemViewCount value, Context ctx, Collector<String> out) throws Exception {
+            itemViewCountListState.add(value);
+            // 某一个时间戳只能注册一个定时器
+            // 所以这里只会在第一条数据到来的时候注册一个定时器
+            ctx.timerService().registerEventTimeTimer(value.windowEnd + 1L);
+        }
+
+        @Override
+        public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+            super.onTimer(timestamp, ctx, out);
+            // 定时器用来排序
+            ArrayList<ItemViewCount> itemViewCountArrayList = new ArrayList<>();
+            for (ItemViewCount ivc : itemViewCountListState.get()) {
+                itemViewCountArrayList.add(ivc);
+            }
+            // 清空列表状态变量
+            itemViewCountListState.clear();
+
+            // 排序
+            itemViewCountArrayList.sort(new Comparator<ItemViewCount>() {
+                @Override
+                public int compare(ItemViewCount o1, ItemViewCount o2) {
+                    return o2.count.intValue() - o1.count.intValue();
+                }
+            });
+
+            StringBuilder result = new StringBuilder();
+
+            result
+                    .append("====================================\n")
+                    .append("窗口结束时间：")
+                    .append(new Timestamp(timestamp - 1L)) // 恢复窗口结束时间
+                    .append("\n");
+
+            for (int i = 0; i < this.threshold; i++) {
+                ItemViewCount itemViewCount = itemViewCountArrayList.get(i);
+                result
+                        .append("第" + (i + 1) + "名商品的ID是：" + itemViewCount.itemId)
+                        .append("\n")
+                        .append("PV数量是：" + itemViewCount.count)
+                        .append("\n");
+            }
+
+            result
+                    .append("====================================\n");
+            out.collect(result.toString());
+        }
+    }
+}
+\end{minted}
+
+\subsection{Flink SQL实现方式}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class TopNSQL {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<UserBehavior> stream = env
+                .readTextFile("UserBehavior.csv")
+                .map(new MapFunction<String, UserBehavior>() {
+                    @Override
+                    public UserBehavior map(String value) throws Exception {
+                        String[] arr = value.split(",");
+                        return new UserBehavior(arr[0], arr[1], arr[2], arr[3], Long.parseLong(arr[4]) * 1000L);
+                    }
+                })
+                .filter(r -> r.behaviorType.equals("pv"))
+                .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+                        .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                            @Override
+                            public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                                return element.timestamp;
+                            }
+                        }));
+
+        // SQL
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+        tEnv.createTemporaryView("t", stream, $("itemId"), $("timestamp").rowtime().as("ts"));
+
+        // 按照itemid分流开窗聚合，结果是每一个itemid在每一个窗口的浏览量
+        String innerSQL = "SELECT itemId, COUNT(itemId) as itemCount, HOP_END(ts, INTERVAL '5' MINUTE, INTERVAL '1' HOUR) as windowEnd" +
+                " FROM t GROUP BY HOP(ts, INTERVAL '5' MINUTE, INTERVAL '1' HOUR), itemId";
+
+        // 按照windowEnd分区，然后按照浏览量降序排列
+        String midSQL = "SELECT *, ROW_NUMBER() OVER (PARTITION BY windowEnd ORDER BY itemCount DESC) as row_num" +
+                " FROM (" + innerSQL + ")";
+
+        // 取出前三名
+        String outerSQL = "SELECT * FROM (" + midSQL + ") WHERE row_num <= 3";
+
+        Table result = tEnv.sqlQuery(outerSQL);
+
+        tEnv.toRetractStream(result, Row.class).print();
+
+        env.execute();
+    }
+}
 \end{minted}
 
 \end{document}

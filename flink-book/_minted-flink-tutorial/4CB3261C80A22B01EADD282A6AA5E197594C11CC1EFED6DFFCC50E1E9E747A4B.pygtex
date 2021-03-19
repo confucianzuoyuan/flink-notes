@@ -1,0 +1,142 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{TopNHotItems} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{userBehaviorStream} \PYG{o}{=} \PYG{n}{env}
+                \PYG{p}{.}\PYG{n+na}{readTextFile}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}/Users/yuanzuo/Desktop/Flink1125SH/src/main/resources/UserBehavior.csv\PYGZdq{}}\PYG{p}{)}
+                \PYG{p}{.}\PYG{n+na}{map}\PYG{p}{(}\PYG{k}{new} \PYG{n}{MapFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{p}{,} \PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                    \PYG{n+nd}{@Override}
+                    \PYG{k+kd}{public} \PYG{n}{UserBehavior} \PYG{n+nf}{map}\PYG{p}{(}\PYG{n}{String} \PYG{n}{value}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+                        \PYG{n}{String}\PYG{o}{[]} \PYG{n}{arr} \PYG{o}{=} \PYG{n}{value}\PYG{p}{.}\PYG{n+na}{split}\PYG{p}{(}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{p}{);}
+                        \PYG{k}{return} \PYG{k}{new} \PYG{n}{UserBehavior}\PYG{p}{(}
+                                \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{0}\PYG{o}{]}\PYG{p}{,} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{1}\PYG{o}{]}\PYG{p}{,} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{2}\PYG{o}{]}\PYG{p}{,} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{3}\PYG{o}{]}\PYG{p}{,}
+                                \PYG{n}{Long}\PYG{p}{.}\PYG{n+na}{parseLong}\PYG{p}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{4}\PYG{o}{]}\PYG{p}{)} \PYG{o}{*} \PYG{l+m+mi}{1000L}
+                        \PYG{p}{);}
+                    \PYG{p}{\PYGZcb{}}
+                \PYG{p}{\PYGZcb{})}
+                \PYG{p}{.}\PYG{n+na}{filter}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{behaviorType}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{p}{))}
+                \PYG{c+c1}{// 对于离线数据集来讲，flink只会插入连个水位线，开始的负无穷大，末尾的正无穷大}
+                \PYG{p}{.}\PYG{n+na}{assignTimestampsAndWatermarks}\PYG{p}{(}\PYG{n}{WatermarkStrategy}\PYG{p}{.}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{n}{forMonotonousTimestamps}\PYG{p}{()}
+                        \PYG{p}{.}\PYG{n+na}{withTimestampAssigner}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SerializableTimestampAssigner}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                            \PYG{n+nd}{@Override}
+                            \PYG{k+kd}{public} \PYG{k+kt}{long} \PYG{n+nf}{extractTimestamp}\PYG{p}{(}\PYG{n}{UserBehavior} \PYG{n}{element}\PYG{p}{,} \PYG{k+kt}{long} \PYG{n}{recordTimestamp}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                                \PYG{k}{return} \PYG{n}{element}\PYG{p}{.}\PYG{n+na}{timestamp}\PYG{p}{;}
+                            \PYG{p}{\PYGZcb{}}
+                        \PYG{p}{\PYGZcb{}));}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}} \PYG{n}{itemViewCountStream} \PYG{o}{=} \PYG{n}{userBehaviorStream}
+                \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{itemId}\PYG{p}{)}
+                \PYG{c+c1}{// 进到了窗口的数据有什么特点？}
+                \PYG{c+c1}{// 相同的itemId}
+                \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{SlidingEventTimeWindows}\PYG{p}{.}\PYG{n+na}{of}\PYG{p}{(}\PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{hours}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{),} \PYG{n}{Time}\PYG{p}{.}\PYG{n+na}{minutes}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{)))}
+                \PYG{p}{.}\PYG{n+na}{aggregate}\PYG{p}{(}\PYG{k}{new} \PYG{n}{CountAgg}\PYG{p}{(),} \PYG{k}{new} \PYG{n}{WindowResult}\PYG{p}{());}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{result} \PYG{o}{=} \PYG{n}{itemViewCountStream}
+                \PYG{c+c1}{// 每一条支流，属于同一个窗口的不同itemid的pv数量}
+                \PYG{p}{.}\PYG{n+na}{keyBy}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{windowEnd}\PYG{p}{)}
+                \PYG{p}{.}\PYG{n+na}{process}\PYG{p}{(}\PYG{k}{new} \PYG{n}{TopN}\PYG{p}{(}\PYG{l+m+mi}{3L}\PYG{p}{));}
+
+        \PYG{n}{result}\PYG{p}{.}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{CountAgg} \PYG{k+kd}{implements} \PYG{n}{AggregateFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{p}{,} \PYG{n}{Long}\PYG{p}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{createAccumulator}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{l+m+mi}{0}\PYG{n}{L}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{add}\PYG{p}{(}\PYG{n}{UserBehavior} \PYG{n}{value}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{accumulator}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{accumulator} \PYG{o}{+} \PYG{l+m+mi}{1L}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{getResult}\PYG{p}{(}\PYG{n}{Long} \PYG{n}{accumulator}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{accumulator}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{merge}\PYG{p}{(}\PYG{n}{Long} \PYG{n}{a}\PYG{p}{,} \PYG{n}{Long} \PYG{n}{b}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{return} \PYG{k+kc}{null}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{WindowResult} \PYG{k+kd}{extends} \PYG{n}{ProcessWindowFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{p}{,} \PYG{n}{ItemViewCount}\PYG{p}{,} \PYG{n}{String}\PYG{p}{,} \PYG{n}{TimeWindow}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{process}\PYG{p}{(}\PYG{n}{String} \PYG{n}{itemId}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{elements}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{n}{out}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{k}{new} \PYG{n}{ItemViewCount}\PYG{p}{(}\PYG{n}{itemId}\PYG{p}{,} \PYG{n}{elements}\PYG{p}{.}\PYG{n+na}{iterator}\PYG{p}{().}\PYG{n+na}{next}\PYG{p}{(),} \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{window}\PYG{p}{().}\PYG{n+na}{getStart}\PYG{p}{(),} \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{window}\PYG{p}{().}\PYG{n+na}{getEnd}\PYG{p}{()));}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{TopN} \PYG{k+kd}{extends} \PYG{n}{KeyedProcessFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{p}{,} \PYG{n}{ItemViewCount}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{p}{\PYGZob{}}
+        \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{threshold}\PYG{p}{;}
+
+        \PYG{k+kd}{public} \PYG{n}{ListState}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}} \PYG{n}{itemViewCountListState}\PYG{p}{;}
+
+        \PYG{k+kd}{public} \PYG{n+nf}{TopN}\PYG{p}{(}\PYG{n}{Long} \PYG{n}{threshold}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+            \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{threshold} \PYG{o}{=} \PYG{n}{threshold}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{open}\PYG{p}{(}\PYG{n}{Configuration} \PYG{n}{parameters}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{open}\PYG{p}{(}\PYG{n}{parameters}\PYG{p}{);}
+            \PYG{n}{itemViewCountListState} \PYG{o}{=} \PYG{n}{getRuntimeContext}\PYG{p}{().}\PYG{n+na}{getListState}\PYG{p}{(}
+                    \PYG{k}{new} \PYG{n}{ListStateDescriptor}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}list\PYGZdq{}}\PYG{p}{,} \PYG{n}{Types}\PYG{p}{.}\PYG{n+na}{POJO}\PYG{p}{(}\PYG{n}{ItemViewCount}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{))}
+            \PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{processElement}\PYG{p}{(}\PYG{n}{ItemViewCount} \PYG{n}{value}\PYG{p}{,} \PYG{n}{Context} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{n}{itemViewCountListState}\PYG{p}{.}\PYG{n+na}{add}\PYG{p}{(}\PYG{n}{value}\PYG{p}{);}
+            \PYG{c+c1}{// 某一个时间戳只能注册一个定时器}
+            \PYG{c+c1}{// 所以这里只会在第一条数据到来的时候注册一个定时器}
+            \PYG{n}{ctx}\PYG{p}{.}\PYG{n+na}{timerService}\PYG{p}{().}\PYG{n+na}{registerEventTimeTimer}\PYG{p}{(}\PYG{n}{value}\PYG{p}{.}\PYG{n+na}{windowEnd} \PYG{o}{+} \PYG{l+m+mi}{1L}\PYG{p}{);}
+        \PYG{p}{\PYGZcb{}}
+
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{onTimer}\PYG{p}{(}\PYG{k+kt}{long} \PYG{n}{timestamp}\PYG{p}{,} \PYG{n}{OnTimerContext} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+            \PYG{k+kd}{super}\PYG{p}{.}\PYG{n+na}{onTimer}\PYG{p}{(}\PYG{n}{timestamp}\PYG{p}{,} \PYG{n}{ctx}\PYG{p}{,} \PYG{n}{out}\PYG{p}{);}
+            \PYG{c+c1}{// 定时器用来排序}
+            \PYG{n}{ArrayList}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}} \PYG{n}{itemViewCountArrayList} \PYG{o}{=} \PYG{k}{new} \PYG{n}{ArrayList}\PYG{o}{\PYGZlt{}\PYGZgt{}}\PYG{p}{();}
+            \PYG{k}{for} \PYG{p}{(}\PYG{n}{ItemViewCount} \PYG{n}{ivc} \PYG{p}{:} \PYG{n}{itemViewCountListState}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{())} \PYG{p}{\PYGZob{}}
+                \PYG{n}{itemViewCountArrayList}\PYG{p}{.}\PYG{n+na}{add}\PYG{p}{(}\PYG{n}{ivc}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}}
+            \PYG{c+c1}{// 清空列表状态变量}
+            \PYG{n}{itemViewCountListState}\PYG{p}{.}\PYG{n+na}{clear}\PYG{p}{();}
+
+            \PYG{c+c1}{// 排序}
+            \PYG{n}{itemViewCountArrayList}\PYG{p}{.}\PYG{n+na}{sort}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Comparator}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}}\PYG{p}{()} \PYG{p}{\PYGZob{}}
+                \PYG{n+nd}{@Override}
+                \PYG{k+kd}{public} \PYG{k+kt}{int} \PYG{n+nf}{compare}\PYG{p}{(}\PYG{n}{ItemViewCount} \PYG{n}{o1}\PYG{p}{,} \PYG{n}{ItemViewCount} \PYG{n}{o2}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                    \PYG{k}{return} \PYG{n}{o2}\PYG{p}{.}\PYG{n+na}{count}\PYG{p}{.}\PYG{n+na}{intValue}\PYG{p}{()} \PYG{o}{\PYGZhy{}} \PYG{n}{o1}\PYG{p}{.}\PYG{n+na}{count}\PYG{p}{.}\PYG{n+na}{intValue}\PYG{p}{();}
+                \PYG{p}{\PYGZcb{}}
+            \PYG{p}{\PYGZcb{});}
+
+            \PYG{n}{StringBuilder} \PYG{n}{result} \PYG{o}{=} \PYG{k}{new} \PYG{n}{StringBuilder}\PYG{p}{();}
+
+            \PYG{n}{result}
+                    \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}====================================\PYGZbs{}n\PYGZdq{}}\PYG{p}{)}
+                    \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}窗口结束时间：\PYGZdq{}}\PYG{p}{)}
+                    \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{k}{new} \PYG{n}{Timestamp}\PYG{p}{(}\PYG{n}{timestamp} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1L}\PYG{p}{))} \PYG{c+c1}{// 恢复窗口结束时间}
+                    \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}\PYGZbs{}n\PYGZdq{}}\PYG{p}{);}
+
+            \PYG{k}{for} \PYG{p}{(}\PYG{k+kt}{int} \PYG{n}{i} \PYG{o}{=} \PYG{l+m+mi}{0}\PYG{p}{;} \PYG{n}{i} \PYG{o}{\PYGZlt{}} \PYG{k}{this}\PYG{p}{.}\PYG{n+na}{threshold}\PYG{p}{;} \PYG{n}{i}\PYG{o}{++}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+                \PYG{n}{ItemViewCount} \PYG{n}{itemViewCount} \PYG{o}{=} \PYG{n}{itemViewCountArrayList}\PYG{p}{.}\PYG{n+na}{get}\PYG{p}{(}\PYG{n}{i}\PYG{p}{);}
+                \PYG{n}{result}
+                        \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}第\PYGZdq{}} \PYG{o}{+} \PYG{p}{(}\PYG{n}{i} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{)} \PYG{o}{+} \PYG{l+s}{\PYGZdq{}名商品的ID是：\PYGZdq{}} \PYG{o}{+} \PYG{n}{itemViewCount}\PYG{p}{.}\PYG{n+na}{itemId}\PYG{p}{)}
+                        \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}\PYGZbs{}n\PYGZdq{}}\PYG{p}{)}
+                        \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}PV数量是：\PYGZdq{}} \PYG{o}{+} \PYG{n}{itemViewCount}\PYG{p}{.}\PYG{n+na}{count}\PYG{p}{)}
+                        \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}\PYGZbs{}n\PYGZdq{}}\PYG{p}{);}
+            \PYG{p}{\PYGZcb{}}
+
+            \PYG{n}{result}
+                    \PYG{p}{.}\PYG{n+na}{append}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}====================================\PYGZbs{}n\PYGZdq{}}\PYG{p}{);}
+            \PYG{n}{out}\PYG{p}{.}\PYG{n+na}{collect}\PYG{p}{(}\PYG{n}{result}\PYG{p}{.}\PYG{n+na}{toString}\PYG{p}{());}
+        \PYG{p}{\PYGZcb{}}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}
