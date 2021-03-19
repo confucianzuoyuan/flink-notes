@@ -1,0 +1,34 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{c+c1}{// 处理时间，10s滚动窗口的温度平均值}
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{AvgTempPerWindow} \PYG{p}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{p}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{p}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{p}{\PYGZob{}}
+        \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setParallelism}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{);}
+
+        \PYG{n}{EnvironmentSettings} \PYG{n}{settings} \PYG{o}{=} \PYG{n}{EnvironmentSettings}\PYG{p}{.}\PYG{n+na}{newInstance}\PYG{p}{().}\PYG{n+na}{inStreamingMode}\PYG{p}{().}\PYG{n+na}{build}\PYG{p}{();}
+
+        \PYG{n}{StreamTableEnvironment} \PYG{n}{tEnv} \PYG{o}{=} \PYG{n}{StreamTableEnvironment}\PYG{p}{.}\PYG{n+na}{create}\PYG{p}{(}\PYG{n}{env}\PYG{p}{,} \PYG{n}{settings}\PYG{p}{);}
+
+        \PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{addSource}\PYG{p}{(}\PYG{k}{new} \PYG{n}{SensorSource}\PYG{p}{()).}\PYG{n+na}{filter}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{id}\PYG{p}{.}\PYG{n+na}{equals}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}sensor\PYGZus{}1\PYGZdq{}}\PYG{p}{));}
+
+        \PYG{c+c1}{// 添加处理时间字段}
+        \PYG{n}{Table} \PYG{n}{table} \PYG{o}{=} \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{fromDataStream}\PYG{p}{(}\PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}id\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}temperature\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}temp\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}timestamp\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}ts\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}ptime\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{proctime}\PYG{p}{());}
+
+        \PYG{n}{Table} \PYG{n}{tableResult} \PYG{o}{=} \PYG{n}{table}
+                \PYG{p}{.}\PYG{n+na}{window}\PYG{p}{(}\PYG{n}{Tumble}\PYG{p}{.}\PYG{n+na}{over}\PYG{p}{(}\PYG{n}{lit}\PYG{p}{(}\PYG{l+m+mi}{10}\PYG{p}{).}\PYG{n+na}{seconds}\PYG{p}{()).}\PYG{n+na}{on}\PYG{p}{(}\PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}ptime\PYGZdq{}}\PYG{p}{)).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}w\PYGZdq{}}\PYG{p}{))}
+                \PYG{p}{.}\PYG{n+na}{groupBy}\PYG{p}{(}\PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}id\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}w\PYGZdq{}}\PYG{p}{))}
+                \PYG{p}{.}\PYG{n+na}{select}\PYG{p}{(}\PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}id\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}temp\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{avg}\PYG{p}{(),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}w\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{end}\PYG{p}{());}
+
+        \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{toRetractStream}\PYG{p}{(}\PYG{n}{tableResult}\PYG{p}{,} \PYG{n}{Row}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{).}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{c+c1}{// SQL}
+
+        \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{createTemporaryView}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}sensor\PYGZdq{}}\PYG{p}{,} \PYG{n}{stream}\PYG{p}{,} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}id\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}temperature\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}temp\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}timestamp\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{as}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}ts\PYGZdq{}}\PYG{p}{),} \PYG{n}{\PYGZdl{}}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}ptime\PYGZdq{}}\PYG{p}{).}\PYG{n+na}{proctime}\PYG{p}{());}
+        \PYG{n}{Table} \PYG{n}{sqlResult} \PYG{o}{=} \PYG{n}{tEnv}
+                \PYG{p}{.}\PYG{n+na}{sqlQuery}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}SELECT id, AVG(temp), TUMBLE\PYGZus{}START(ptime, INTERVAL \PYGZsq{}10\PYGZsq{} SECOND), TUMBLE\PYGZus{}END(ptime, INTERVAL \PYGZsq{}10\PYGZsq{} SECOND) FROM sensor GROUP BY id, TUMBLE(ptime, INTERVAL \PYGZsq{}10\PYGZsq{} SECOND)\PYGZdq{}}\PYG{p}{);}
+        \PYG{n}{tEnv}\PYG{p}{.}\PYG{n+na}{toRetractStream}\PYG{p}{(}\PYG{n}{sqlResult}\PYG{p}{,} \PYG{n}{Row}\PYG{p}{.}\PYG{n+na}{class}\PYG{p}{).}\PYG{n+na}{print}\PYG{p}{();}
+
+        \PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{();}
+    \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

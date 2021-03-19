@@ -5015,18 +5015,6 @@ Flink 可以基于几种不同的 时间 概念来处理数据。
 
 只要时间属性没有被修改，而是简单地从一个表传递到另一个表，它就仍然是一个有效的时间属性。时间属性可以像普通的时间戳的列一样被使用和计算。一旦时间属性被用在了计算中，它就会被物化，进而变成一个普通的时间戳。普通的时间戳是无法跟 Flink 的时间以及watermark等一起使用的，所以普通的时间戳就无法用在时间相关的操作中。
 
-Table API 程序需要在 streaming environment 中指定时间属性：
-
-\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
-final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-env.setStreamTimeCharacteristic(TimeCharacteristic.ProcessingTime); // default
-
-// 或者:
-// env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);
-// env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-\end{minted}
-
 \textbf{处理时间}
 
 处理时间是基于机器的本地时间来处理数据，它是最简单的一种时间概念，但是它不能提供确定性。它既不需要从数据里获取时间，也不需要生成 watermark。
@@ -5134,6 +5122,172 @@ WindowedTable windowedTable = table.window(Tumble
        .over(lit(10).minutes())
        .on($("user_action_time"))
        .as("userActionWindow"));
+\end{minted}
+
+\section{例子}
+
+\subsection{分流求平均值}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class AvgTemp {
+    public static void main(String[] args) throws Exception {
+        // 获取流执行环境
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        // 表环境配置
+        EnvironmentSettings settings = EnvironmentSettings
+                .newInstance()
+                .inStreamingMode()
+                .build();
+
+        // 获取表环境
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+        SingleOutputStreamOperator<SensorReading> stream = env.addSource(new SensorSource()).filter(r -> r.id.equals("sensor_1"));
+
+        // Table API
+        // 将DataStream转换成Table
+        Table table = tEnv.fromDataStream(stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"));
+
+        // 查询
+        Table tableResult = table
+                .groupBy($("id"))
+                .select($("id"), $("temp").avg());
+
+        // 将Table转换成DataStream[Row]
+        // 只要查询中有聚合操作，必须使用toRetractStream
+        tEnv.toRetractStream(tableResult, Row.class).print();
+
+        // SQL
+
+        // 将DataStream转换成临时视图
+        tEnv.createTemporaryView("sensor", stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"));
+
+        // 查询
+        Table sqlResult = tEnv
+                .sqlQuery("SELECT id, AVG(temp) FROM sensor GROUP BY id");
+
+        // 转换成DataStream
+        tEnv.toRetractStream(sqlResult, Row.class).print();
+
+        // 别忘了执行
+        env.execute();
+    }
+}
+\end{minted}
+
+\subsection{求窗口温度平均值}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+// 处理时间，10s滚动窗口的温度平均值
+public class AvgTempPerWindow {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+        SingleOutputStreamOperator<SensorReading> stream = env.addSource(new SensorSource()).filter(r -> r.id.equals("sensor_1"));
+
+        // 添加处理时间字段
+        Table table = tEnv.fromDataStream(stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"), $("ptime").proctime());
+
+        Table tableResult = table
+                .window(Tumble.over(lit(10).seconds()).on($("ptime")).as("w"))
+                .groupBy($("id"), $("w"))
+                .select($("id"), $("temp").avg(), $("w").end());
+
+        tEnv.toRetractStream(tableResult, Row.class).print();
+
+        // SQL
+
+        tEnv.createTemporaryView("sensor", stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"), $("ptime").proctime());
+        Table sqlResult = tEnv
+                .sqlQuery("SELECT id, AVG(temp), TUMBLE_START(ptime, INTERVAL '10' SECOND), TUMBLE_END(ptime, INTERVAL '10' SECOND) FROM sensor GROUP BY id, TUMBLE(ptime, INTERVAL '10' SECOND)");
+        tEnv.toRetractStream(sqlResult, Row.class).print();
+
+        env.execute();
+    }
+}
+\end{minted}
+
+\subsection{追加流}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class AppendExample {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+        SingleOutputStreamOperator<SensorReading> stream = env.addSource(new SensorSource()).filter(r -> r.id.equals("sensor_1"));
+
+        Table table = tEnv.fromDataStream(stream);
+
+        Table result = table
+                .select($("id"), $("temperature"));
+
+        // 查询中没有聚合操作的情况下，使用toAppendStream
+        tEnv.toAppendStream(result, Row.class).print();
+
+        env.execute();
+
+    }
+}
+\end{minted}
+
+\subsection{事件时间例子}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+public class EventTimeExample {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<Tuple2<String, Long>> stream = env
+                .socketTextStream("localhost", 9999)
+                .map(new MapFunction<String, Tuple2<String, Long>>() {
+                    @Override
+                    public Tuple2<String, Long> map(String value) throws Exception {
+                        String[] arr = value.split(" ");
+                        return Tuple2.of(arr[0], Long.parseLong(arr[1]) * 1000L);
+                    }
+                })
+                .assignTimestampsAndWatermarks(WatermarkStrategy.<Tuple2<String, Long>>forMonotonousTimestamps()
+                        .withTimestampAssigner(new SerializableTimestampAssigner<Tuple2<String, Long>>() {
+                            @Override
+                            public long extractTimestamp(Tuple2<String, Long> element, long recordTimestamp) {
+                                return element.f1;
+                            }
+                        }));
+
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+        // .rowtime将字段指定为事件时间
+        Table table = tEnv.fromDataStream(stream, $("key"), $("ts").rowtime());
+        Table tableResult = table
+                .window(Tumble.over(lit(5).seconds()).on($("ts")).as("w"))
+                .groupBy($("key"), $("w"))
+                .select($("key"), $("key").count());
+
+        tEnv.toRetractStream(tableResult, Row.class).print();
+
+        // SQL
+        tEnv.createTemporaryView("t", stream, $("key"), $("ts").rowtime());
+        Table sqlResult = tEnv.sqlQuery("SELECT key, COUNT(key) FROM t GROUP BY key, TUMBLE(ts, INTERVAL '5' SECOND)");
+        tEnv.toRetractStream(sqlResult, Row.class).print();
+
+        env.execute();
+    }
+}
 \end{minted}
 
 \chapter{案例集}

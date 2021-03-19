@@ -1,9 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYG{k+kd}{final} \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{p}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{p}{();}
-
-\PYG{n}{env}\PYG{p}{.}\PYG{n+na}{setStreamTimeCharacteristic}\PYG{p}{(}\PYG{n}{TimeCharacteristic}\PYG{p}{.}\PYG{n+na}{ProcessingTime}\PYG{p}{);} \PYG{c+c1}{// default}
-
-\PYG{c+c1}{// 或者:}
-\PYG{c+c1}{// env.setStreamTimeCharacteristic(TimeCharacteristic.IngestionTime);}
-\PYG{c+c1}{// env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);}
-\end{Verbatim}
