@@ -1,5 +1,6 @@
 \documentclass[cn,11pt,chinese]{elegantbook}
 \usepackage{minted,tabularx,tikz}
+\usetikzlibrary{shapes,shapes.geometric}
 
 \setcounter{tocdepth}{2}
 
@@ -5950,6 +5951,116 @@ public class TwoStreamJoin {
 \end{minted}
 
 \section{实时热门商品}
+
+\subsection{实现思路}
+
+\begin{figure}[htbp]
+    \centering
+	\begin{tikzpicture}
+		
+		\node[draw] at (-2.5,10.25) {DataStream};
+		
+		\node[draw] at (-2.5,7.75) {KeyedStream};
+		
+		\node[draw] at (-2.5,5.25) {WindowedStream};
+		
+		\node[draw] at (-2.5,2.75) {DataStream};
+		
+		\node[draw] at (-1.5,9) {分区};
+		
+		\node[draw] at (-1.5,6.5) {开窗};
+		
+		\node[draw] at (-1.5,4) {聚合};
+		
+		\draw (-3.5,9) circle [radius=0.3] node {1};
+		
+		\draw (-3.5,6.5) circle [radius=0.3] node {2};
+		
+		\draw (-3.5,4) circle [radius=0.3] node {3};
+		
+		\draw[fill=blue!40] (-0.5,10) rectangle (0,10.5);
+		
+		\draw[fill=blue!40] (-0.5,7.5) rectangle (0,8);
+		
+		\draw[fill=blue!40] (-0.5,5) rectangle (0,5.5);
+		
+		\draw[fill=orange!40] (0.5,4) rectangle (1,4.5);
+		
+		\draw[fill=orange!40] (1.5,4) rectangle (2,4.5);
+		
+		\draw[fill=orange!40] (3.5,4) rectangle (4,4.5);
+		
+		\draw[fill=blue!40,draw=red,line width=0.05cm] (-0.5,2.5) rectangle (0.5,3);
+		
+		\draw[fill=orange!40,draw=red,line width=0.05cm] (1,2.5) rectangle (2,3);
+		
+		\draw[fill=blue!40,draw=green,line width=0.05cm] (2.5,2.5) rectangle (3.5,3);
+		
+		\draw[fill=orange!40,draw=green,line width=0.05cm] (4,2.5) rectangle (5,3);
+		
+		\draw[fill=blue!40,draw=purple,line width=0.05cm] (5.5,2.5) rectangle (6.5,3);
+		
+		\draw[fill=orange!40,draw=purple,line width=0.05cm] (7,2.5) rectangle (8,3);
+		
+		\draw[fill=blue!40] (1.5,5) rectangle (2,5.5);
+		
+		\draw[fill=blue!40] (2.5,5) rectangle (3,5.5);
+		
+		\draw[fill=blue!40] (4.5,5) rectangle (5,5.5);
+		
+		\draw[fill=blue!40] (4.5,7.5) rectangle (5,8);
+		
+		\draw[fill=blue!40] (5.5,5) rectangle (6,5.5);
+		
+		\draw[fill=blue!40] (6.5,5) rectangle (7,5.5);
+		
+		\draw[fill=orange!40] (-0.5,6.5) rectangle (0,7);
+		
+		\draw[fill=orange!40] (0.5,6.5) rectangle (1,7);
+		
+		\draw[fill=orange!40] (1.5,6.5) rectangle (2,7);
+		
+		\draw[fill=blue!40] (0.5,10) rectangle (1,10.5);
+		
+		\draw[fill=blue!40] (0.5,7.5) rectangle (1,8);
+		
+		\draw[fill=orange!40] (1.5,10) rectangle (2,10.5);
+		
+		\draw[fill=blue!40] (1.5,7.5) rectangle (2,8);
+		
+		\draw[fill=blue!40] (2.5,10) rectangle (3,10.5);
+		
+		\draw[fill=blue!40] (2.5,7.5) rectangle (3,8);
+		
+		\draw[fill=orange!40] (3.5,10) rectangle (4,10.5);
+		
+		\draw[fill=blue!40] (3.5,7.5) rectangle (4,8);
+		
+		\draw[fill=blue!40] (4.5,10) rectangle (5,10.5);
+		
+		\draw[fill=orange!40] (5.5,10) rectangle (6,10.5);
+		
+		\draw[fill=blue!40] (6.5,10) rectangle (7,10.5);
+		
+		\draw[fill=orange!40] (7.5,10) rectangle (8,10.5);
+		
+		\draw[fill=blue!40] (8.5,10) rectangle (9,10.5);
+		
+		\draw[draw=red,line width=0.05cm] (-0.5,4) rectangle (3,5.5);
+		
+		\draw[draw=green,line width=0.05cm] (1.5,3.95) rectangle (5,5.45);
+		
+		\draw[draw=purple,line width=0.05cm] (3.5,3.9) rectangle (7,5.4);
+		
+		\draw[->,thick] (-2.5,10) -- (-2.5,8);
+		
+		\draw[->,thick] (-2.5,7.5) -- (-2.5,5.5);
+		
+		\draw[->,thick] (-2.5,5) -- (-2.5,3);
+		
+	\end{tikzpicture}
+    \caption{分流、开窗、聚合}
+\end{figure}
 
 \subsection{底层API实现方式}
 

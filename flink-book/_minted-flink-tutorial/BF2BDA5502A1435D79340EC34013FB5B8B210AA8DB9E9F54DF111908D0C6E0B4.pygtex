@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+    \PYG{p}{...}
+    \PYG{k}{if} \PYG{p}{(}\PYG{n}{is\PYGZus{}continuous}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}::}\PYG{n}{value} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{n}{value}\PYG{p}{.}\PYG{n}{size}\PYG{p}{()} \PYG{o}{==} \PYG{l+m+mi}{0}\PYG{p}{)}
+        \PYG{n}{ar}\PYG{p}{.}\PYG{n}{write}\PYG{p}{(}\PYG{n}{path}\PYG{p}{,} \PYG{k}{static\PYGZus{}cast}\PYG{o}{\PYGZlt{}}\PYG{k}{typename} \PYG{n+nc}{scalar\PYGZus{}type}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{::}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{p}{,} \PYG{n}{A}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZgt{}::}\PYG{n}{type} \PYG{k}{const} \PYG{o}{*\PYGZgt{}}\PYG{p}{(}\PYG{n+nb}{NULL}\PYG{p}{),} \PYG{n}{std}\PYG{o}{::}\PYG{n}{vector}\PYG{o}{\PYGZlt{}}\PYG{n}{std}\PYG{o}{::}\PYG{k+kt}{size\PYGZus{}t}\PYG{o}{\PYGZgt{}}\PYG{p}{());}
+    \PYG{k}{else} \PYG{n+nf}{if} \PYG{p}{(}\PYG{n}{is\PYGZus{}continuous}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}::}\PYG{n}{value}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+\end{Verbatim}
