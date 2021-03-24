@@ -6062,6 +6062,150 @@ public class TwoStreamJoin {
     \caption{分流、开窗、聚合}
 \end{figure}
 
+\textbf{先来做分流}
+
+\begin{minted}[frame=lines,framesep=2mm,linenos,breaklines,fontsize=\footnotesize]{java}
+.keyBy(r -> r.itemId)
+\end{minted}
+
+\begin{figure}[htbp]
+    \centering
+	\begin{tikzpicture}
+		
+		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,10) {itemid 1 \\ 10:01};
+		
+		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,8.5) {itemid 2 \\ 10:03};
+		
+		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,7) {itemid 1 \\ 10:04};
+		
+		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,5.5) {itemid 1 \\ 10:05};
+		
+		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,4) {itemid 2 \\ 10:05};
+		
+		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,2.5) {itemid 1 \\ 10:07};
+		
+		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,1) {itemid 2 \\ 10:09};
+		
+		\draw[->,line width=0.05cm] (0.5,5.5) -- (2.5,5.5);
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3.5,6.5) {itemid 1 \\ 10:01};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (6,6.5) {itemid 1 \\ 10:04};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8.5,6.5) {itemid 1 \\ 10:05};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (11,6.5) {itemid 1 \\ 10:07};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3.5,4.5) {itemid 2 \\ 10:03};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (6,4.5) {itemid 2 \\ 10:05};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8.5,4.5) {itemid 2 \\ 10:09};
+		
+	\end{tikzpicture}
+    \caption{分流}
+\end{figure}
+
+\textbf{开窗}
+
+\begin{figure}[htbp]
+    \centering
+	\begin{tikzpicture}
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-1.5,6.5) {itemid 1 \\ 10:01};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (2.5,6.5) {itemid 1 \\ 10:04};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5,6.5) {itemid 1 \\ 10:05};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (7.5,6.5) {itemid 1 \\ 10:07};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,4.5) {itemid 2 \\ 10:03};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5,4.5) {itemid 2 \\ 10:05};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (9.5,4.5) {itemid 2 \\ 10:09};
+		
+		\draw[red,line width=0.05cm] (-2.5,4) -- (-2.5,7);
+		
+		\draw[red,line width=0.05cm] (-2.5,7) -- (10.5,7);
+		
+		\draw[red,line width=0.05cm] (-2.5,4) -- (10.5,4);
+		
+		\draw[blue,line width=0.05cm] (4,3.95) -- (4,6.95);
+		
+		\draw[blue,line width=0.05cm] (4,6.95) -- (10.5,6.95);
+		
+		\draw[blue,line width=0.05cm] (4,3.95) -- (10.5,3.95);
+		
+		\draw[<->,line width=0.05cm,red] (-2.5,3) -- (10.5,3);
+		
+		\draw[<->,line width=0.05cm,blue] (4,2) -- (10.5,2);
+		
+		\node[draw] at (4,3.5) {SlidingWindow [10:00,11:00)};
+		
+		\node[draw] at (7.25,2.5) {SlidingWindow [10:05,11:05)};
+		
+	\end{tikzpicture}
+    \caption{开窗}
+\end{figure}
+
+\textbf{聚合}
+
+\begin{figure}[htbp]
+    \centering
+	\begin{tikzpicture}
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,6.5) {itemid 1 \\ 10:01};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3,6.5) {itemid 1 \\ 10:05};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5.5,6.5) {itemid 1 \\ 10:07};
+		
+		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8,6.5) {itemid 1 \\ 10:13};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,4.5) {itemid 2 \\ 10:03};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3,4.5) {itemid 2 \\ 10:05};
+		
+		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5.5,4.5) {itemid 2 \\ 10:09};
+		
+		\draw[->,line width=0.05cm] (4.25,4) -- (4.25,3);
+		
+		\node[rectangle,align=center,draw=black] at (0,2) {itemId 1 \\ window [10:00,11:00) \\ count 4};
+		
+		\node[rectangle,align=center,draw=black] at (0,0) {itemId 2 \\ window [10:00,11:00) \\ count 3};
+		
+		\node[rectangle,align=center,draw=black] at (4,2) {itemId 1 \\ window [10:05,11:05) \\ count 2};
+		
+		\node[rectangle,align=center,draw=black] at (4,0) {itemId 2 \\ window [10:05,11:05) \\ count 2};
+		
+		\node[rectangle,align=center,draw=black] at (8,2) {itemId 1 \\ window [10:10,11:10) \\ count 1};
+		
+	\end{tikzpicture}
+    \caption{聚合}
+\end{figure}
+
+\textbf{使用窗口结束时间分流}
+
+\begin{figure}[htbp]
+    \centering
+	\begin{tikzpicture}
+		
+		\node[rectangle,align=center,draw=red,line width=0.05cm] at (0,2) {itemId 1 \\ window [10:00,11:00) \\ count 4};
+		
+		\node[rectangle,align=center,draw=red,line width=0.05cm] at (0,0) {itemId 2 \\ window [10:00,11:00) \\ count 3};
+		
+		\node[rectangle,align=center,draw=blue,line width=0.05cm] at (4,2) {itemId 1 \\ window [10:05,11:05) \\ count 2};
+		
+		\node[rectangle,align=center,draw=blue,line width=0.05cm] at (4,0) {itemId 2 \\ window [10:05,11:05) \\ count 2};
+		
+		\node[rectangle,align=center,draw=purple,line width=0.05cm] at (8,2) {itemId 1 \\ window [10:10,11:10) \\ count 1};
+		
+	\end{tikzpicture}
+    \caption{继续分流}
+\end{figure}
+
 \subsection{底层API实现方式}
 
 \textit{UserBehavior POJO类}
