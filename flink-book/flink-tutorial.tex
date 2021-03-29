@@ -6208,7 +6208,46 @@ public class TwoStreamJoin {
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{keyby-windowEnd.pdf}
+    \begin{tikzpicture}
+        \draw [rounded corners,fill=gray!20,draw=blue,line width=0.05cm] (0,0) rectangle (2,1);
+\draw [rounded corners,fill=gray!20,draw=blue,line width=0.05cm] (3,0) rectangle (5,1);
+\draw [rounded corners,fill=gray!20,draw=blue,line width=0.05cm] (6,0) rectangle (8,1);
+
+\draw[->] (8.5,0.5) -- (10.5,0.5);
+
+\node (db1) [cylinder, 
+fill=gray!20,draw=blue,line width=0.05cm,
+shape border rotate=90, 
+draw,
+minimum height=1cm,
+minimum width=1cm] at (12,0.4) {};
+
+\draw [rounded corners,fill=gray!20,draw=red,line width=0.05cm] (0,-2) rectangle (2,-1);
+\draw [rounded corners,fill=gray!20,draw=red,line width=0.05cm] (3,-2) rectangle (5,-1);
+\draw [rounded corners,fill=gray!20,draw=red,line width=0.05cm] (6,-2) rectangle (8,-1);
+
+\draw[->] (8.5,-1.5) -- (10.5,-1.5);
+
+\node (db1) [cylinder, 
+fill=gray!20,draw=red,line width=0.05cm,
+shape border rotate=90, 
+draw,
+minimum height=1cm,
+minimum width=1cm] at (12,-1.6) {};
+
+\draw [rounded corners,fill=gray!20,draw=purple,line width=0.05cm] (0,-4) rectangle (2,-3);
+\draw [rounded corners,fill=gray!20,draw=purple,line width=0.05cm] (3,-4) rectangle (5,-3);
+\draw [rounded corners,fill=gray!20,draw=purple,line width=0.05cm] (6,-4) rectangle (8,-3);
+
+\draw[->] (8.5,-3.5) -- (10.5,-3.5);
+
+\node (db1) [cylinder, 
+fill=gray!20,draw=purple,line width=0.05cm,
+shape border rotate=90, 
+draw,
+minimum height=1cm,
+minimum width=1cm] at (12,-3.6) {};
+    \end{tikzpicture}
     \caption{使用窗口结束时间分流}
 \end{figure}
 
