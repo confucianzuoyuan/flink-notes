@@ -182,7 +182,11 @@ Flink为不同行业和全球的许多公司和企业提供大规模的商业关
 
 公司将各种应用程序用于日常业务活动，例如企业资源规划（ERP）系统，客户关系管理（CRM）软件和基于Web的应用程序。这些系统通常设计有单独的层，用于数据处理（应用程序本身）和数据存储（事务数据库系统），如图所示。
 
+\begin{figure}
+\centering
 \includegraphics{images/spaf_0101.png}
+\caption{传统架构}
+\end{figure}
 
 应用程序通常连接到外部服务或直接面向用户，并持续处理传入的事件，如网站上的订单，电子邮件或点击。处理事件时，应用程序将会读取远程数据库的状态，或者通过运行事务来更新它。通常，一个数据库系统可以服务于多个应用程序，它们有时会访问相同的数据库或表。
 
@@ -5880,10 +5884,12 @@ Table API 和 SQL 支持三种方式来编码一个动态表的变化：
   操作编码为 retract message、将 UPDATE 操作编码为更新(先前)行的 retract
   message 和更新(新)行的 add message，将动态表转换为 retract
   流。下图显示了将动态表转换为 retract 流的过程。
-  \includegraphics{images/undo-redo-mode.png} *Upsert 流: upsert
-  流包含两种类型的 message： upsert messages 和delete messages。转换为
-  upsert 流的动态表需要(可能是组合的)唯一键。通过将 INSERT 和 UPDATE
-  操作编码为 upsert message，将 DELETE 操作编码为 delete message
+  \includegraphics{images/undo-redo-mode.png}
+\item
+  Upsert 流: upsert 流包含两种类型的 message： upsert messages 和delete
+  messages。转换为 upsert 流的动态表需要(可能是组合的)唯一键。通过将
+  INSERT 和 UPDATE 操作编码为 upsert message，将 DELETE 操作编码为
+  delete message
   ，将具有唯一键的动态表转换为流。消费流的算子需要知道唯一键的属性，以便正确地应用
   message。与 retract 流的主要区别在于 UPDATE 操作是用单个 message
   编码的，因此效率更高。下图显示了将动态表转换为 upsert 流的过程。
@@ -6583,7 +6589,7 @@ Positives），该概率由以下公式确定
 
 \textbf{最佳实践}
 
-常见的适用常见有，利用布隆过滤器减少磁盘 IO
+常见的使用场景有，利用布隆过滤器减少磁盘 IO
 或者网络请求，因为一旦一个值必定不存在的话，我们可以不用进行后续昂贵的查询请求。
 
 另外，既然你使用布隆过滤器来加速查找和判断是否存在，那么性能很低的哈希函数不是个好选择，推荐

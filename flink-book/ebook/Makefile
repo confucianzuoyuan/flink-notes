@@ -14,7 +14,7 @@ docx:
 pdf:
 	cp flink-tutorial.md flink-tutorial-pdf.md
 	gsed -i 's/svg/pdf/g' flink-tutorial-pdf.md
-	pandoc flink-tutorial-pdf.md -o output.tex --template=./template.tex --pdf-engine=xelatex --top-level-division=chapter
+	pandoc flink-tutorial-pdf.md -o output.tex --template=./template.tex --pdf-engine=xelatex --top-level-division=chapter --from markdown+implicit_figures
 	rm -rf flink-tutorial-pdf.md
 	xelatex output.tex
 	xelatex output.tex
