@@ -6863,4 +6863,151 @@ Lamport的逻辑时钟算法构建了一个全序(total ordering)时钟来描述
 
 于是，我们继续探讨向量时钟。
 
+\section{向量时钟 (Vector Clocks)}
+
+向量时钟，其实是对Lamport的时钟的一个延伸思考，\textbf{算法结构一致，只是多传了一部分信息}。
+
+对每个进程，定义一个向量$VC$，向量的长度是$n$，$n$是进程数目。
+
+\begin{enumerate}
+    \item 初始化各个进程$P_i$的向量，全部抹零：$VC_i = [0,...,0]$。
+    \item 进程$P_i$每发生一个事件时，其向量的第$i$个元素自增：$VC_i[i] \mathrel{+}= 1$。
+    \item 当进程$P_i$发消息给进程$P_j$时，需要在消息上附带自己的向量$VC_i$。
+    \item 当进程$P_j$接收到消息时，对齐对方的时钟，并在自己的时钟上自增：对$[0,n)$上的任意一个整数$k$执行$VC_j[k] = \max (VC_j[k],VC_i[k])，接着，对应第2点：$VC_j[j] \mathrel{+}= 1$。
+\end{enumerate}
+
+下面图是一个向量时钟算法的示意图：
+
+\begin{enumerate}
+    \item 和Lamport时钟算法示意图一样：（红色点、蓝色点、黑灰色点...）
+    \item 图的右方部分，总结了这个算法对不同事件的操作：
+    \begin{enumerate}
+        \item 对于红色和蓝色，也就是进程内自发性事件和发送消息的事件，向量内相应的计数器自增。
+        \item 发送消息的时候，需要传播出去自己的整个向量（也就是广播自己对整个系统的视角）。
+        \item 接收到消息的时候，也就是蓝色事件，需要对齐对方的向量，并应用第一条规则，即自己的向量内相应计数器自增。
+    \end{enumerate}
+\end{enumerate}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/appendix-a-13.jpeg}
+    \caption{向量时钟示意图}
+\end{figure}
+
+可以发现，向量时钟和Lamport的时钟算法结构一样， 不同的点在于：Lamport时钟只是在对齐时钟的计数器，而\textbf{向量时钟是在对齐各自对整个系统的视角}。
+
+我们可以推导出来关于向量时钟比较大小的几个性质：
+
+\begin{enumerate}
+    \item \textbf{向量的各维相等，则向量相等}。这个是显而易见的。
+    \item 向量时钟是有序的 (充要)，即：$VC_i$的各维上的值不大于$VC_j$对应维上的值，则认为$VC_i$不大于$VC_j$。
+    \item 向量时钟有序性质的进一步细化，定义了严格小于：如果$VC_i$不大于$VC_j$，并且至少存在一个维，在这个维上$VC_i$的值严格小于$VC_j$在这个维上的值，则认为$VC_i$小于$VC_j$。
+    \item 如果两个向量不存在大小关系，则认为两个向量平行，记作$VC_i \Vert VC_j$.
+\end{enumerate}
+
+这几个性质看起来复杂，其实都是在定义向量时钟之间的大小关系。 我们可以得出一个结论：
+
+\textbf{向量时钟之间的大小关系是一种偏序关系。}
+
+和Lamport时钟一样，我们可以利用类似的推导方式，证明$a \rightarrow b \Rightarrow VC_a < VC_b$。这里不再描述证明思路。
+
+我们接下来要花一定篇幅论证下$VC_a < VC_b \Rightarrow a \rightarrow b$。
+
+\begin{enumerate}
+    \item 如果$a$和$b$两个事件处在同一个进程中，显而易见$a \rightarrow b$。
+    \item 假设$a$和$b$分别处在不同的进程内，如$P_a$和$P_b$，设$VC_a = [m,n], VC_b = [s,t]$。因为$VC_a < VC_b$，所以$m≤s$，所以必然在不早于$a$之前和不晚于$b$之后的时间内，$P_a$向$P_b$发送了消息（否则$P_b$对$P_a$的计数器得不到及时刷新，$s$就不会不小于$m$）。
+\end{enumerate}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/appendix-a-14.jpeg}
+    \caption{中间必然存在$P_a$向$P_b$发送了消息}
+\end{figure}
+
+实际上，可以分为以下几种情况：
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/appendix-a-15.jpeg}
+    \caption{可能出现的4种情况}
+\end{figure}
+
+\begin{enumerate}
+    \item 当$a = c$且$d = b$, 易得$a \rightarrow b$.
+    \item 当$a = c$且$d \rightarrow b$，由传递性，得$a \rightarrow b$.
+    \item 同样对于$d = b$且$a \rightarrow c$的情况.
+    \item 当$a \rightarrow c$且$d \rightarrow b$，根据进程内的算法逻辑和传递性，也很容易得出结论。
+\end{enumerate}
+
+综上：$VC_a < VC_b \Rightarrow a \rightarrow b$得证。
+
+进一步的，我们可以得出这样的结论：
+
+\begin{enumerate}
+    \item 向量有序，则事件有序（充要）：$VC_a < VC_b \leftrightarrow a \rightarrow b$
+    \item 向量平行，则事件并发（充要）：$VC_a \Vert VC_b \leftrightarrow a \Vert b$
+\end{enumerate}
+
+是的，向量时钟可以准确刻画事件顺序。
+
+其本质在于将Lamport时钟的全序计数器的方式改造成向量时钟的偏序大小关系。
+
+\section{向量时钟看前面的问题}
+
+现在我们回到文中一开始提到的问题。
+
+由于网络延迟的不确定性， 我们在文章开始提出了一个$A,B,C$三个进程中如何确定事件顺序的问题。
+
+我们可以从下面的图中看出，$VC_a < VC_b < VC_c$，那么可以确定$a \rightarrow b \rightarrow c$。也就是我们找到了一种方法来描述这种情况下的事件顺序。进程$C$的视角下观察$a$和$b$的顺序的问题也有了明确的答案。
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/appendix-a-16.jpeg}
+    \caption{用向量时钟的方法解答文章开始提出的问题}
+\end{figure}
+
+最后，我们回到朋友圈的例子。下面图中可以看出，$VC_a < VC_b < VC_c < VC_d < VC_e$，显然可以确定$a \rightarrow b \rightarrow c \rightarrow d \rightarrow e$。
+
+在小李看到小明的朋友圈和小红的评论的时候，也收到了这两条数据的向量， 我们可以根据向量时钟来确定事件的先后关系，从而不会显示出因果矛盾。
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/appendix-a-17.jpeg}
+    \caption{用向量时钟的方法看朋友圈问题}
+\end{figure}
+
+上图中还有一个事件$f$，它的发生可能是小红又发了一条评论。我们可以看到$VC_f \Vert VC_e$。这时候，无法确定事件$f$和$e$的先后关系，也就是说$f \Vert e$。
+
+但是，这时候小李还没有看见这个事情。所谓「因果」：有因才有果。看见也是一个事件的果。 这样说，$f$和$e$没有因果关系，因为小李还没有看见这个事件。所以讨论也就没有意义。
+
+\section{向量时钟的不足}
+
+\begin{enumerate}
+    \item 只考虑了固定数量的节点，没有考虑节点的动态添加和销毁。
+    \item 假设节点数量是$N$，那么每个节点需要维护的空间复杂度是$O(N)$。通信的信息量的复杂度也是$O(N)$。
+\end{enumerate}
+
+\section{总结与感想}
+
+\begin{itemize}
+    \item 现实中，无法构建精确的全局时钟来描述事件顺序。
+    \item 受狭义相对论的启发，我们用因果关系来描述事件顺序。
+    \item 因果关系是一种偏序关系。
+    \item Lamport时钟构造的计数器之间的大小关系是一种全序关系，无法准确刻画事件顺序的偏序关系。
+    \item 向量时钟是一种对Lamport时钟的延伸，以偏序关系准确刻画了事件的因果顺序。
+\end{itemize}
+
+此外，向量时钟给我一种感想，对每个分布式节点来说：
+
+\begin{itemize}
+    \item 我把我的视角分享给其他节点。
+    \item 我对齐我看到的其他节点的视角。
+\end{itemize}
+
+本质上，是在做\textbf{视角对齐}。
+
+这自然地，让我想起了Gossip谣言传播算法。 Gossip算法如其名，每个分布式参与者都在散播自己视角的信息，以达到谣言扩散的效果。 同样是在做 视角对齐。
+
+对于分布式系统中的事件顺序的刻画，就讨论到这里。
+
 \end{document}
