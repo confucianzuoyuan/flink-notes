@@ -1,0 +1,48 @@
+public class TopNSQL {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<UserBehavior> stream = env
+                .readTextFile("UserBehavior.csv")
+                .map(new MapFunction<String, UserBehavior>() {
+                    @Override
+                    public UserBehavior map(String value) throws Exception {
+                        String[] arr = value.split(",");
+                        return new UserBehavior(arr[0], arr[1], arr[2], arr[3], Long.parseLong(arr[4]) * 1000L);
+                    }
+                })
+                .filter(r -> r.behaviorType.equals("pv"))
+                .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+                        .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                            @Override
+                            public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                                return element.timestamp;
+                            }
+                        }));
+
+        // SQL
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+        tEnv.createTemporaryView("t", stream, $("itemId"), $("timestamp").rowtime().as("ts"));
+
+        // 按照itemid分流开窗聚合，结果是每一个itemid在每一个窗口的浏览量
+        String innerSQL = "SELECT itemId, COUNT(itemId) as itemCount, HOP_END(ts, INTERVAL '5' MINUTE, INTERVAL '1' HOUR) as windowEnd" +
+                " FROM t GROUP BY HOP(ts, INTERVAL '5' MINUTE, INTERVAL '1' HOUR), itemId";
+
+        // 按照windowEnd分区，然后按照浏览量降序排列
+        String midSQL = "SELECT *, ROW_NUMBER() OVER (PARTITION BY windowEnd ORDER BY itemCount DESC) as row_num" +
+                " FROM (" + innerSQL + ")";
+
+        // 取出前三名
+        String outerSQL = "SELECT * FROM (" + midSQL + ") WHERE row_num <= 3";
+
+        Table result = tEnv.sqlQuery(outerSQL);
+
+        tEnv.toRetractStream(result, Row.class).print();
+
+        env.execute();
+    }
+}
