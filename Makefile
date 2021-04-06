@@ -10,6 +10,9 @@ all:
 
 slide3:
 	xelatex -shell-escape slide3.tex
+
+slide4:
+	xelatex -shell-escape slide4.tex
 	
 clean:
 	@echo Done. 
