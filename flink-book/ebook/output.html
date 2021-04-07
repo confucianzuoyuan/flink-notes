@@ -4751,14 +4751,12 @@ k = \frac{m}{n} \ln 2
 <h2 id="事件先后的相对性">事件先后的相对性</h2>
 <p>逻辑时钟的概念是由著名的分布式系统科学家 Leslie Lamport (2013年图灵奖得主) 提出的， 在他的那篇著名的论文「Time, Clocks and the Ordering of Events in a Distributed System」 的介绍上，Lamport提到了著名的狭义相对论：</p>
 <blockquote>
-<p>Special relativity teaches us that there is no invariant total ordering of events in space-time; different observers can disagree about which of two events happened first. There is only a partial order in which an event e1 precedes an event e2 iff e1 can causally affect e2.</p>
-<pre><code>                       --- Leslie Lamport 《Time, Clocks and the Ordering of Events in a Distributed System》</code></pre>
+<p>Special relativity teaches us that there is no invariant total ordering of events in space-time; different observers can disagree about which of two events happened first. There is only a partial order in which an event e1 precedes an event e2 iff e1 can causally affect e2. - Leslie Lamport 《Time, Clocks and the Ordering of Events in a Distributed System》</p>
 </blockquote>
 <p>爱因斯坦的狭义相对论告诉我们，<strong>时空中不存在绝对的全序事件顺序， 不同的观察者可能对哪个事件是先发生的无法达成一致。 但是有偏序关系存在，当事件<span class="math inline">\(e_2\)</span>是由事件<span class="math inline">\(e_1\)</span>引起的时候，<span class="math inline">\(e_1\)</span>和<span class="math inline">\(e_2\)</span>之间才有先后关系</strong>。</p>
 <p>对于「不同的观察者可能对哪个事件是先发生的无法达成一致」这个说法， 我们从同时的相对性开始说起：</p>
 <blockquote>
-<p>根据狭义相对论，发生在空间中不同位置的两个事件，它们的同时性并不具有绝对的意义， 我们没办法肯定地说它们是否为同时发生。若在某一参考系中此两事件是同时的，则在另一相对于原参考系等速运动的新参考系中，此两事件将不再同时。</p>
-<pre><code>                                                    --- 维基百科「同时的相对性」</code></pre>
+<p>根据狭义相对论，发生在空间中不同位置的两个事件，它们的同时性并不具有绝对的意义， 我们没办法肯定地说它们是否为同时发生。若在某一参考系中此两事件是同时的，则在另一相对于原参考系等速运动的新参考系中，此两事件将不再同时。 - 维基百科「同时的相对性」</p>
 </blockquote>
 <p>因为狭义相对论最基本的假设，光速不变原理：无论在何种惯性参考系下，光在真空中的传播速度相对观察者都是一个常数。所以「同时」这个概念也是相对的。</p>
 <p>关于同时的相对性，有一个著名的火车思想实验：</p>
@@ -4889,7 +4887,7 @@ k = \frac{m}{n} \ln 2
 <figure>
 <img src="images/appendix-a-13.jpeg" alt="" /><figcaption>向量时钟示意图</figcaption>
 </figure>
-<p>可以发现，向量时钟和Lamport的时钟算法结构一样， 不同的点在于：Lamport时钟只是在对齐时钟的计数器，而**{向量时钟是在对齐各自对整个系统的视角}。</p>
+<p>可以发现，向量时钟和Lamport的时钟算法结构一样， 不同的点在于：Lamport时钟只是在对齐时钟的计数器，而<strong>向量时钟是在对齐各自对整个系统的视角</strong>。</p>
 <p>我们可以推导出来关于向量时钟比较大小的几个性质：</p>
 <ol type="1">
 <li><strong>向量的各维相等，则向量相等</strong>。这个是显而易见的。</li>
