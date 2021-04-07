@@ -324,6 +324,18 @@
 <li><a href="#flink-sql实现方式">Flink SQL实现方式</a></li>
 </ul></li>
 </ul></li>
+<li><a href="#附录a逻辑时钟---如何刻画分布式中的事件顺序">附录A：逻辑时钟 - 如何刻画分布式中的事件顺序</a>
+<ul>
+<li><a href="#如何确定分布式系统中事件的发生顺序">如何确定分布式系统中事件的发生顺序？</a></li>
+<li><a href="#全局物理时钟">全局物理时钟</a></li>
+<li><a href="#全序和偏序">全序和偏序</a></li>
+<li><a href="#事件先后的相对性">事件先后的相对性</a></li>
+<li><a href="#逻辑时钟lamports-timestamp">逻辑时钟(Lamport’s Timestamp)</a></li>
+<li><a href="#向量时钟-vector-clocks">向量时钟 (Vector Clocks)</a></li>
+<li><a href="#向量时钟看前面的问题">向量时钟看前面的问题</a></li>
+<li><a href="#向量时钟的不足">向量时钟的不足</a></li>
+<li><a href="#总结与感想">总结与感想</a></li>
+</ul></li>
 </ul>
 </nav>
 <h1 id="有状态的流式处理">有状态的流式处理</h1>
@@ -338,18 +350,24 @@
 </figure>
 <p>应用程序通常连接到外部服务或直接面向用户，并持续处理传入的事件，如网站上的订单，电子邮件或点击。处理事件时，应用程序将会读取远程数据库的状态，或者通过运行事务来更新它。通常，一个数据库系统可以服务于多个应用程序，它们有时会访问相同的数据库或表。</p>
 <p>当应用程序需要扩展时，这样的设计可能会导致问题。由于多个应用程序可能会同时用到相同的数据表示，或者共享相同的基础设施，因此想要更改表的结构或扩展数据库，就需要仔细的规划和大量的工作。克服紧耦合应用程序的最新方法是微服务设计模式。微服务被设计为小型、完备且独立的应用程序。他们遵循UNIX的理念，即“只做一件事并且把它做好”。通过将几个微服务相互连接来构建更复杂的应用程序，这些微服务仅通过标准化接口（例如RESTful HTTP连接）进行通信。由于微服务严格地彼此分离并且仅通过明确定义的接口进行通信，因此每个微服务都可以用不同技术栈来实现，包括编程语言、类库和数据存储。微服务和所有必需的软件和服务通常捆绑在一起并部署在独立的容器中。下图描绘了一种微服务架构。</p>
-<p><img src="images/spaf_0102.png" /></p>
+<figure>
+<img src="images/spaf_0102.png" alt="" /><figcaption>微服务架构</figcaption>
+</figure>
 <h3 id="分析处理">分析处理</h3>
 <p>大量数据存储在公司的各种事务数据库系统中，它们可以为公司业务运营提供宝贵的参考意见。例如，分析订单处理系统的数据，可以获得销量随时间的增长曲线；可以识别延迟发货的原因；还可以预测未来的销量以便提前调整库存。但是，事务数据通常分布在多个数据库中，它们往往汇总起来联合分析时更有价值。而且，数据通常需要转换为通用格式。</p>
 <p>所以我们一般不会直接在事务数据库上运行分析查询，而是复制数据到数据仓库。数据仓库是对工作负载进行分析和查询的专用数据存储。为了填充数据仓库，需要将事务数据库系统管理的数据复制过来。将数据复制到数据仓库的过程称为extract-transform-load（ETL）。 ETL过程从事务数据库中提取数据，将其转换为某种通用的结构表示，可能包括验证，值的规范化，编码，重复数据删除（去重）和模式转换，最后将其加载到分析数据库中。 ETL过程可能非常复杂，并且通常需要技术复杂的解决方案来满足性能要求。 ETL过程需要定期运行以保持数据仓库中的数据同步。</p>
 <p>将数据导入数据仓库后，可以查询和分析数据。通常，在数据仓库上执行两类查询。第一种类型是定期报告查询，用于计算与业务相关的统计信息，比如收入、用户增长或者输出的产量。这些指标汇总到报告中，帮助管理层评估业务的整体健康状况。第二种类型是即席查询，旨在提供特定问题的答案并支持关键业务决策，例如收集统计在投放商业广告上的花费，和获取的相应收入，以评估营销活动的有效性。两种查询由批处理方式由数据仓库执行，如图所示。</p>
-<p><img src="images/spaf_0103.png" /></p>
+<figure>
+<img src="images/spaf_0103.png" alt="" /><figcaption>在线分析</figcaption>
+</figure>
 <p>如今，Apache Hadoop生态系统的组件，已经是许多企业IT基础架构中不可或缺的组成部分。现在的做法不是直接将所有数据都插入关系数据库系统，而是将大量数据（如日志文件，社交媒体或Web点击日志）写入Hadoop的分布式文件系统（HDFS）、S3或其他批量数据存储库，如Apache HBase，以较低的成本提供大容量存储容量。驻留在此类存储系统中的数据可以通过SQL-on-Hadoop引擎查询和处理，例如Apache Hive，Apache Drill或Apache Impala。但是，基础结构与传统数据仓库架构基本相同。</p>
 <h2 id="有状态的流式处理-1">有状态的流式处理</h2>
 <p>日常生活中，所有数据都是作为连续的事件流创建的。比如网站或者移动应用中的用户交互动作，订单的提交，服务器日志或传感器测量数据：所有这些都是事件流。实际上，很少有应用场景，能一次性地生成所需要的完整（有限）数据集。实际应用中更多的是无限事件流。有状态的流处理就是用于处理这种无限事件流的应用程序设计模式，在公司的IT基础设施中有广泛的应用场景。在我们讨论其用例之前，我们将简要介绍有状态流处理的工作原理。</p>
 <p>如果我们想要无限处理事件流，并且不愿意繁琐地每收到一个事件就记录一次，那这样的应用程序就需要是有状态的，也就是说能够存储和访问中间数据。当应用程序收到一个新事件时，它可以从状态中读取数据，或者向该状态写入数据，总之可以执行任何计算。原则上讲，我们可以在各种不同的地方存储和访问状态，包括程序变量（内存）、本地文件，还有嵌入式或外部数据库。</p>
 <p>Apache Flink将应用程序状态，存储在内存或者嵌入式数据库中。由于Flink是一个分布式系统，因此需要保护本地状态以防止在应用程序或计算机故障时数据丢失。 Flink通过定期将应用程序状态的一致性检查点（check point）写入远程且持久的存储，来保证这一点。状态、状态一致性和Flink的检查点将在后面的章节中更详细地讨论，但是，现在，下图显示了有状态的流式Flink应用程序。</p>
-<p><img src="images/spaf_0104.png" /></p>
+<figure>
+<img src="images/spaf_0104.png" alt="" /><figcaption>有状态的流式处理</figcaption>
+</figure>
 <p>有状态的流处理应用程序，通常从事件日志中提取输入事件。事件日志就用来存储和分发事件流。事件被写入持久的仅添加（append-only）日志，这意味着无法更改写入事件的顺序。写入事件日志的流，可以被相同或不同的消费者多次读取。由于日志的仅附加（append-only）属性，事件始终以完全相同的顺序发布给所有消费者。现在已有几种事件日志系统，其中Apache Kafka是最受欢迎的，可以作为开源软件使用，或者是云计算提供商提供的集成服务。</p>
 <p>在Flink上运行的有状态的流处理应用程序，是很有意思的一件事。在这个架构中，事件日志会按顺序保留输入事件，并且可以按确定的顺序重播它们。如果发生故障，Flink将从先前的检查点（check point）恢复其状态，并重置事件日志上的读取位置，这样就可以恢复整个应用。应用程序将重放（并快进）事件日志中的输入事件，直到它到达流的尾部。此技术一般用于从故障中恢复，但也可用于更新应用程序、修复bug或者修复以前发出的结果，另外还可以用于将应用程序迁移到其他群集，或使用不同的应用程序版本执行A / B测试。</p>
 <p>如前所述，有状态的流处理是一种通用且灵活的设计架构，可用于许多不同的场景。在下文中，我们提出了三类通常使用有状态流处理实现的应用程序：（1）事件驱动应用程序，（2）数据管道应用程序，以及（3）数据分析应用程序。</p>
@@ -363,7 +381,9 @@
 <li>异常检测（例如，检测侵入计算机网络的尝试）</li>
 </ul>
 <p>事件驱动应用程序是微服务的演变。它们通过事件日志而不是REST调用进行通信，并将应用程序数据保存为本地状态，而不是将其写入外部数据存储区（例如关系数据库或键值数据库）。下图显示了由事件驱动的流应用程序组成的服务架构。</p>
-<p><img src="images/spaf_0105.png" /></p>
+<figure>
+<img src="images/spaf_0105.png" alt="" /><figcaption>事件驱动的流应用程序</figcaption>
+</figure>
 <p>上图中的应用程序通过事件日志连接。一个应用程序将其输出发送到事件日志通道（kafka），另一个应用程序使用其他应用程序发出的事件。事件日志通道将发送者和接收者分离，并提供异步、非阻塞的事件传输。每个应用程序都可以是有状态的，并且可以本地管理自己的状态而无需访问外部数据存储。应用程序也可以单独处理和扩展。</p>
 <p>与事务性应用程序或微服务相比，事件驱动的应用程序具有多种优势。与读写远程数据库相比，本地状态访问提供了非常好的性能。扩展性和容错性都由流处理器来保证，并且以事件日志作为输入源，应用程序的整个输入数据可以可靠地存储，并且可以确定性地重放。此外，Flink可以将应用程序的状态重置为先前的保存点（save point），从而可以在不丢失状态的情况下更新或重新扩展应用程序。</p>
 <p>事件驱动的应用程序对运行它们的流处理器有很高的要求，并不是所有流处理器都适合运行事件驱动的应用程序。 API的表现力，以及对状态处理和事件时间支持的程度，决定了可以实现和执行的业务逻辑。这方面取决于流处理器的API，主要看它能提供什么样的状态类型，以及它对事件时间处理的支持程度。此外，精确一次（exactly-once）的状态一致性和扩展应用程序的能力是事件驱动应用程序的基本要求。 Apache Flink符合所有的这些要求，是运行此类应用程序的一个非常好的选择。</p>
@@ -375,7 +395,9 @@
 <p>ETL作业定期将数据导入数据存储区，数据的处理是由即席查询（用户自定义查询）或设定好的通常查询来做的。无论架构是基于数据仓库还是基于Hadoop生态系统的组件，这都是批处理。多年来最好的处理方式就是，定期将数据加载到数据分析系统中，但它给分析管道带了的延迟相当大，而且无法避免。</p>
 <p>根据设定好的时间间隔，可能需要数小时或数天才能将数据点包含在报告中。我们前面已经提到，数据管道可以实现低延迟的ETL，所以在某种程度上，可以通过使用数据管道将数据导入存储区来减少延迟。但是，即使持续不停地进行ETL操作，在用查询来处理事件之前总会有延迟。虽然这种延迟在过去可能是可以接受的，但是今天的应用程序，往往要求必须能够实时收集数据，并立即对其进行操作（例如，在手机游戏中去适应不断变化的条件，或者在电商网站中提供个性化的用户体验）。</p>
 <p>流式分析应用程序不是等待定期触发，而是连续地提取事件流，并且通过纳入最新事件来更新其计算结果，这个过程是低延迟的。这有些类似于数据库中用于更新视图（views）的技术。通常，流应用程序将其结果存储在支持更新的外部数据存储中，例如数据库或键值（key-value）存储。流分析应用程序的实时更新结果可用于驱动监控仪表板（dashboard）应用程序，如下图所示。</p>
-<p><img src="images/spaf_0106.png" /></p>
+<figure>
+<img src="images/spaf_0106.png" alt="" /><figcaption>仪表盘</figcaption>
+</figure>
 <p>流分析应用程序最大的优势就是，将每个事件纳入到分析结果所需的时间短得多。除此之外，流分析应用程序还有另一个不太明显的优势。传统的分析管道由几个独立的组件组成，例如ETL过程、存储系统、对于基于Hadoop的环境，还包括用于触发任务（jobs）的数据处理和调度程序。相比之下，如果我们运行一个有状态流应用程序，那么流处理器就会负责所有这些处理步骤，包括事件提取、带有状态维护的连续计算以及更新结果。此外，流处理器可以从故障中恢复，并且具有精确一次（exactly-once）的状态一致性保证，还可以调整应用程序的计算资源。像Flink这样的流处理器还支持事件时间（event-time）处理，这可以保证产生正确和确定的结果，并且能够在很短的时间内处理大量数据。</p>
 <p>流分析应用程序通常用于：</p>
 <ul>
@@ -392,7 +414,9 @@
 </ul>
 <p>仅仅一个Apache软件基金会就支持了十几个与流处理相关的项目。新的分布式流处理项目不断进入开源阶段，并不断增加新的特性和功能。开源社区不断改进其项目的功能，并正在推动流处理的技术边界。我们将简要介绍一下过去，看看开源流处理的起源和今天的状态。</p>
 <p>第一代分布式开源流处理器（2011）专注于具有毫秒延迟的事件处理，并提供了在发生故障时防止事件丢失的保证。这些系统具有相当低级的API，并且对于流应用程序的准确性和结果的一致性，不提供内置支持，因为结果会取决于到达事件的时间和顺序。另外，即使事件没有丢失，也可能不止一次地处理它们。与批处理器相比，第一代开源流处理器牺牲了结果准确性，用来获得更低的延迟。为了让当时的数据处理系统，可以同时提供快速和准确的结果，人们设计了所谓的lambda架构，如图所示。</p>
-<p><img src="images/spaf_0107.png" /></p>
+<figure>
+<img src="images/spaf_0107.png" alt="" /><figcaption>lambda架构</figcaption>
+</figure>
 <p>lambda架构增强了传统的批处理架构，其“快速层”（speed layer）由低延迟的流处理器来支持。数据到达之后由流处理器提取出来，并写入批处理存储。流处理器近乎实时地计算近似结果并将它们写入“快速表”（speed table）。批处理器定期处理批量存储中的数据，将准确的结果写入批处理表，并从速度表中删除相应的不准确结果。应用程序会合并快速表中的近似结果和批处理表中的准确结果，然后消费最终的结果。</p>
 <p>lambda架构现在已经不再是最先进的，但仍在许多地方使用。该体系结构的最初目标是改善原始批处理分析体系结构的高延迟。但是，它有一些明显的缺点。首先，它需要对一个应用程序，做出两个语义上等效的逻辑实现，用于两个独立的、具有不同API的处理系统。其次，流处理器计算的结果只是近似的。第三，lambda架构很难建立和维护。</p>
 <p>通过在第一代基础上进行改进，下一代分布式开源流处理器（2013）提供了更好的故障保证，并确保在发生故障时，每个输入记录仅对结果产生一次影响（exactly -once）。此外，编程API从相当低级的操作符接口演变为高级API。但是，一些改进（例如更高的吞吐量和更好的故障保证）是以将处理延迟从毫秒增加到几秒为代价的。此外，结果仍然取决于到达事件的时间和顺序。</p>
@@ -1022,7 +1046,7 @@
 <li>maxBy()：在输入流上针对指定字段求最大值，并返回包含当前观察到的最大值的事件。</li>
 </ul>
 <p>滚动聚合算子无法组合起来使用，每次计算只能使用一个单独的滚动聚合算子。</p>
-<p>下面的例子根据第一个字段来对类型为Tuple3&lt;Int, Int, Int&gt;的流做分流操作，然后针对第二个字段做滚动求和操作。</p>
+<p>下面的例子根据第一个字段来对类型为<code>Tuple3&lt;Integer, Integer, Integer&gt;</code>的流做分流操作，然后针对第二个字段做滚动求和操作。</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb25-1"><a href="#cb25-1"></a>DataStreamSource&lt;Tuple3&lt;<span class="bu">Integer</span>, <span class="bu">Integer</span>, <span class="bu">Integer</span>&gt;&gt; inputStream = env</span>
 <span id="cb25-2"><a href="#cb25-2"></a>    .<span class="fu">fromElements</span>(</span>
 <span id="cb25-3"><a href="#cb25-3"></a>        Tuple3.<span class="fu">of</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">2</span>),</span>
@@ -1098,7 +1122,7 @@
 <span id="cb31-2"><a href="#cb31-2"></a>DataStream&lt;Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">String</span>&gt;&gt; two = ...</span>
 <span id="cb31-3"><a href="#cb31-3"></a></span>
 <span id="cb31-4"><a href="#cb31-4"></a><span class="co">// keyBy two connected streams</span></span>
-<span id="cb31-5"><a href="#cb31-5"></a>ConnectedStreams&lt;Tuple2&lt;Int, <span class="bu">Long</span>&gt;, Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">String</span>&gt;&gt; keyedConnect1 = one</span>
+<span id="cb31-5"><a href="#cb31-5"></a>ConnectedStreams&lt;Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">Long</span>&gt;, Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">String</span>&gt;&gt; keyedConnect1 = one</span>
 <span id="cb31-6"><a href="#cb31-6"></a>  .<span class="fu">connect</span>(two)</span>
 <span id="cb31-7"><a href="#cb31-7"></a>  .<span class="fu">keyBy</span>(<span class="dv">0</span>, <span class="dv">0</span>); <span class="co">// key both input streams on first attribute</span></span>
 <span id="cb31-8"><a href="#cb31-8"></a></span>
@@ -1109,10 +1133,10 @@
 <p>无论使用keyBy()算子操作ConnectedStreams还是使用connect()算子连接两条KeyedStreams，connect()算子会将两条流的含有相同Key的所有事件都发送到相同的算子实例。两条流的key必须是一样的类型和值，就像SQL中的JOIN。在connected和keyed stream上面执行的算子有访问keyed state的权限。</p>
 <p>下面的例子展示了如何连接一条DataStream和广播过的流。</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode java"><code class="sourceCode java"><span id="cb32-1"><a href="#cb32-1"></a>DataStream&lt;Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">Long</span>&gt;&gt; one = ...</span>
-<span id="cb32-2"><a href="#cb32-2"></a>DataStream&lt;Tuple2&lt;Int, <span class="bu">String</span>&gt;&gt; two = ...</span>
+<span id="cb32-2"><a href="#cb32-2"></a>DataStream&lt;Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">String</span>&gt;&gt; two = ...</span>
 <span id="cb32-3"><a href="#cb32-3"></a></span>
 <span id="cb32-4"><a href="#cb32-4"></a><span class="co">// connect streams with broadcast</span></span>
-<span id="cb32-5"><a href="#cb32-5"></a>ConnectedStreams&lt;Tuple2&lt;Int, <span class="bu">Long</span>&gt;, Tuple2&lt;Int, <span class="bu">String</span>&gt;&gt; keyedConnect = first</span>
+<span id="cb32-5"><a href="#cb32-5"></a>ConnectedStreams&lt;Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">Long</span>&gt;, Tuple2&lt;<span class="bu">Integer</span>, <span class="bu">String</span>&gt;&gt; keyedConnect = first</span>
 <span id="cb32-6"><a href="#cb32-6"></a>  <span class="co">// broadcast second input stream</span></span>
 <span id="cb32-7"><a href="#cb32-7"></a>  .<span class="fu">connect</span>(second.<span class="fu">broadcast</span>());</span></code></pre></div>
 <p>一条被广播过的流中的所有元素将会被复制然后发送到下游算子的所有并行实例中去。未被广播过的流仅仅向前发送。所以两条流的元素显然会被连接处理。</p>
@@ -4638,5 +4662,304 @@ k = \frac{m}{n} \ln 2
 <span id="cb152-46"><a href="#cb152-46"></a>        env.<span class="fu">execute</span>();</span>
 <span id="cb152-47"><a href="#cb152-47"></a>    }</span>
 <span id="cb152-48"><a href="#cb152-48"></a>}</span></code></pre></div>
+<h1 id="附录a逻辑时钟---如何刻画分布式中的事件顺序">附录A：逻辑时钟 - 如何刻画分布式中的事件顺序</h1>
+<p>逻辑时钟是描述分布式系统中时序和因果关系的一种机制。 由于网络延迟、时钟漂移等现实问题，我们无法建立一个全局物理时钟来描述时序， 因此区别于物理时钟的「逻辑时钟」机制应运而生。 第一个逻辑时钟算法是由分布式领域的大神 Lamport 在1978年提出的 lamport 时钟算法。</p>
+<figure>
+<img src="images/repr-clock.jpeg" alt="" /><figcaption>时钟</figcaption>
+</figure>
+<p>本文将从一个基础问题的讨论切入，逐步介绍：</p>
+<ul>
+<li>为什么需要逻辑时钟 – 物理时钟是否可行？</li>
+<li>相对论是带来了什么启示 – 事件的相对性</li>
+<li>最早期的逻辑时钟算法什么特点 – Lamport逻辑时钟</li>
+<li>后续改进的算法有哪些 – 「向量时钟」和「版本向量」等等</li>
+</ul>
+<p>逻辑时钟的思想有趣而深刻，值得探究。</p>
+<h2 id="如何确定分布式系统中事件的发生顺序">如何确定分布式系统中事件的发生顺序？</h2>
+<p>首先，我们来观察一个「如何确定分布式系统中事件的发生顺序」的问题：</p>
+<p>在这个分布式系统中，有三个独立的进程A、B、C：</p>
+<ol type="1">
+<li>首先，进程A中发生了一个事件a，并把这个事件消息同步给另外两个进程B和C。</li>
+<li>B收到消息后，发生了一个事件b，并把这个事件消息同步给进程C。</li>
+<li>但是由于无法确定的网络延迟原因，导致进程A发出的消息到达C晚于进程B发出的消息到达C，这样 进程C的视角上，最终看到的事件顺序是b,a，但是这与事实是相悖的。</li>
+</ol>
+<figure>
+<img src="images/appendix-a-01.jpeg" alt="" /><figcaption>由于网络延迟，进程B发出的消息晚于进程A发出的消息到达进程C</figcaption>
+</figure>
+<p>可以看到，在分布式通信中，由于网络延迟的不确定性，<strong>仅仅以接收顺序作为整个分布式系统中事件的发生顺序是不可取的</strong>。</p>
+<p>下面我们再观察一个稍微现实点的例子。</p>
+<ol type="1">
+<li>假设朋友圈有三个数据中心，分别在北京、维也纳和纽约。</li>
+<li>北京小明在朋友圈中发了一张风景图，并问到「猜猜这里是哪里?」，这条消息被扩散到其他数据中心。</li>
+<li>维也纳的小红看到这个消息后，回复说她知道。这条回复也被扩散到其他数据中心。</li>
+<li>但是由于无法确定的网络延迟的原因，导致纽约的数据中心先收到小红的回复，而后收到了原始的提问消息。 这样，导致最终小李看到的问答顺序是不符合问答的因果一致性的。</li>
+</ol>
+<figure>
+<img src="images/appendix-a-02.jpeg" alt="" /><figcaption>由于网络延迟，小李看到的事件顺序并不符合问答的因果关系</figcaption>
+</figure>
+<p>以上的例子，是腾讯微信朋友圈真实碰到并解决的问题。</p>
+<p>下面是微信朋友圈架构设计的两个关于因果一致性算法设计的PPT截图：</p>
+<figure>
+<img src="images/appendix-a-03.jpeg" alt="" /><figcaption>《微信朋友圈技术之道》中分享的关于因果性的PPT</figcaption>
+</figure>
+<figure>
+<img src="images/appendix-a-04.jpeg" alt="" /><figcaption>《微信朋友圈技术之道》中分享的关于向量时钟的PPT</figcaption>
+</figure>
+<p>在腾讯的分享PPT中，提到了「向量时钟」， 不过我们稍后再揭开它的神秘面纱。</p>
+<p>而这两个例子中，我们面临的要解决的问题， 其实是分布式系统中的因果一致性， 换句话说，就是如何准确刻画分布式中的事件顺序，**{显然仅仅简单地依靠进程接收到的(看到的)事件发生顺序是不准确的}。</p>
+<h2 id="全局物理时钟">全局物理时钟</h2>
+<p>对于上面提到的两个问题，我们试图解决的一个天然想法是，记录每个分布式进程中发生事件的原始时间戳，并把它连同事件本身扩散到其他节点，这样其他节点的视角上就可以观察到完整的因果顺序了？</p>
+<blockquote>
+<p>If you have one clock, you know what the time is. If you have two, you are not sure.</p>
+</blockquote>
+<p>大家都清楚的一点是，<strong>不同节点的物理时钟其实是不一致的，而且无法做到精确一致</strong>。</p>
+<p>其原因：</p>
+<ol type="1">
+<li>仍然是由于网络延迟的不确定，我们无法通过网络同步时间来获取一个全局一致的物理时钟。</li>
+<li>现实中的多个时钟，即使时间已经调成一致，但是由于日积月累的计时速率的差异，会导致时钟漂移而显示不同的时间。</li>
+</ol>
+<p>如此看来，<strong>寄希望于一个全局的时钟来对事件顺序做全局标定也是不现实的</strong>。</p>
+<h2 id="全序和偏序">全序和偏序</h2>
+<p>在数学上，「顺序」是如何描述的？</p>
+<p>我们看下序理论中的两种序关系：偏序(partial ordering) 和 全序 (total ordering).</p>
+<p>偏序： 假设<span class="math inline">\(\leq\)</span>是集合<span class="math inline">\(S\)</span>上的一个二元关系，如果<span class="math inline">\(\leq\)</span>满足：</p>
+<ol type="1">
+<li>自反性： 对<span class="math inline">\(S\)</span>中任意的元素<span class="math inline">\(a\)</span>，都有<span class="math inline">\(a \leq a\)</span></li>
+<li>反对称性： 如果对于<span class="math inline">\(S\)</span>中的两个元素<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>，<span class="math inline">\(a \leq b\)</span>且<span class="math inline">\(b \leq a\)</span>，那么<span class="math inline">\(a = b\)</span></li>
+<li>传递性： 如果对于<span class="math inline">\(S\)</span>中的三个元素，有<span class="math inline">\(a \leq b\)</span>且<span class="math inline">\(b \leq c\)</span>，那么<span class="math inline">\(a \leq c\)</span></li>
+</ol>
+<p>以上的数学内容其实不那么重要~ 关键理解： <strong>偏序关系是一种序关系，但只是部分元素有序，并不是全部元素都可以比较</strong>。</p>
+<p>全序则比偏序的要求更为严格一些，在偏序的基础上，多了一个完全性的条件：</p>
+<ul>
+<li>完全性：对于<span class="math inline">\(S\)</span>中的任意<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>元素，必然有<span class="math inline">\(a \leq b\)</span>或<span class="math inline">\(b \leq a\)</span></li>
+</ul>
+<p>可以看出，实际上，<strong>全序就是在偏序的基础上，要求全部元素都必须可以比较</strong>。</p>
+<p>总结来看，简短说：<strong>偏序是部分可比较的序关系，全序是全部可比较的序关系</strong>。</p>
+<p>举例来看：</p>
+<ol type="1">
+<li>自然数集合中的比较大小的关系，就是一种全序关系。</li>
+<li>集合之间的包含关系，则是一种偏序关系（集合之间可以有包含关系，也可以没有包含关系）。</li>
+<li>复数之间的大小关系，是一种偏序关系，而复数的模的大小关系，则是一种全序关系。</li>
+</ol>
+<p>下面用简单的有向图(哈斯图)来描述下全序和偏序的区别：</p>
+<p>下图中<span class="math inline">\(S_1\)</span>上的图示关系，描述的是整数之间的大小顺序，是一种全序关系，可以看到任意两个元素之间都可以比较顺序。</p>
+<p>而<span class="math inline">\(S_2\)</span>上的关系，描述的是集合之间的包含关系，是一种偏序关系，其中<span class="math inline">\(v_2\)</span>和<span class="math inline">\(v_3\)</span>是不可比较的。</p>
+<figure>
+<img src="images/appendix-a-05.jpeg" alt="" /><figcaption><span class="math inline">\(S_1\)</span>描述了全序关系；<span class="math inline">\(S_2\)</span>描述了偏序关系</figcaption>
+</figure>
+<p>现在我们回头看，寻求全局时钟为分布式节点中的时间做顺序标定的方式， 其实是在寻求一种全序关系来描述分布式中的事件顺序， 而且是严格对齐真实的物理时钟的全序关系。</p>
+<h2 id="事件先后的相对性">事件先后的相对性</h2>
+<p>逻辑时钟的概念是由著名的分布式系统科学家 Leslie Lamport (2013年图灵奖得主) 提出的， 在他的那篇著名的论文「Time, Clocks and the Ordering of Events in a Distributed System」 的介绍上，Lamport提到了著名的狭义相对论：</p>
+<blockquote>
+<p>Special relativity teaches us that there is no invariant total ordering of events in space-time; different observers can disagree about which of two events happened first. There is only a partial order in which an event e1 precedes an event e2 iff e1 can causally affect e2.</p>
+<pre><code>                       --- Leslie Lamport 《Time, Clocks and the Ordering of Events in a Distributed System》</code></pre>
+</blockquote>
+<p>爱因斯坦的狭义相对论告诉我们，<strong>时空中不存在绝对的全序事件顺序， 不同的观察者可能对哪个事件是先发生的无法达成一致。 但是有偏序关系存在，当事件<span class="math inline">\(e_2\)</span>是由事件<span class="math inline">\(e_1\)</span>引起的时候，<span class="math inline">\(e_1\)</span>和<span class="math inline">\(e_2\)</span>之间才有先后关系</strong>。</p>
+<p>对于「不同的观察者可能对哪个事件是先发生的无法达成一致」这个说法， 我们从同时的相对性开始说起：</p>
+<blockquote>
+<p>根据狭义相对论，发生在空间中不同位置的两个事件，它们的同时性并不具有绝对的意义， 我们没办法肯定地说它们是否为同时发生。若在某一参考系中此两事件是同时的，则在另一相对于原参考系等速运动的新参考系中，此两事件将不再同时。</p>
+<pre><code>                                                    --- 维基百科「同时的相对性」</code></pre>
+</blockquote>
+<p>因为狭义相对论最基本的假设，光速不变原理：无论在何种惯性参考系下，光在真空中的传播速度相对观察者都是一个常数。所以「同时」这个概念也是相对的。</p>
+<p>关于同时的相对性，有一个著名的火车思想实验：</p>
+<p>有一个观察者<span class="math inline">\(A\)</span>在移动的火车中间，有另一位观察者<span class="math inline">\(B\)</span>在地面上的月台上， 当两个观察者相遇时，一道闪光从火车的中央发出。</p>
+<p>对于火车上的观察者<span class="math inline">\(A\)</span>而言，由于火车头和火车尾距离光源的距离是相同的， 因此观察到了光同时到达了车头和车尾。</p>
+<p>但是对于月台的观察者<span class="math inline">\(B\)</span>而言，火车的尾部会迎向光移动，而车头会远离光移动，而且光速是有限的，且相对于两个观察者都是相同的常数，所以<span class="math inline">\(B\)</span>认为光会先到达车尾，后到达车头。</p>
+<figure>
+<img src="images/appendix-a-06.jpeg" alt="" /><figcaption>狭义相对论中著名的火车思想实验</figcaption>
+</figure>
+<p>这样，对于不同参照系的观察者而言，事件的顺序并没有一个一致性的结论。之所以得出这样神奇的结论，仍然是因为关键的「光速不变原理」。但是，这并不意味着发生了因果上的逻辑矛盾， 我们在这种情况下，只是无法在不同的参照系下观察到一致性的事件顺序。</p>
+<p>我们经验上所说的「同时发生」，是因为光速太大，或者我们生活的尺度太小，所以同时是一种近乎同时。</p>
+<p>相对论告诉我们，光速是物质移动的最大速度，信息传播的速度不可能超过这个速度。假如太阳消失了，地球上的我们也要在8分钟之后感知到太阳消失了。</p>
+<p>也就是说，一个事件<span class="math inline">\(A\)</span>发生后，载有这个事件信息的光（引力、无论什么，快不过光速）到达观察者之前， 观察者是无法没有任何感知的， 这时我们就无法定义事件的顺序。 而当信息最终传播到达观察者时，这个事件也就对观察者发生了影响，造成了一个新的事件<span class="math inline">\(B\)</span>，叫做「观察到了事件<span class="math inline">\(A\)</span>的事件<span class="math inline">\(B\)</span>」。这时我们才有<span class="math inline">\(A\)</span> happened before <span class="math inline">\(B\)</span>的因果关系。</p>
+<figure>
+<img src="images/appendix-a-07.jpeg" alt="" /><figcaption>物理时空中因果关系建立了事件顺序</figcaption>
+</figure>
+<p>可以看到，时空对于描述事件顺序的「happened before」同样是偏序关系。</p>
+<p>因为事件<span class="math inline">\(A\)</span>的发生，造成了事件<span class="math inline">\(B\)</span>的发生（包括<span class="math inline">\(B\)</span>这种观察<span class="math inline">\(A\)</span>而发生的事件），那么<span class="math inline">\(A\)</span>和<span class="math inline">\(B\)</span>就存在因果关系。</p>
+<p>Lamport受相对论中事件顺序的相对性的启发，创造了Lamport Logical Clocks。</p>
+<p>我们的分布式系统，和相对论有很多相似之处：</p>
+<ul>
+<li>在物理时空中，信息是通过光速传播的，而在分布式系统中，信息是通过网络传播的。</li>
+<li>在物理时空中，不同参照系下的观察者可能对于事件顺序无法达成一致， 而在分布式系统中，由于全局物理时钟无法实现，不存在进程拥有全局视角。 而如果进程间的事件没有因果关系，那么就无法达成顺序上的一致性。</li>
+<li>在物理时空中，由于光速限制，观察者在观察到事件<span class="math inline">\(A\)</span>的时候，才确定了事件<span class="math inline">\(B\)</span>和<span class="math inline">\(A\)</span>的因果关系。那么在分布式系统中，我们同样可以通过消息传递来创造因果关系。</li>
+</ul>
+<p>总体来说， 逻辑时钟尝试用「通过进程间创造通信以添加因果关系」的方式来对分布式中的事件顺序做描述。</p>
+<p>下面，我们来看下，「通过通信创造因果关系」 这个设计对于刻画分布式系统中的事件顺序有多么重要。</p>
+<p>观察下图中的两个图：</p>
+<ul>
+<li>红色的点表示自发性事件。 黑色的表示『观察到其他进程事件』而发生的事件。</li>
+<li>横向黑色实线代表物理时钟。</li>
+<li>带箭头的线表示进程中一个事件发生时，向另外一个进程传播这个事件。</li>
+</ul>
+<p>我们试着从每个进程的视角，依次对图<span class="math inline">\(S_1\)</span>和<span class="math inline">\(S_2\)</span>进行推导一下，会发现，其实两个图所描述的事件顺序，在进程的相对视角中，是一样的。</p>
+<figure>
+<img src="images/appendix-a-08.jpeg" alt="" /><figcaption><span class="math inline">\(S_1\)</span>和<span class="math inline">\(S_2\)</span>虽然在物理时序上不一样，但是在各个进程的视角上推导出来却是一样的</figcaption>
+</figure>
+<p>我们的逻辑时序应该越接近物理时序越好，然而两个图对时序的刻画， 出现了歧义（比如无法确定<span class="math inline">\(a_3\)</span>和<span class="math inline">\(b_2\)</span>的顺序）。根本上是没有做充分的消息传递来添加因果关系。</p>
+<h2 id="逻辑时钟lamports-timestamp">逻辑时钟(Lamport’s Timestamp)</h2>
+<p>现在，我们开始讨论Lamport的逻辑时钟算法。</p>
+<p>首先我们需要明确一点：<strong>逻辑时钟并不度量时间本身，仅区分事件发生的前后顺序</strong>。</p>
+<p>那么，「事件」是如何分类的：</p>
+<ol type="1">
+<li>进程内自发的事件（如下图中的红色标记的事件）。</li>
+<li>发送一个消息，是一个事件（如下图中的蓝色标记的事件）。</li>
+<li>接收一个消息，是一个事件 （如下图中的黑灰色标记的事件）。</li>
+</ol>
+<figure>
+<img src="images/appendix-a-09.jpeg" alt="" /><figcaption>分布式中事件的分类</figcaption>
+</figure>
+<p>我们上面有提到「happened before」的关系，我们知道，因果关系是推导「happened before」关系的重要一环：</p>
+<blockquote>
+<p>if <span class="math inline">\(e_i\)</span> causes <span class="math inline">\(e_j\)</span>, then <span class="math inline">\(e_i\)</span> must happen before <span class="math inline">\(e_j\)</span> – Logical Time</p>
+</blockquote>
+<p>道理是显然的：如果事件<span class="math inline">\(e_i\)</span>导致了事件<span class="math inline">\(e_j\)</span>，那么一定<span class="math inline">\(e_i\)</span>发生在<span class="math inline">\(e_j\)</span>之前。</p>
+<p>我们现在给「happened before」这个关系一个记号：<span class="math inline">\(\rightarrow\)</span>，事件<span class="math inline">\(a\)</span>在事件<span class="math inline">\(b\)</span>之前发生则表示为<span class="math inline">\(a \rightarrow b\)</span>，那么我们有：</p>
+<ol type="1">
+<li>如果<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>是同一个进程内的事件，并且<span class="math inline">\(a\)</span>在<span class="math inline">\(b\)</span>之前发生，则<span class="math inline">\(a \rightarrow b\)</span>。</li>
+<li>如果事件<span class="math inline">\(a\)</span>是「发送了一个消息」，而事件<span class="math inline">\(b\)</span>是接收了这个消息，则<span class="math inline">\(a \rightarrow b\)</span>。</li>
+<li>如果<span class="math inline">\(a \rightarrow b\)</span>并且<span class="math inline">\(b \rightarrow c\)</span>，那么<span class="math inline">\(a \rightarrow c\)</span>（即传递性）。</li>
+</ol>
+<p>那么，是否存在两个事件并无顺序关系吗？经过前面的讨论，答案当然是肯定的。</p>
+<p>如果两个事件无法推导出顺序关系的话，我们称两个事件是并发的，记作<span class="math inline">\(a \Vert b\)</span>。</p>
+<p>这样，我们可以这样描述上面的图中存在的事件顺序：</p>
+<ul>
+<li><span class="math inline">\(a \rightarrow b \rightarrow c \rightarrow d\)</span></li>
+<li><span class="math inline">\(e \rightarrow c \rightarrow d\)</span></li>
+<li><span class="math inline">\(a \Vert e\)</span></li>
+<li><span class="math inline">\(b \Vert e\)</span></li>
+</ul>
+<p>可以看出，「happened before」<span class="math inline">\(\rightarrow\)</span>是一个偏序关系。</p>
+<p><strong>Lamport的时钟算法</strong>：</p>
+<ol type="1">
+<li>每个进程<span class="math inline">\(P_i\)</span>内维护本地一个计数器<span class="math inline">\(C_i\)</span>，初始为<span class="math inline">\(0\)</span>.</li>
+<li>每次执行一个事件，计数器<span class="math inline">\(C_i\)</span>自增（假设自增量为<span class="math inline">\(1\)</span>）.</li>
+<li>进程<span class="math inline">\(P_i\)</span>发消息给进程<span class="math inline">\(P_j\)</span>时，需要在消息上附带自己的计数器<span class="math inline">\(C_i\)</span>.</li>
+<li>当进程<span class="math inline">\(P_j\)</span>接收到消息时，更新自己的计数器<span class="math inline">\(C_j = \max (C_i,C_j) + 1\)</span>.</li>
+</ol>
+<p>下面的图是这个算法的示意图，可以推算最后的时钟计数器的值：<span class="math inline">\(C_i = 3, C_j = 5\)</span></p>
+<figure>
+<img src="images/appendix-a-10.jpeg" alt="" /><figcaption>Lamport时钟算法</figcaption>
+</figure>
+<p>下面，将证明：如果<span class="math inline">\(a \rightarrow b\)</span>，那么一定有<span class="math inline">\(C_a &lt; C_b\)</span>。</p>
+<ol type="1">
+<li>假设<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>发生在同一个进程内，显然<span class="math inline">\(C_a &lt; C_b\)</span>.</li>
+<li>假设<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>分别处在不同的进程内，如<span class="math inline">\(P_a\)</span>和<span class="math inline">\(P_b\)</span>，根据事件先后的定义，必然存在一个不早于<span class="math inline">\(a\)</span>且不晚于<span class="math inline">\(b\)</span>的由<span class="math inline">\(P_a\)</span>到<span class="math inline">\(P_b\)</span>的通信（否则<span class="math inline">\(a \Vert b\)</span>，矛盾）。那么假设两个进程在<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>之间最近一次通信是由<span class="math inline">\(P_a\)</span>向<span class="math inline">\(P_b\)</span>发送了消息<span class="math inline">\(a \rightarrow b\)</span>：易得<span class="math inline">\(a \rightarrow c \rightarrow d \rightarrow b\)</span>（其中可能<span class="math inline">\(a = c\)</span>或者<span class="math inline">\(d = b\)</span>）。根据算法定义，得：
+<ol type="1">
+<li><span class="math inline">\(C_a \leq C_c\)</span>（进程内计数器自增）.</li>
+<li><span class="math inline">\(C_d \leq C_b\)</span>（进程内计数器自增）.</li>
+<li><span class="math inline">\(C_c &lt; C_d\)</span>（进程间通信，观察者事件已经严格大于发生者事件的计数器）.</li>
+</ol>
+那么，最终推导出<span class="math inline">\(C_a &lt; C_b\)</span>（严格小于）。</li>
+</ol>
+<figure>
+<img src="images/appendix-a-11.jpeg" alt="" /><figcaption>事件<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>在不同进程的情况下，中间一定有消息传递，否则两个事件并发</figcaption>
+</figure>
+<p>以上，得证<span class="math inline">\(a \rightarrow b \Rightarrow C_a &lt; C_b\)</span>。</p>
+<p>但是，如果我们已知<span class="math inline">\(C_a &lt; C_b\)</span>的话，是否可以推导出<span class="math inline">\(a \rightarrow b\)</span>呢？</p>
+<p>悲哀的是，不能。下面的图是个反例：</p>
+<figure>
+<img src="images/appendix-a-12.jpeg" alt="" /><figcaption>Lamport时钟无法反向推导事件顺序的反例：红色<span class="math inline">\(a\)</span>和蓝色<span class="math inline">\(b\)</span>是并发的</figcaption>
+</figure>
+<p>这样，我们反证了<span class="math inline">\(C_a &lt; C_b \nRightarrow a \rightarrow b\)</span>。</p>
+<p>我们无法推导出<span class="math inline">\(C_a &lt; C_b \Rightarrow a \rightarrow b\)</span>的原因，在于<span class="math inline">\(a\)</span>可能和<span class="math inline">\(b\)</span>并发。</p>
+<p>但是， 如果<span class="math inline">\(C_a &lt; C_b\)</span>，一定不会有<span class="math inline">\(b \rightarrow a\)</span>的关系存在。</p>
+<p>Lamport的逻辑时钟算法构建了一个全序(total ordering)时钟来描述事件顺序， 但是我们知道「happened before」是一个偏序关系， 用全序关系的一维计数器来描述「happened before」的话， 就会导致无法等价化描述的结果，Lamport时钟的缺陷在于：<strong>如果两个事件并不相关，那么这个时钟给出的大小关系则没有意义，这个缺陷其实恰好就是全序和偏序的不同点而已</strong>。</p>
+<p>所以，要准确描述事件顺序，我们终究要寻求偏序方法。</p>
+<p>于是，我们继续探讨向量时钟。</p>
+<h2 id="向量时钟-vector-clocks">向量时钟 (Vector Clocks)</h2>
+<p>向量时钟，其实是对Lamport的时钟的一个延伸思考，<strong>算法结构一致，只是多传了一部分信息</strong>。</p>
+<p>对每个进程，定义一个向量<span class="math inline">\(VC\)</span>，向量的长度是<span class="math inline">\(n\)</span>，<span class="math inline">\(n\)</span>是进程数目。</p>
+<ol type="1">
+<li>初始化各个进程<span class="math inline">\(P_i\)</span>的向量，全部抹零：<span class="math inline">\(VC_i = [0,...,0]\)</span>。</li>
+<li>进程<span class="math inline">\(P_i\)</span>每发生一个事件时，其向量的第<span class="math inline">\(i\)</span>个元素自增：<span class="math inline">\(VC_i[i] \mathrel{+}= 1\)</span>。</li>
+<li>当进程<span class="math inline">\(P_i\)</span>发消息给进程<span class="math inline">\(P_j\)</span>时，需要在消息上附带自己的向量<span class="math inline">\(VC_i\)</span>。</li>
+<li>当进程<span class="math inline">\(P_j\)</span>接收到消息时，对齐对方的时钟，并在自己的时钟上自增：对<span class="math inline">\([0,n)\)</span>上的任意一个整数<span class="math inline">\(k\)</span>执行<span class="math inline">\(VC_j[k] = \max (VC_j[k],VC_i[k])\)</span>，接着，对应第2点：<span class="math inline">\(VC_j[j] \mathrel{+}= 1\)</span>。</li>
+</ol>
+<p>下面图是一个向量时钟算法的示意图：</p>
+<ol type="1">
+<li>和Lamport时钟算法示意图一样：（红色点、蓝色点、黑灰色点…）</li>
+<li>图的右方部分，总结了这个算法对不同事件的操作：
+<ol type="1">
+<li>对于红色和蓝色，也就是进程内自发性事件和发送消息的事件，向量内相应的计数器自增。</li>
+<li>发送消息的时候，需要传播出去自己的整个向量（也就是广播自己对整个系统的视角）。</li>
+<li>接收到消息的时候，也就是蓝色事件，需要对齐对方的向量，并应用第一条规则，即自己的向量内相应计数器自增。</li>
+</ol></li>
+</ol>
+<figure>
+<img src="images/appendix-a-13.jpeg" alt="" /><figcaption>向量时钟示意图</figcaption>
+</figure>
+<p>可以发现，向量时钟和Lamport的时钟算法结构一样， 不同的点在于：Lamport时钟只是在对齐时钟的计数器，而**{向量时钟是在对齐各自对整个系统的视角}。</p>
+<p>我们可以推导出来关于向量时钟比较大小的几个性质：</p>
+<ol type="1">
+<li><strong>向量的各维相等，则向量相等</strong>。这个是显而易见的。</li>
+<li>向量时钟是有序的 (充要)，即：<span class="math inline">\(VC_i\)</span>的各维上的值不大于<span class="math inline">\(VC_j\)</span>对应维上的值，则认为<span class="math inline">\(VC_i\)</span>不大于<span class="math inline">\(VC_j\)</span>。</li>
+<li>向量时钟有序性质的进一步细化，定义了严格小于：如果<span class="math inline">\(VC_i\)</span>不大于<span class="math inline">\(VC_j\)</span>，并且至少存在一个维，在这个维上<span class="math inline">\(VC_i\)</span>的值严格小于<span class="math inline">\(VC_j\)</span>在这个维上的值，则认为<span class="math inline">\(VC_i\)</span>小于<span class="math inline">\(VC_j\)</span>。</li>
+<li>如果两个向量不存在大小关系，则认为两个向量平行，记作<span class="math inline">\(VC_i \Vert VC_j\)</span>.</li>
+</ol>
+<p>这几个性质看起来复杂，其实都是在定义向量时钟之间的大小关系。 我们可以得出一个结论：</p>
+<p><strong>向量时钟之间的大小关系是一种偏序关系</strong>。</p>
+<p>和Lamport时钟一样，我们可以利用类似的推导方式，证明<span class="math inline">\(a \rightarrow b \Rightarrow VC_a &lt; VC_b\)</span>。这里不再描述证明思路。</p>
+<p>我们接下来要花一定篇幅论证下<span class="math inline">\(VC_a &lt; VC_b \Rightarrow a \rightarrow b\)</span>。</p>
+<ol type="1">
+<li>如果<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>两个事件处在同一个进程中，显而易见<span class="math inline">\(a \rightarrow b\)</span>。</li>
+<li>假设<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>分别处在不同的进程内，如<span class="math inline">\(P_a\)</span>和<span class="math inline">\(P_b\)</span>，设<span class="math inline">\(VC_a = [m,n], VC_b = [s,t]\)</span>。因为<span class="math inline">\(VC_a &lt; VC_b\)</span>，所以<span class="math inline">\(m≤s\)</span>，所以必然在不早于<span class="math inline">\(a\)</span>之前和不晚于<span class="math inline">\(b\)</span>之后的时间内，<span class="math inline">\(P_a\)</span>向<span class="math inline">\(P_b\)</span>发送了消息（否则<span class="math inline">\(P_b\)</span>对<span class="math inline">\(P_a\)</span>的计数器得不到及时刷新，<span class="math inline">\(s\)</span>就不会不小于<span class="math inline">\(m\)</span>）。</li>
+</ol>
+<figure>
+<img src="images/appendix-a-14.jpeg" alt="" /><figcaption>中间必然存在<span class="math inline">\(P_a\)</span>向<span class="math inline">\(P_b\)</span>发送了消息</figcaption>
+</figure>
+<p>实际上，可以分为以下几种情况：</p>
+<figure>
+<img src="images/appendix-a-15.jpeg" alt="" /><figcaption>可能出现的4种情况</figcaption>
+</figure>
+<ol type="1">
+<li>当<span class="math inline">\(a = c\)</span>且<span class="math inline">\(d = b\)</span>, 易得<span class="math inline">\(a \rightarrow b\)</span>.</li>
+<li>当<span class="math inline">\(a = c\)</span>且<span class="math inline">\(d \rightarrow b\)</span>，由传递性，得<span class="math inline">\(a \rightarrow b\)</span>.</li>
+<li>同样对于<span class="math inline">\(d = b\)</span>且<span class="math inline">\(a \rightarrow c\)</span>的情况.</li>
+<li>当<span class="math inline">\(a \rightarrow c\)</span>且<span class="math inline">\(d \rightarrow b\)</span>，根据进程内的算法逻辑和传递性，也很容易得出结论。</li>
+</ol>
+<p>综上：<span class="math inline">\(VC_a &lt; VC_b \Rightarrow a \rightarrow b\)</span>得证。</p>
+<p>进一步的，我们可以得出这样的结论：</p>
+<ol type="1">
+<li>向量有序，则事件有序（充要）：<span class="math inline">\(VC_a &lt; VC_b \leftrightarrow a \rightarrow b\)</span></li>
+<li>向量平行，则事件并发（充要）：<span class="math inline">\(VC_a \Vert VC_b \leftrightarrow a \Vert b\)</span></li>
+</ol>
+<p>是的，向量时钟可以准确刻画事件顺序。</p>
+<p>其本质在于将Lamport时钟的全序计数器的方式改造成向量时钟的偏序大小关系。</p>
+<h2 id="向量时钟看前面的问题">向量时钟看前面的问题</h2>
+<p>现在我们回到文中一开始提到的问题。</p>
+<p>由于网络延迟的不确定性， 我们在文章开始提出了一个<span class="math inline">\(A,B,C\)</span>三个进程中如何确定事件顺序的问题。</p>
+<p>我们可以从下面的图中看出，<span class="math inline">\(VC_a &lt; VC_b &lt; VC_c\)</span>，那么可以确定<span class="math inline">\(a \rightarrow b \rightarrow c\)</span>。也就是我们找到了一种方法来描述这种情况下的事件顺序。进程<span class="math inline">\(C\)</span>的视角下观察<span class="math inline">\(a\)</span>和<span class="math inline">\(b\)</span>的顺序的问题也有了明确的答案。</p>
+<figure>
+<img src="images/appendix-a-16.jpeg" alt="" /><figcaption>用向量时钟的方法解答文章开始提出的问题</figcaption>
+</figure>
+<p>最后，我们回到朋友圈的例子。下面图中可以看出，<span class="math inline">\(VC_a &lt; VC_b &lt; VC_c &lt; VC_d &lt; VC_e\)</span>，显然可以确定<span class="math inline">\(a \rightarrow b \rightarrow c \rightarrow d \rightarrow e\)</span>。</p>
+<p>在小李看到小明的朋友圈和小红的评论的时候，也收到了这两条数据的向量， 我们可以根据向量时钟来确定事件的先后关系，从而不会显示出因果矛盾。</p>
+<figure>
+<img src="images/appendix-a-17.jpeg" alt="" /><figcaption>用向量时钟的方法看朋友圈问题</figcaption>
+</figure>
+<p>上图中还有一个事件<span class="math inline">\(f\)</span>，它的发生可能是小红又发了一条评论。我们可以看到<span class="math inline">\(VC_f \Vert VC_e\)</span>。这时候，无法确定事件<span class="math inline">\(f\)</span>和<span class="math inline">\(e\)</span>的先后关系，也就是说<span class="math inline">\(f \Vert e\)</span>。</p>
+<p>但是，这时候小李还没有看见这个事情。所谓「因果」：有因才有果。看见也是一个事件的果。 这样说，<span class="math inline">\(f\)</span>和<span class="math inline">\(e\)</span>没有因果关系，因为小李还没有看见这个事件。所以讨论也就没有意义。</p>
+<h2 id="向量时钟的不足">向量时钟的不足</h2>
+<ol type="1">
+<li>只考虑了固定数量的节点，没有考虑节点的动态添加和销毁。</li>
+<li>假设节点数量是<span class="math inline">\(N\)</span>，那么每个节点需要维护的空间复杂度是<span class="math inline">\(O(N)\)</span>。通信的信息量的复杂度也是<span class="math inline">\(O(N)\)</span>。</li>
+</ol>
+<h2 id="总结与感想">总结与感想</h2>
+<ul>
+<li>现实中，无法构建精确的全局时钟来描述事件顺序。</li>
+<li>受狭义相对论的启发，我们用因果关系来描述事件顺序。</li>
+<li>因果关系是一种偏序关系。</li>
+<li>Lamport时钟构造的计数器之间的大小关系是一种全序关系，无法准确刻画事件顺序的偏序关系。</li>
+<li>向量时钟是一种对Lamport时钟的延伸，以偏序关系准确刻画了事件的因果顺序。</li>
+</ul>
+<p>此外，向量时钟给我一种感想，对每个分布式节点来说：</p>
+<ol type="1">
+<li>我把我的视角分享给其他节点。</li>
+<li>我对齐我看到的其他节点的视角。</li>
+</ol>
+<p>本质上，是在做<strong>视角对齐</strong>。</p>
+<p>这自然地，让我想起了Gossip谣言传播算法。 Gossip算法如其名，每个分布式参与者都在散播自己视角的信息，以达到谣言扩散的效果。 同样是在做<strong>视角对齐</strong>。</p>
+<p>对于分布式系统中的事件顺序的刻画，就讨论到这里。</p>
 </body>
 </html>
