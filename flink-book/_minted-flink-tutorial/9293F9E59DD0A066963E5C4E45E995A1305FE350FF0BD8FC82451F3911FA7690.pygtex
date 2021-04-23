@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n+nt}{\PYGZlt{}dependency\PYGZgt{}}
+\PYGZca{}\PYGZca{}I\PYG{n+nt}{\PYGZlt{}groupId\PYGZgt{}}org.apache.bahir\PYG{n+nt}{\PYGZlt{}/groupId\PYGZgt{}}
+\PYGZca{}\PYGZca{}I\PYG{n+nt}{\PYGZlt{}artifactId\PYGZgt{}}flink\PYGZhy{}connector\PYGZhy{}redis\PYGZus{}2.11\PYG{n+nt}{\PYGZlt{}/artifactId\PYGZgt{}}
+\PYGZca{}\PYGZca{}I\PYG{n+nt}{\PYGZlt{}version\PYGZgt{}}1.0\PYG{n+nt}{\PYGZlt{}/version\PYGZgt{}}
+\PYG{n+nt}{\PYGZlt{}/dependency\PYGZgt{}}
+\end{Verbatim}

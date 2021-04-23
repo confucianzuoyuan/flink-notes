@@ -1,9 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYG{c+c1}{// first stream}
-\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Integer}\PYG{o}{\PYGZgt{}} \PYG{n}{first} \PYG{o}{=} \PYG{p}{...}
-\PYG{c+c1}{// second stream}
-\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{second} \PYG{o}{=} \PYG{p}{...}
-
-\PYG{c+c1}{// connect streams}
-\PYG{n}{ConnectedStreams}\PYG{o}{\PYGZlt{}}\PYG{n}{Integer}\PYG{p}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{connected} \PYG{o}{=} \PYG{n}{first}\PYG{p}{.}\PYG{n+na}{connect}\PYG{p}{(}\PYG{n}{second}\PYG{p}{);}
-\end{Verbatim}

@@ -1,0 +1,31 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{UserBehavior} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{String} \PYG{n}{userId}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{String} \PYG{n}{itemId}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{String} \PYG{n}{categoryId}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{String} \PYG{n}{behaviorType}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{Long} \PYG{n}{timestamp}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n+nf}{UserBehavior}\PYG{o}{()} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n+nf}{UserBehavior}\PYG{o}{(}\PYG{n}{String} \PYG{n}{userId}\PYG{o}{,} \PYG{n}{String} \PYG{n}{itemId}\PYG{o}{,} \PYG{n}{String} \PYG{n}{categoryId}\PYG{o}{,} \PYG{n}{String} \PYG{n}{behaviorType}\PYG{o}{,} \PYG{n}{Long} \PYG{n}{timestamp}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ithis}\PYG{o}{.}\PYG{n+na}{userId} \PYG{o}{=} \PYG{n}{userId}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ithis}\PYG{o}{.}\PYG{n+na}{itemId} \PYG{o}{=} \PYG{n}{itemId}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ithis}\PYG{o}{.}\PYG{n+na}{categoryId} \PYG{o}{=} \PYG{n}{categoryId}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ithis}\PYG{o}{.}\PYG{n+na}{behaviorType} \PYG{o}{=} \PYG{n}{behaviorType}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ithis}\PYG{o}{.}\PYG{n+na}{timestamp} \PYG{o}{=} \PYG{n}{timestamp}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{n+nd}{@Override}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{n}{String} \PYG{n+nf}{toString}\PYG{o}{()} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ireturn} \PYG{l+s}{\PYGZdq{}UserBehavior\PYGZob{}\PYGZdq{}} \PYG{o}{+}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{l+s}{\PYGZdq{}userId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{userId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{l+s}{\PYGZdq{}, itemId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{itemId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{l+s}{\PYGZdq{}, categoryId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{categoryId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{l+s}{\PYGZdq{}, behaviorType=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{behaviorType} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{l+s}{\PYGZdq{}, timestamp=\PYGZdq{}} \PYG{o}{+} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{o}{(}\PYG{n}{timestamp}\PYG{o}{)} \PYG{o}{+}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{l+s+sc}{\PYGZsq{}\PYGZcb{}\PYGZsq{}}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,20 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{class} \PYG{n+nc}{UserBehaviorSource} \PYG{k+kd}{extends} \PYG{n}{RichParallelSourceFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Iprivate} \PYG{n}{Boolean} \PYG{n}{running} \PYG{o}{=} \PYG{k+kc}{true}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{n+nd}{@Override}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{k+kt}{void} \PYG{n+nf}{run}\PYG{o}{(}\PYG{n}{SourceContext}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{sourceContext}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IString} \PYG{n}{strCurrentLine}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IBufferedReader} \PYG{n}{reader} \PYG{o}{=} \PYG{k}{new} \PYG{n}{BufferedReader}\PYG{o}{(}\PYG{k}{new} \PYG{n}{FileReader}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}UserBehavior.csv\PYGZdq{}}\PYG{o}{));}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Iwhile} \PYG{o}{(}\PYG{n}{running} \PYG{o}{\PYGZam{}\PYGZam{}} \PYG{o}{(}\PYG{n}{strCurrentLine} \PYG{o}{=} \PYG{n}{reader}\PYG{o}{.}\PYG{n+na}{readLine}\PYG{o}{())} \PYG{o}{!=} \PYG{k+kc}{null}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IString}\PYG{o}{[]} \PYG{n}{arr} \PYG{o}{=} \PYG{n}{strCurrentLine}\PYG{o}{.}\PYG{n+na}{split}\PYG{o}{(}\PYG{l+s}{\PYGZdq{},\PYGZdq{}}\PYG{o}{);}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IsourceContext}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{k}{new} \PYG{n}{UserBehavior}\PYG{o}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{0}\PYG{o}{],} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{1}\PYG{o}{],} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{2}\PYG{o}{],} \PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{3}\PYG{o}{],} \PYG{n}{Long}\PYG{o}{.}\PYG{n+na}{parseLong}\PYG{o}{(}\PYG{n}{arr}\PYG{o}{[}\PYG{l+m+mi}{4}\PYG{o}{])} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{o}{));}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IThread}\PYG{o}{.}\PYG{n+na}{sleep}\PYG{o}{(}\PYG{l+m+mi}{100L}\PYG{o}{);}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{n+nd}{@Override}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ipublic} \PYG{k+kt}{void} \PYG{n+nf}{cancel}\PYG{o}{()} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Irunning} \PYG{o}{=} \PYG{k+kc}{false}\PYG{o}{;}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

@@ -1,0 +1,16 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{interface} \PYG{n+nc}{AggregateFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{IN}\PYG{o}{,} \PYG{n}{ACC}\PYG{o}{,} \PYG{n}{OUT}\PYG{o}{\PYGZgt{}} \PYG{k+kd}{extends} \PYG{n}{Function}\PYG{o}{,} \PYG{n}{Serializable} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{c+c1}{// 创建新累加器}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IACC} \PYG{n+nf}{createAccumulator}\PYG{o}{();}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{c+c1}{// 累加操作的逻辑：将每一条输入元素累加到累加器上，并返回累加器}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IACC} \PYG{n+nf}{add}\PYG{o}{(}\PYG{n}{IN} \PYG{n}{value}\PYG{o}{,} \PYG{n}{ACC} \PYG{n}{accumulator}\PYG{o}{);}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{c+c1}{// 返回累加结果}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IOUT} \PYG{n+nf}{getResult}\PYG{o}{(}\PYG{n}{ACC} \PYG{n}{accumulator}\PYG{o}{);}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{c+c1}{// 将两个累加器聚合，只在事件时间会话窗口才会用到}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{IACC} \PYG{n+nf}{merge}\PYG{o}{(}\PYG{n}{ACC} \PYG{n}{a}\PYG{o}{,} \PYG{n}{ACC} \PYG{n}{b}\PYG{o}{);}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

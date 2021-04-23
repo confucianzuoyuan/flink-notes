@@ -1,0 +1,62 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{SingleOutputStreamOperator}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}} \PYG{n}{ivcStream} \PYG{o}{=} \PYG{n}{pvStream}
+    \PYG{o}{.}\PYG{n+na}{keyBy}\PYG{o}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{itemId}\PYG{o}{)}
+    \PYG{o}{.}\PYG{n+na}{window}\PYG{o}{(}\PYG{n}{SlidingEventTimeWindows}\PYG{o}{.}\PYG{n+na}{of}\PYG{o}{(}\PYG{n}{Time}\PYG{o}{.}\PYG{n+na}{hours}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{),} \PYG{n}{Time}\PYG{o}{.}\PYG{n+na}{minutes}\PYG{o}{(}\PYG{l+m+mi}{5}\PYG{o}{)))}
+    \PYG{o}{.}\PYG{n+na}{aggregate}\PYG{o}{(}\PYG{k}{new} \PYG{n}{CountAgg}\PYG{o}{(),} \PYG{k}{new} \PYG{n}{WindowResult}\PYG{o}{());}
+
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{CountAgg} \PYG{k+kd}{implements} \PYG{n}{AggregateFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{,} \PYG{n}{Long}\PYG{o}{,} \PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZob{}}
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{createAccumulator}\PYG{o}{()} \PYG{o}{\PYGZob{}}
+        \PYG{k}{return} \PYG{l+m+mi}{0}\PYG{n}{L}\PYG{o}{;}
+    \PYG{o}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{add}\PYG{o}{(}\PYG{n}{UserBehavior} \PYG{n}{value}\PYG{o}{,} \PYG{n}{Long} \PYG{n}{accumulator}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+        \PYG{k}{return} \PYG{n}{accumulator} \PYG{o}{+} \PYG{l+m+mi}{1L}\PYG{o}{;}
+    \PYG{o}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{getResult}\PYG{o}{(}\PYG{n}{Long} \PYG{n}{accumulator}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+        \PYG{k}{return} \PYG{n}{accumulator}\PYG{o}{;}
+    \PYG{o}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n+nf}{merge}\PYG{o}{(}\PYG{n}{Long} \PYG{n}{a}\PYG{o}{,} \PYG{n}{Long} \PYG{n}{b}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+        \PYG{k}{return} \PYG{k+kc}{null}\PYG{o}{;}
+    \PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{WindowResult} \PYG{k+kd}{implements} \PYG{n}{WindowFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{,} \PYG{n}{ItemViewCount}\PYG{o}{,} \PYG{n}{String}\PYG{o}{,} \PYG{n}{TimeWindow}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZob{}}
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{apply}\PYG{o}{(}\PYG{n}{String} \PYG{n}{s}\PYG{o}{,} \PYG{n}{TimeWindow} \PYG{n}{timeWindow}\PYG{o}{,} \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{Long}\PYG{o}{\PYGZgt{}} \PYG{n}{iterable}\PYG{o}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{ItemViewCount}\PYG{o}{\PYGZgt{}} \PYG{n}{collector}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+        \PYG{n}{collector}\PYG{o}{.}\PYG{n+na}{collect}\PYG{o}{(}\PYG{k}{new} \PYG{n}{ItemViewCount}\PYG{o}{(}\PYG{n}{s}\PYG{o}{,} \PYG{n}{iterable}\PYG{o}{.}\PYG{n+na}{iterator}\PYG{o}{().}\PYG{n+na}{next}\PYG{o}{(),} \PYG{n}{timeWindow}\PYG{o}{.}\PYG{n+na}{getStart}\PYG{o}{(),} \PYG{n}{timeWindow}\PYG{o}{.}\PYG{n+na}{getEnd}\PYG{o}{()));}
+    \PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kd}{class} \PYG{n+nc}{ItemViewCount} \PYG{o}{\PYGZob{}}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n}{itemId}\PYG{o}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{count}\PYG{o}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{windowStart}\PYG{o}{;}
+    \PYG{k+kd}{public} \PYG{n}{Long} \PYG{n}{windowEnd}\PYG{o}{;}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{ItemViewCount}\PYG{o}{()} \PYG{o}{\PYGZob{}}
+    \PYG{o}{\PYGZcb{}}
+
+    \PYG{k+kd}{public} \PYG{n+nf}{ItemViewCount}\PYG{o}{(}\PYG{n}{String} \PYG{n}{itemId}\PYG{o}{,} \PYG{n}{Long} \PYG{n}{count}\PYG{o}{,} \PYG{n}{Long} \PYG{n}{windowStart}\PYG{o}{,} \PYG{n}{Long} \PYG{n}{windowEnd}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+        \PYG{k}{this}\PYG{o}{.}\PYG{n+na}{itemId} \PYG{o}{=} \PYG{n}{itemId}\PYG{o}{;}
+        \PYG{k}{this}\PYG{o}{.}\PYG{n+na}{count} \PYG{o}{=} \PYG{n}{count}\PYG{o}{;}
+        \PYG{k}{this}\PYG{o}{.}\PYG{n+na}{windowStart} \PYG{o}{=} \PYG{n}{windowStart}\PYG{o}{;}
+        \PYG{k}{this}\PYG{o}{.}\PYG{n+na}{windowEnd} \PYG{o}{=} \PYG{n}{windowEnd}\PYG{o}{;}
+    \PYG{o}{\PYGZcb{}}
+
+    \PYG{n+nd}{@Override}
+    \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{toString}\PYG{o}{()} \PYG{o}{\PYGZob{}}
+        \PYG{k}{return} \PYG{l+s}{\PYGZdq{}ItemViewCount\PYGZob{}\PYGZdq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}itemId=\PYGZsq{}\PYGZdq{}} \PYG{o}{+} \PYG{n}{itemId} \PYG{o}{+} \PYG{l+s+sc}{\PYGZsq{}\PYGZbs{}\PYGZsq{}\PYGZsq{}} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, count=\PYGZdq{}} \PYG{o}{+} \PYG{n}{count} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, windowStart=\PYGZdq{}} \PYG{o}{+} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{o}{(}\PYG{n}{windowStart}\PYG{o}{)} \PYG{o}{+}
+                \PYG{l+s}{\PYGZdq{}, windowEnd=\PYGZdq{}} \PYG{o}{+} \PYG{k}{new} \PYG{n}{Timestamp}\PYG{o}{(}\PYG{n}{windowEnd}\PYG{o}{)} \PYG{o}{+}
+                \PYG{l+s+sc}{\PYGZsq{}\PYGZcb{}\PYGZsq{}}\PYG{o}{;}
+    \PYG{o}{\PYGZcb{}}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

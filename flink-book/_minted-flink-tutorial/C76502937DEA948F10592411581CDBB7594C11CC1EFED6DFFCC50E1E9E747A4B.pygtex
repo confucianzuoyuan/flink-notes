@@ -1,3 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYG{n}{env}\PYG{p}{.}\PYG{n+na}{execute}\PYG{p}{(}\PYG{l+s}{\PYGZdq{}Compute average sensor temperature\PYGZdq{}}\PYG{p}{);}
-\end{Verbatim}

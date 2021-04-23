@@ -1,3 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{SensorReading}\PYG{o}{\PYGZgt{}} \PYG{n}{filteredReadings} \PYG{o}{=} \PYG{n}{readings}\PYG{p}{.}\PYG{n+na}{filter}\PYG{p}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{p}{.}\PYG{n+na}{temperature} \PYG{o}{\PYGZgt{}=} \PYG{l+m+mi}{25}\PYG{p}{);}
-\end{Verbatim}

@@ -1,6 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYG{c+c1}{// T: the type of input elements}
-\PYG{c+c1}{// O: the type of output elements}
-\PYG{n}{MapFunction}\PYG{o}{[}\PYG{n}{T}\PYG{p}{,} \PYG{n}{O}\PYG{o}{]}
-    \PYG{o}{\PYGZgt{}} \PYG{n}{map}\PYG{p}{(}\PYG{n}{T}\PYG{p}{):} \PYG{n}{O}
-\end{Verbatim}

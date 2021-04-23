@@ -1,0 +1,18 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n+nd}{@Public}
+\PYG{k+kd}{public} \PYG{k+kd}{interface} \PYG{n+nc}{WatermarkGenerator}\PYG{o}{\PYGZlt{}}\PYG{n}{T}\PYG{o}{\PYGZgt{}} \PYG{o}{\PYGZob{}}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{c+cm}{/**}
+\PYG{c+cm}{\PYGZca{}\PYGZca{}I* 每来一个事件都会调用, 允许水位线产生器记忆和检查事件的时间戳。}
+\PYG{c+cm}{\PYGZca{}\PYGZca{}I* 允许水位线产生器基于事件本身发射水位线。}
+\PYG{c+cm}{\PYGZca{}\PYGZca{}I*/}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ivoid} \PYG{n+nf}{onEvent}\PYG{o}{(}\PYG{n}{T} \PYG{n}{event}\PYG{o}{,} \PYG{k+kt}{long} \PYG{n}{eventTimestamp}\PYG{o}{,} \PYG{n}{WatermarkOutput} \PYG{n}{output}\PYG{o}{);}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{I}\PYG{c+cm}{/**}
+\PYG{c+cm}{\PYGZca{}\PYGZca{}I* 周期性的调用（默认200ms调用一次）, 可能会产生新的水位线，也可能不会。}
+\PYG{c+cm}{\PYGZca{}\PYGZca{}I*}
+\PYG{c+cm}{\PYGZca{}\PYGZca{}I* 调用周期通过ExecutionConfig\PYGZsh{}getAutoWatermarkInterval()方法来配置。}
+\PYG{c+cm}{\PYGZca{}\PYGZca{}I*/}
+\PYG{o}{\PYGZca{}\PYGZca{}}\PYG{n}{Ivoid} \PYG{n+nf}{onPeriodicEmit}\PYG{o}{(}\PYG{n}{WatermarkOutput} \PYG{n}{output}\PYG{o}{);}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

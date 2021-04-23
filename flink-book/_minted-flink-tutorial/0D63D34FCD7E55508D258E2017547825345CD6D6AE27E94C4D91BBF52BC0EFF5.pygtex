@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+org.apache.flink.api.common.functions.InvalidTypesException: The generic type parameters of \PYGZsq{}Collector\PYGZsq{} are missing.
+In many cases lambda methods don\PYGZsq{}t provide enough information for automatic type extraction when Java generics are involved.
+An easy workaround is to use an (anonymous) class instead that implements the \PYGZsq{}org.apache.flink.api.common.functions.FlatMapFunction\PYGZsq{} interface.
+Otherwise the type has to be specified explicitly using type information.
+\end{Verbatim}

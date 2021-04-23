@@ -1,3 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYGZdl{} ./bin/flink run 打包好的JAR包的绝对路径
-\end{Verbatim}

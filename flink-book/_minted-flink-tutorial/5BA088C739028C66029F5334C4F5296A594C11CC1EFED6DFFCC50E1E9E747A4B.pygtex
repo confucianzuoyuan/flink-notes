@@ -1,6 +1,0 @@
-\begin{Verbatim}[commandchars=\\\{\}]
-\PYG{k+kd}{public} \PYG{k+kd}{enum} \PYG{n}{SmokeLevel} \PYG{p}{\PYGZob{}}
-    \PYG{n}{LOW}\PYG{p}{,}
-    \PYG{n}{HIGH}
-\PYG{p}{\PYGZcb{}}
-\end{Verbatim}

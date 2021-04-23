@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGZdl{} ./bin/flink run \PYG{l+s+se}{\PYGZbs{}c}olorbox\PYG{o}{\PYGZob{}}yellow\PYG{o}{\PYGZcb{}\PYGZob{}}打包好的JAR包的绝对路径\PYG{o}{\PYGZcb{}}
+\end{Verbatim}

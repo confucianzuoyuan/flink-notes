@@ -1,0 +1,5 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{interface} \PYG{n+nc}{WindowFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{IN}\PYG{o}{,} \PYG{n}{OUT}\PYG{o}{,} \PYG{n}{KEY}\PYG{o}{,} \PYG{n}{W} \PYG{k+kd}{extends} \PYG{n}{Window}\PYG{o}{\PYGZgt{}} \PYG{k+kd}{extends} \PYG{n}{Function}\PYG{o}{,} \PYG{n}{Serializable} \PYG{o}{\PYGZob{}}
+    \PYG{k+kt}{void} \PYG{n+nf}{apply}\PYG{o}{(}\PYG{n}{KEY} \PYG{n}{key}\PYG{o}{,} \PYG{n}{W} \PYG{n}{window}\PYG{o}{,} \PYG{n}{Iterable}\PYG{o}{\PYGZlt{}}\PYG{n}{IN}\PYG{o}{\PYGZgt{}} \PYG{n}{input}\PYG{o}{,} \PYG{n}{Collector}\PYG{o}{\PYGZlt{}}\PYG{n}{OUT}\PYG{o}{\PYGZgt{}} \PYG{n}{out}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception}\PYG{o}{;}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}
