@@ -2,6 +2,35 @@
 \usepackage{minted,tabularx,tikz}
 \usetikzlibrary{shapes,shapes.geometric}
 
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
 \setcounter{tocdepth}{2}
 
 \title{尚硅谷Flink教程}
@@ -232,7 +261,7 @@ Apache Flink是第三代分布式流处理器，它拥有极富竞争力的功�
 
 编写\texttt{WordCount.java}程序
 
-\begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
+\begin{lstlisting}[language=java]
 public class WordCount {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -259,7 +288,7 @@ public class WordCount {
         }
     }
 }
-\end{minted}
+\end{lstlisting}
 
 \subsection{下载Flink运行时环境，提交Jar包的运行方式}
 
@@ -1039,33 +1068,33 @@ Flink中一个最有价值，也是最独特的功能是保存点（savepoints�
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 public static class UserBehavior {
-	public String userId;
-	public String itemId;
-	public String categoryId;
-	public String behaviorType;
-	public Long timestamp;
-	
-	public UserBehavior() {
-	}
-	
-	public UserBehavior(String userId, String itemId, String categoryId, String behaviorType, Long timestamp) {
-		this.userId = userId;
-		this.itemId = itemId;
-		this.categoryId = categoryId;
-		this.behaviorType = behaviorType;
-		this.timestamp = timestamp;
-	}
-	
-	@Override
-	public String toString() {
-		return "UserBehavior{" +
-			"userId='" + userId + '\'' +
-			", itemId='" + itemId + '\'' +
-			", categoryId='" + categoryId + '\'' +
-			", behaviorType='" + behaviorType + '\'' +
-			", timestamp=" + new Timestamp(timestamp) +
-			'}';
-	}
+    public String userId;
+    public String itemId;
+    public String categoryId;
+    public String behaviorType;
+    public Long timestamp;
+    
+    public UserBehavior() {
+    }
+    
+    public UserBehavior(String userId, String itemId, String categoryId, String behaviorType, Long timestamp) {
+        this.userId = userId;
+        this.itemId = itemId;
+        this.categoryId = categoryId;
+        this.behaviorType = behaviorType;
+        this.timestamp = timestamp;
+    }
+    
+    @Override
+    public String toString() {
+        return "UserBehavior{" +
+            "userId='" + userId + '\'' +
+            ", itemId='" + itemId + '\'' +
+            ", categoryId='" + categoryId + '\'' +
+            ", behaviorType='" + behaviorType + '\'' +
+            ", timestamp=" + new Timestamp(timestamp) +
+            '}';
+    }
 }
 \end{minted}
 
@@ -1073,21 +1102,21 @@ public static class UserBehavior {
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 public static void main(String[] args) throws Exception {
-	StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-	env.setParallelism(1);
-	
-	env.fromElements(
-	    new UserBehavior("543462","1715","1464116","pv",1511658000 * 1000L),
-	    new UserBehavior("662867","2244074","1575622","pv",1511658000 * 1000L)
-	);
-	
-	ArrayList<UserBehavior> userBehaviors = new ArrayList<>();
-	userBehaviors.add(new UserBehavior("543462","1715","1464116","pv",1511658000 * 1000L));
-	userBehaviors.add(new UserBehavior("662867","2244074","1575622","pv",1511658000 * 1000L));
-	
-	env.fromCollection(userBehaviors);
-	
-	env.execute();
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    env.setParallelism(1);
+    
+    env.fromElements(
+        new UserBehavior("543462","1715","1464116","pv",1511658000 * 1000L),
+        new UserBehavior("662867","2244074","1575622","pv",1511658000 * 1000L)
+    );
+    
+    ArrayList<UserBehavior> userBehaviors = new ArrayList<>();
+    userBehaviors.add(new UserBehavior("543462","1715","1464116","pv",1511658000 * 1000L));
+    userBehaviors.add(new UserBehavior("662867","2244074","1575622","pv",1511658000 * 1000L));
+    
+    env.fromCollection(userBehaviors);
+    
+    env.execute();
 }
 \end{minted}
 
@@ -1109,9 +1138,9 @@ env.socketTextStream(host, port);
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{xml}
 <dependency>
-	<groupId>org.apache.flink</groupId>
-	<artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
-	<version>${flink.version}</version>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-connector-kafka_${scala.binary.version}</artifactId>
+    <version>${flink.version}</version>
 </dependency>
 \end{minted}
 
@@ -1126,11 +1155,11 @@ properties.setProperty("value.deserializer", "org.apache.kafka.common.serializat
 properties.setProperty("auto.offset.reset", "latest");
 
 env
-	.addSource(new FlinkKafkaConsumer<String>(
-		"userbehavior",
-		new SimpleStringSchema(),
-		properties
-	));
+    .addSource(new FlinkKafkaConsumer<String>(
+        "userbehavior",
+        new SimpleStringSchema(),
+        properties
+    ));
 \end{minted}
 
 \subsection{自定义数据源读取}
@@ -1139,22 +1168,22 @@ env
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 public class UserBehaviorSource extends RichParallelSourceFunction<UserBehavior> {
-	private Boolean running = true;
-	@Override
-	public void run(SourceContext<UserBehavior> sourceContext) throws Exception {
-		String strCurrentLine;
-		BufferedReader reader = new BufferedReader(new FileReader("UserBehavior.csv"));
-		while (running && (strCurrentLine = reader.readLine()) != null) {
-			String[] arr = strCurrentLine.split(",");
-			sourceContext.collect(new UserBehavior(arr[0], arr[1], arr[2], arr[3], Long.parseLong(arr[4]) * 1000L));
-			Thread.sleep(100L);
-		}
-	}
-	
-	@Override
-	public void cancel() {
-		running = false;
-	}
+    private Boolean running = true;
+    @Override
+    public void run(SourceContext<UserBehavior> sourceContext) throws Exception {
+        String strCurrentLine;
+        BufferedReader reader = new BufferedReader(new FileReader("UserBehavior.csv"));
+        while (running && (strCurrentLine = reader.readLine()) != null) {
+            String[] arr = strCurrentLine.split(",");
+            sourceContext.collect(new UserBehavior(arr[0], arr[1], arr[2], arr[3], Long.parseLong(arr[4]) * 1000L));
+            Thread.sleep(100L);
+        }
+    }
+    
+    @Override
+    public void cancel() {
+        running = false;
+    }
 }
 \end{minted}
 
@@ -1190,19 +1219,19 @@ Flink流处理程序的结构如下：
 readings.map(r -> r.itemId);
 
 readings.map(new MapFunction<UserBehavior, String>() {
-	@Override
-	public String map(UserBehavior r) throws Exception {
-		return r.itemId;
-	}
+    @Override
+    public String map(UserBehavior r) throws Exception {
+        return r.itemId;
+    }
 });
 
 readings.map(new IdExtractor());
-	
+    
 public static class IdExtractor implements MapFunction<UserBehavior, String> {
-	@Override
-	public String map(UserBehavior r) throws Exception {
-		return r.itemId;
-	}
+    @Override
+    public String map(UserBehavior r) throws Exception {
+        return r.itemId;
+    }
 }
 \end{minted}
 
@@ -1210,21 +1239,21 @@ public static class IdExtractor implements MapFunction<UserBehavior, String> {
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 readings.filter(r -> r.behaviorType.equals("pv"));
-	
+    
 readings.filter(new FilterFunction<UserBehavior>() {
-	@Override
-	public Boolean filter(UserBehavior r) throws Exception {
-		return r.behaviorType.equals("pv");
-	}
+    @Override
+    public Boolean filter(UserBehavior r) throws Exception {
+        return r.behaviorType.equals("pv");
+    }
 });
-	
+    
 readings.filter(new PvExtractor());
-	
+    
 public static class IdExtractor implements FilterFunction<UserBehavior> {
-	@Override
-	public Boolean filter(UserBehavior r) throws Exception {
-		return r.behaviorType.equals("pv");
-	}
+    @Override
+    public Boolean filter(UserBehavior r) throws Exception {
+        return r.behaviorType.equals("pv");
+    }
 }
 \end{minted}
 
@@ -1234,30 +1263,30 @@ public static class IdExtractor implements FilterFunction<UserBehavior> {
 DataStreamSource<String> stream = env.fromElements("white", "black", "gray");
 
 stream
-	.flatMap(
-		(FlatMapFunction<String, String>)(s, out) -> {
-			if (s.equals("white")) {
-				out.collect(s);
-			} else if (s.equals("black")) {
-				out.collect(s);
-				out.collect(s);
-			}
-	})
-	.returns(Types.STRING)
-	.print();
-	
+    .flatMap(
+        (FlatMapFunction<String, String>)(s, out) -> {
+            if (s.equals("white")) {
+                out.collect(s);
+            } else if (s.equals("black")) {
+                out.collect(s);
+                out.collect(s);
+            }
+    })
+    .returns(Types.STRING)
+    .print();
+    
 stream.flatMap(new MyFlatMap()).print();
 
 public static class MyFlatMap implements FlatMapFunction<String, String> {
-	@Override
-	public void flatMap(String value, Collector<String> out) throws Exception {
-		if (value.equals("white")) {
-			out.collect(value);
-		} else if (value.equals("black")) {
-			out.collect(value);
-			out.collect(value);
-		}
-	}
+    @Override
+    public void flatMap(String value, Collector<String> out) throws Exception {
+        if (value.equals("white")) {
+            out.collect(value);
+        } else if (value.equals("black")) {
+            out.collect(value);
+            out.collect(value);
+        }
+    }
 }
 \end{minted}
 
@@ -1279,12 +1308,12 @@ keyBy()方法接收一个参数，这个参数指定了key或者keys，有很多
 KeyedStream<UserBehavior, String> keyed = stream.keyBy(r -> r.itemId);
 
 stream
-	.keyBy(new KeySelector<UserBehavior, String>() {
-		@Override
-		public String getKey(UserBehavior value) throws Exception {
-			return value.itemId;
-		}
-	});
+    .keyBy(new KeySelector<UserBehavior, String>() {
+        @Override
+        public String getKey(UserBehavior value) throws Exception {
+            return value.itemId;
+        }
+    });
 \end{minted}
 
 \textit{滚动聚合}
@@ -1329,18 +1358,18 @@ reduce函数可以通过实现接口ReduceFunction来创建一个类。ReduceFun
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 inputStream
-	.keyBy(r -> r.f0)
-	.reduce(new ReduceFunction<Tuple3<Integer, Integer, Integer>>() {
-		@Override
-		public Tuple3<Integer, Integer, Integer> reduce(Tuple3<Integer, Integer, Integer> value1, Tuple3<Integer, Integer, Integer> value2) throws Exception {
-			if (value1.f1 > value2.f1) {
-				return value1;
-			} else {
-				return value2;
-			}
-		}
-	})
-	.print();
+    .keyBy(r -> r.f0)
+    .reduce(new ReduceFunction<Tuple3<Integer, Integer, Integer>>() {
+        @Override
+        public Tuple3<Integer, Integer, Integer> reduce(Tuple3<Integer, Integer, Integer> value1, Tuple3<Integer, Integer, Integer> value2) throws Exception {
+            if (value1.f1 > value2.f1) {
+                return value1;
+            } else {
+                return value2;
+            }
+        }
+    })
+    .print();
 \end{minted}
 
 \section{分布式转换算子}
@@ -1450,8 +1479,8 @@ Flink为Java的Tuple提供了高效的实现。Flink实现的Java Tuple最多可
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 DataStream<Tuple2<String, Integer>> persons = env
     .fromElements(
-    	Tuple2.of("Adam", 17),
-    	Tuple2.of("Sarah", 23)
+        Tuple2.of("Adam", 17),
+        Tuple2.of("Sarah", 23)
     );
 
 persons.filter(p -> p.f1 > 18);
@@ -1494,8 +1523,8 @@ public class Person {
     public Person() {}
 
     public Person(String name, int age) {
-    	this.name = name;
-    	this.age = age;
+        this.name = name;
+        this.age = age;
     }
 }
 
@@ -1566,11 +1595,11 @@ DataSet<Integer> input = env.fromElements(1, 2, 3);
 
 // 必须声明 collector 类型
 input.flatMap((Integer number, Collector<String> out) -> {
-	StringBuilder builder = new StringBuilder();
-	for(int i = 0; i < number; i++) {
-		builder.append("a");
-		out.collect(builder.toString());
-	}
+    StringBuilder builder = new StringBuilder();
+    for(int i = 0; i < number; i++) {
+        builder.append("a");
+        out.collect(builder.toString());
+    }
 })
 // 显式提供类型信息
 .returns(Types.STRING)
@@ -1607,19 +1636,19 @@ env.fromElements(1, 2, 3)
 .print();
 
 public static class MyTuple2Mapper extends MapFunction<Integer, Tuple2<Integer, Integer>> {
-	@Override
-	public Tuple2<Integer, Integer> map(Integer i) {
-		return Tuple2.of(i, i);
-	}
+    @Override
+    public Tuple2<Integer, Integer> map(Integer i) {
+        return Tuple2.of(i, i);
+    }
 }
 
 // 使用匿名类来替代
 env.fromElements(1, 2, 3)
 .map(new MapFunction<Integer, Tuple2<Integer, Integer>> {
-	@Override
-	public Tuple2<Integer, Integer> map(Integer i) {
-		return Tuple2.of(i, i);
-	}
+    @Override
+    public Tuple2<Integer, Integer> map(Integer i) {
+        return Tuple2.of(i, i);
+    }
 })
 .print();
 
@@ -1629,10 +1658,10 @@ env.fromElements(1, 2, 3)
 .print();
 
 public static class DoubleTuple extends Tuple2<Integer, Integer> {
-	public DoubleTuple(int f0, int f1) {
-		this.f0 = f0;
-		this.f1 = f1;
-	}
+    public DoubleTuple(int f0, int f1) {
+        this.f0 = f0;
+        this.f1 = f1;
+    }
 }
 \end{minted}
 
@@ -1698,14 +1727,14 @@ import org.apache.flink.streaming.api.functions.sink.filesystem.rollingpolicies.
 DataStream<String> input = ...;
 
 final StreamingFileSink<String> sink = StreamingFileSink
-	.forRowFormat(new Path(outputPath), new SimpleStringEncoder<String>("UTF-8"))
-	.withRollingPolicy(
-		DefaultRollingPolicy.builder()
-		.withRolloverInterval(TimeUnit.MINUTES.toMillis(15))
-		.withInactivityInterval(TimeUnit.MINUTES.toMillis(5))
-		.withMaxPartSize(1024 * 1024 * 1024)
-	.build())
-	.build();
+    .forRowFormat(new Path(outputPath), new SimpleStringEncoder<String>("UTF-8"))
+    .withRollingPolicy(
+        DefaultRollingPolicy.builder()
+        .withRolloverInterval(TimeUnit.MINUTES.toMillis(15))
+        .withInactivityInterval(TimeUnit.MINUTES.toMillis(5))
+        .withMaxPartSize(1024 * 1024 * 1024)
+    .build())
+    .build();
 
 input.addSink(sink);
 \end{minted}
@@ -1713,9 +1742,9 @@ input.addSink(sink);
 这个例子创建了一个简单的 Sink ，将记录分配给默认的一小时时间桶。它还指定了一个滚动策略，该策略在以下三种情况下滚动处于 In-progress 状态的部分文件（part file）：
 
 \begin{itemize}
-	\item 它至少包含 15 分钟的数据
-	\item 最近 5 分钟没有收到新的记录
-	\item 文件大小达到 1GB （写入最后一条记录后）
+    \item 它至少包含 15 分钟的数据
+    \item 最近 5 分钟没有收到新的记录
+    \item 文件大小达到 1GB （写入最后一条记录后）
 \end{itemize}
 
 \subsection{写入Kafka}
@@ -1729,11 +1758,11 @@ properties.put("bootstrap.servers", "localhost:9092");
 DataStreamSource<String> stream = env.addSource(new UserBehaviorSource());
 
 stream
-	.addSink(new FlinkKafkaProducer<String>(
-		"userbehavior",
-		new SimpleStringSchema(),
-		properties
-	));
+    .addSink(new FlinkKafkaProducer<String>(
+        "userbehavior",
+        new SimpleStringSchema(),
+        properties
+    ));
 \end{minted}
 
 \subsection{写入Redis}
@@ -1742,9 +1771,9 @@ stream
 
 \begin{minted}{xml}
 <dependency>
-	<groupId>org.apache.bahir</groupId>
-	<artifactId>flink-connector-redis_2.11</artifactId>
-	<version>1.0</version>
+    <groupId>org.apache.bahir</groupId>
+    <artifactId>flink-connector-redis_2.11</artifactId>
+    <version>1.0</version>
 </dependency>
 \end{minted}
 
@@ -1752,25 +1781,25 @@ stream
 FlinkJedisPoolConfig conf = new FlinkJedisPoolConfig.Builder().setHost("localhost").build();
 
 env
-	.addSource(new UserBehaviorSource())
-	.addSink(new RedisSink<UserBehavior>(conf, new MyRedisSink()));
-	
-	
+    .addSource(new UserBehaviorSource())
+    .addSink(new RedisSink<UserBehavior>(conf, new MyRedisSink()));
+    
+    
 public static class MyRedisSink implements RedisMapper<UserBehavior> {
-	@Override
-	public String getKeyFromData(UserBehavior r) {
-		return r.itemId;
-	}
-	
-	@Override
-	public String getValueFromData(UserBehavior r) {
-		return r.categoryId;
-	}
-	
-	@Override
-	public RedisCommandDescription getCommandDescription() {
-		return new RedisCommandDescription(RedisCommand.HSET, "UserBehavior");
-	}
+    @Override
+    public String getKeyFromData(UserBehavior r) {
+        return r.itemId;
+    }
+    
+    @Override
+    public String getValueFromData(UserBehavior r) {
+        return r.categoryId;
+    }
+    
+    @Override
+    public RedisCommandDescription getCommandDescription() {
+        return new RedisCommandDescription(RedisCommand.HSET, "UserBehavior");
+    }
 }
 \end{minted}
 
@@ -1780,9 +1809,9 @@ public static class MyRedisSink implements RedisMapper<UserBehavior> {
 
 \begin{minted}{xml}
 <dependency>
-	<groupId>org.apache.flink</groupId>
-	<artifactId>flink-connector-elasticsearch7_${scala.binary.version}</artifactId>
-	<version>${flink.version}</version>
+    <groupId>org.apache.flink</groupId>
+    <artifactId>flink-connector-elasticsearch7_${scala.binary.version}</artifactId>
+    <version>${flink.version}</version>
 </dependency>
 \end{minted}
 
@@ -1795,21 +1824,21 @@ ArrayList<HttpHost> httpHosts = new ArrayList<>();
 httpHosts.add(new HttpHost("127.0.0.1", 9200, "http"));
 
 ElasticsearchSink.Builder<UserBehavior> esBuilder = new ElasticsearchSink.Builder<>(
-	httpHosts,
-	new ElasticsearchSinkFunction<UserBehavior>() {
-		@Override
-		public void process(UserBehavior r, RuntimeContext runtimeContext, RequestIndexer requestIndexer) {
-			HashMap<String, String> data = new HashMap<>();
-			data.put(r.itemId, r.categoryId);
-		
-			IndexRequest indexRequest = Requests
-				.indexRequest()
-				.index("UserBehavior")
-				.source(data);
-		
-			requestIndexer.add(indexRequest);
-		}
-	}
+    httpHosts,
+    new ElasticsearchSinkFunction<UserBehavior>() {
+        @Override
+        public void process(UserBehavior r, RuntimeContext runtimeContext, RequestIndexer requestIndexer) {
+            HashMap<String, String> data = new HashMap<>();
+            data.put(r.itemId, r.categoryId);
+        
+            IndexRequest indexRequest = Requests
+                .indexRequest()
+                .index("UserBehavior")
+                .source(data);
+        
+            requestIndexer.add(indexRequest);
+        }
+    }
 );
 
 esBuilder.setBulkFlushMaxActions(1);
@@ -1823,9 +1852,9 @@ stream.addSink(esBuilder.build());
 
 \begin{minted}{xml}
 <dependency>
-	<groupId>mysql</groupId>
-	<artifactId>mysql-connector-java</artifactId>
-	<version>8.0.21</version>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.21</version>
 </dependency>
 \end{minted}
 
@@ -1833,45 +1862,45 @@ stream.addSink(esBuilder.build());
 
 \begin{minted}{java}
 env
-	.addSource(new UserBehaviorSource())
-	.addSink(new MyJDBC());
-	
+    .addSource(new UserBehaviorSource())
+    .addSink(new MyJDBC());
+    
 public static class MyJDBC extends RichSinkFunction<UserBehavior> {
-	private Connection conn;
-	private PreparedStatement insertStmt;
-	private PreparedStatement updateStmt;
-	@Override
-	public void open(Configuration parameters) throws Exception {
-		super.open(parameters);
-		conn = DriverManager.getConnection(
-		"jdbc:mysql://localhost:3306/userbehavior",
-			"zuoyuan",
-			"zuoyuan"
-		);
-		insertStmt = conn.prepareStatement("INSERT INTO userbehavior (itemId, categoryId) VALUES (?, ?)");
-		updateStmt = conn.prepareStatement("UPDATE userbehavior SET categoryId = ? WHERE itemId = ?");
-	}
-	
-	@Override
-	public void invoke(UserBehavior r, Context context) throws Exception {
-		updateStmt.setString(1, r.categoryId);
-		updateStmt.setString(2, r.itemId);
-		updateStmt.execute();
-		
-		if (updateStmt.getUpdateCount() == 0) {
-			insertStmt.setString(1, r.itemId);
-			insertStmt.setString(2, r.categoryId);
-			insertStmt.execute();
-		}
-	}
-	
-	@Override
-	public void close() throws Exception {
-		super.close();
-		insertStmt.close();
-		updateStmt.close();
-		conn.close();
-	}
+    private Connection conn;
+    private PreparedStatement insertStmt;
+    private PreparedStatement updateStmt;
+    @Override
+    public void open(Configuration parameters) throws Exception {
+        super.open(parameters);
+        conn = DriverManager.getConnection(
+        "jdbc:mysql://localhost:3306/userbehavior",
+            "zuoyuan",
+            "zuoyuan"
+        );
+        insertStmt = conn.prepareStatement("INSERT INTO userbehavior (itemId, categoryId) VALUES (?, ?)");
+        updateStmt = conn.prepareStatement("UPDATE userbehavior SET categoryId = ? WHERE itemId = ?");
+    }
+    
+    @Override
+    public void invoke(UserBehavior r, Context context) throws Exception {
+        updateStmt.setString(1, r.categoryId);
+        updateStmt.setString(2, r.itemId);
+        updateStmt.execute();
+        
+        if (updateStmt.getUpdateCount() == 0) {
+            insertStmt.setString(1, r.itemId);
+            insertStmt.setString(2, r.categoryId);
+            insertStmt.execute();
+        }
+    }
+    
+    @Override
+    public void close() throws Exception {
+        super.close();
+        insertStmt.close();
+        updateStmt.close();
+        conn.close();
+    }
 }
 \end{minted}
 
@@ -1883,39 +1912,39 @@ public static class MyJDBC extends RichSinkFunction<UserBehavior> {
 DataStreamSource<UserBehavior> stream = env.addSource(new UserBehaviorSource());
 
 stream
-	.addSink(new SimpleSocketSink("localhost", 9999))
-	.setParallelism(1);
-	
+    .addSink(new SimpleSocketSink("localhost", 9999))
+    .setParallelism(1);
+    
 public static class SimpleSocketSink extends RichSinkFunction<UserBehavior> {
-	private Socket socket;
-	private PrintStream writer;
-	private String host;
-	private Integer port;
-	
-	public SimpleSocketSink(String host, Integer port) {
-		this.host = host;
-		this.port = port;
-	}
-	
-	@Override
-	public void open(Configuration parameters) throws Exception {
-		super.open(parameters);
-		socket = new Socket(InetAddress.getByName(host), port);
-		writer = new PrintStream(socket.getOutputStream());
-	}
-	
-	@Override
-	public void invoke(UserBehavior value, Context context) throws Exception {
-		writer.println(value);
-		writer.flush();
-	}
-	
-	@Override
-	public void close() throws Exception {
-		super.close();
-		writer.close();
-		socket.close();
-	}
+    private Socket socket;
+    private PrintStream writer;
+    private String host;
+    private Integer port;
+    
+    public SimpleSocketSink(String host, Integer port) {
+        this.host = host;
+        this.port = port;
+    }
+    
+    @Override
+    public void open(Configuration parameters) throws Exception {
+        super.open(parameters);
+        socket = new Socket(InetAddress.getByName(host), port);
+        writer = new PrintStream(socket.getOutputStream());
+    }
+    
+    @Override
+    public void invoke(UserBehavior value, Context context) throws Exception {
+        writer.println(value);
+        writer.flush();
+    }
+    
+    @Override
+    public void close() throws Exception {
+        super.close();
+        writer.close();
+        socket.close();
+    }
 }
 \end{minted}
 
@@ -1936,7 +1965,7 @@ public static class SimpleSocketSink extends RichSinkFunction<UserBehavior> {
 Flink暴露了TimestampAssigner接口供我们实现，使我们可以自定义如何从事件数据中抽取时间戳。一般来说，时间戳分配器需要在source操作符后马上进行调用。
 
 \begin{note}
-	因为时间戳分配器看到的元素的顺序应该和source操作符产生数据的顺序是一样的，否则就乱了。这就是为什么我们经常将source操作符的并行度设置为1的原因。
+    因为时间戳分配器看到的元素的顺序应该和source操作符产生数据的顺序是一样的，否则就乱了。这就是为什么我们经常将source操作符的并行度设置为1的原因。
 \end{note}
 
 也就是说，任何分区操作都会将元素的顺序打乱，例如：并行度改变，keyBy()操作等等。
@@ -1947,50 +1976,50 @@ Flink暴露了TimestampAssigner接口供我们实现，使我们可以自定义�
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 DataStream<T> stream = env
-	.addSource(...)
-	.map(...)
-	.filter(...)
-	.assignTimestampsAndWatermarks(...)
+    .addSource(...)
+    .map(...)
+    .filter(...)
+    .assignTimestampsAndWatermarks(...)
 \end{minted}
 
 我们来看一个例子，这个例子的最大延迟时间是5秒钟。
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 env
-	.addSource(new UserBehaviorSource())
-	.assignTimestampsAndWatermarks(
-		WatermarkStrategy
-			.<UserBehavior>forBoundedOutOfOrderness(Duration.ofSeconds(5))
-			.withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
-				@Override
-				public long extractTimestamp(UserBehavior element, long recordTimestamp) {
-					return element.timestamp;
-			}
-		})
-	)
-	.keyBy(r -> r.itemId)
-	.window(TumblingEventTimeWindows.of(Time.seconds(5)))
-	.aggregate(...)
+    .addSource(new UserBehaviorSource())
+    .assignTimestampsAndWatermarks(
+        WatermarkStrategy
+            .<UserBehavior>forBoundedOutOfOrderness(Duration.ofSeconds(5))
+            .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                @Override
+                public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                    return element.timestamp;
+            }
+        })
+    )
+    .keyBy(r -> r.itemId)
+    .window(TumblingEventTimeWindows.of(Time.seconds(5)))
+    .aggregate(...)
 \end{minted}
 
 如果我们已经知道到来的事件的时间戳是升序的，也就是最大延迟时间为0，那么我们可以使用如下写法：
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 env
-	.addSource(new UserBehaviorSource())
-	.assignTimestampsAndWatermarks(
-		WatermarkStrategy
-			.<UserBehavior>forMonotonousTimestamps()
-			.withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
-				@Override
-				public long extractTimestamp(UserBehavior element, long recordTimestamp) {
-					return element.timestamp;
-				}
-		})
-	)
-	.keyBy(r -> r.itemId)
-	.window(TumblingEventTimeWindows.of(Time.seconds(5)))
-	.aggregate(...)
+    .addSource(new UserBehaviorSource())
+    .assignTimestampsAndWatermarks(
+        WatermarkStrategy
+            .<UserBehavior>forMonotonousTimestamps()
+            .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                @Override
+                public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                    return element.timestamp;
+                }
+        })
+    )
+    .keyBy(r -> r.itemId)
+    .window(TumblingEventTimeWindows.of(Time.seconds(5)))
+    .aggregate(...)
 \end{minted}
 
 \subsection{自定义水位线的产生逻辑}
@@ -2000,19 +2029,19 @@ env
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 @Public
 public interface WatermarkGenerator<T> {
-	
-	/**
-	* 每来一个事件都会调用, 允许水位线产生器记忆和检查事件的时间戳。
-	* 允许水位线产生器基于事件本身发射水位线。
-	*/
-	void onEvent(T event, long eventTimestamp, WatermarkOutput output);
-	
-	/**
-	* 周期性的调用（默认200ms调用一次）, 可能会产生新的水位线，也可能不会。
-	*
-	* 调用周期通过ExecutionConfig#getAutoWatermarkInterval()方法来配置。
-	*/
-	void onPeriodicEmit(WatermarkOutput output);
+    
+    /**
+    * 每来一个事件都会调用, 允许水位线产生器记忆和检查事件的时间戳。
+    * 允许水位线产生器基于事件本身发射水位线。
+    */
+    void onEvent(T event, long eventTimestamp, WatermarkOutput output);
+    
+    /**
+    * 周期性的调用（默认200ms调用一次）, 可能会产生新的水位线，也可能不会。
+    *
+    * 调用周期通过ExecutionConfig#getAutoWatermarkInterval()方法来配置。
+    */
+    void onPeriodicEmit(WatermarkOutput output);
 }
 \end{minted}
 
@@ -2037,63 +2066,63 @@ public static class CustomWatermarkStrategy implements WatermarkStrategy<UserBeh
 }
 
 public static class BoundedOutOfOrdernessGenerator implements WatermarkGenerator<UserBehavior> {
-	
-	private final long maxOutOfOrderness = 3500; // 最大延迟时间是3.5s
-	
-	private long currentMaxTimestamp;
-	
-	@Override
-	public void onEvent(UserBehavior r, long eventTimestamp, WatermarkOutput output) {
-		currentMaxTimestamp = Math.max(currentMaxTimestamp, r.timestamp);
-	}
-	
-	@Override
-	public void onPeriodicEmit(WatermarkOutput output) {
-		// 产生水位线的公式：观察到的最大时间戳 - 最大延迟时间 - 1ms
-		output.emitWatermark(new Watermark(currentMaxTimestamp - maxOutOfOrderness - 1));
-	}
+    
+    private final long maxOutOfOrderness = 3500; // 最大延迟时间是3.5s
+    
+    private long currentMaxTimestamp;
+    
+    @Override
+    public void onEvent(UserBehavior r, long eventTimestamp, WatermarkOutput output) {
+        currentMaxTimestamp = Math.max(currentMaxTimestamp, r.timestamp);
+    }
+    
+    @Override
+    public void onPeriodicEmit(WatermarkOutput output) {
+        // 产生水位线的公式：观察到的最大时间戳 - 最大延迟时间 - 1ms
+        output.emitWatermark(new Watermark(currentMaxTimestamp - maxOutOfOrderness - 1));
+    }
 }
 
 env
-	.addSource(new UserBehaviorSource())
-	.assignTimestampsAndWatermarks(
+    .addSource(new UserBehaviorSource())
+    .assignTimestampsAndWatermarks(
         new CustomWatermarkStrategy();
-	);
+    );
 \end{minted}
 
 \textbf{不规则水位线的产生}
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 public class PunctuatedAssigner implements WatermarkGenerator<UserBehavior> {
-	
-	@Override
-	public void onEvent(UserBehavior r, long eventTimestamp, WatermarkOutput output) {
-		if (r.itemId.equals("1")) {
-			output.emitWatermark(new Watermark(r.timestamp - 1));
-		}
-	}
-	
-	@Override
-	public void onPeriodicEmit(WatermarkOutput output) {
-		// 不需要做任何事情，因为我们在onEvent方法中发射了水位线
-	}
+    
+    @Override
+    public void onEvent(UserBehavior r, long eventTimestamp, WatermarkOutput output) {
+        if (r.itemId.equals("1")) {
+            output.emitWatermark(new Watermark(r.timestamp - 1));
+        }
+    }
+    
+    @Override
+    public void onPeriodicEmit(WatermarkOutput output) {
+        // 不需要做任何事情，因为我们在onEvent方法中发射了水位线
+    }
 }
 \end{minted}
 
 \subsection{水位线总结}
 
 \begin{definition}{水位线定义}{watermark}
-	水位线是一种逻辑时钟，Flink认为时间戳小于等于水位线的事件都到了。
+    水位线是一种逻辑时钟，Flink认为时间戳小于等于水位线的事件都到了。
 \end{definition}
 
 \begin{definition}{计算公式}{calculation}
-	\begin{equation}
-		\text{水位线} = \text{观察到的事件所包含的最大时间戳} - \text{最大延迟时间} - \text{1毫秒}
-	\end{equation}
+    \begin{equation}
+        \text{水位线} = \text{观察到的事件所包含的最大时间戳} - \text{最大延迟时间} - \text{1毫秒}
+    \end{equation}
 \end{definition}
 
 \begin{note}
-	在事件时间的世界里，时间就是水位线。
+    在事件时间的世界里，时间就是水位线。
 \end{note}
 
 现在我们要讨论一下水位线会对我们的程序产生什么样的影响。
@@ -2207,19 +2236,19 @@ Flink 1.12通过指定不同类型的窗口来使用不同的时间属性。
 窗口聚合函数定义了窗口中数据的计算逻辑。有两种计算逻辑：
 
 \begin{itemize}
-	\item 增量聚合函数：当一个事件被添加到窗口时，触发函数计算，并且更新window的状态(单个值)。最终聚合的结果将作为输出。ReduceFunction和AggregateFunction是增量聚合函数。
-	\item 全窗口函数：这个函数将会收集窗口中所有的元素，可以做一些复杂计算。ProcessWindowFunction是全窗口聚合函数。
+    \item 增量聚合函数：当一个事件被添加到窗口时，触发函数计算，并且更新window的状态(单个值)。最终聚合的结果将作为输出。ReduceFunction和AggregateFunction是增量聚合函数。
+    \item 全窗口函数：这个函数将会收集窗口中所有的元素，可以做一些复杂计算。ProcessWindowFunction是全窗口聚合函数。
 \end{itemize}
 
 \textbf{增量聚合函数}
 
 \begin{itemize}
-	\item 每条数据到来就进行计算，只保存一个简单的状态（累加器）
-	\item ReduceFunction, AggregateFunction
-	\item 当窗口闭合的时候，增量聚合完成
-	\item 处理时间：当机器时间超过窗口结束时间的时候，窗口闭合
-	\item 事件时间：当水位线超过窗口结束时间的时候，窗口闭合
-	\item 来一条数据计算一次
+    \item 每条数据到来就进行计算，只保存一个简单的状态（累加器）
+    \item ReduceFunction, AggregateFunction
+    \item 当窗口闭合的时候，增量聚合完成
+    \item 处理时间：当机器时间超过窗口结束时间的时候，窗口闭合
+    \item 事件时间：当水位线超过窗口结束时间的时候，窗口闭合
+    \item 来一条数据计算一次
 \end{itemize}
 
 \textit{REDUCE}
@@ -2228,46 +2257,46 @@ Flink 1.12通过指定不同类型的窗口来使用不同的时间属性。
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 stream
-	.map(new MapFunction<UserBehavior, Tuple2<String, Long>>() {
-		@Override
-		public Tuple2<String, Long> map(UserBehavior value) throws Exception {
-			return Tuple2.of(value.userId, 1L);
-		}
-	})
-	.keyBy(r -> r.f0)
-	.window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
-	.reduce(new ReduceFunction<Tuple2<String, Long>>() {
-		@Override
-		public Tuple2<String, Long> reduce(Tuple2<String, Long> value1, Tuple2<String, Long> value2) throws Exception {
+    .map(new MapFunction<UserBehavior, Tuple2<String, Long>>() {
+        @Override
+        public Tuple2<String, Long> map(UserBehavior value) throws Exception {
+            return Tuple2.of(value.userId, 1L);
+        }
+    })
+    .keyBy(r -> r.f0)
+    .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+    .reduce(new ReduceFunction<Tuple2<String, Long>>() {
+        @Override
+        public Tuple2<String, Long> reduce(Tuple2<String, Long> value1, Tuple2<String, Long> value2) throws Exception {
             return Tuple2.of(value1.f0, value1.f1 + value2.f1);
-		}
-	});
+        }
+    });
 \end{minted}
 
 \textit{AggregateFunction}
 
 \begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.7\textwidth]{images/spaf_0604.png}
-	\caption{增量聚合}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/spaf_0604.png}
+    \caption{增量聚合}
 \end{figure}
 
 先来看接口定义
 
 \begin{minted}[bgcolor=gray!30,breaklines,fontsize=\footnotesize]{java}
 public interface AggregateFunction<IN, ACC, OUT> extends Function, Serializable {
-	
-	// 创建新累加器
-	ACC createAccumulator();
-	
-	// 累加操作的逻辑：将每一条输入元素累加到累加器上，并返回累加器
-	ACC add(IN value, ACC accumulator);
-	
-	// 返回累加结果
-	OUT getResult(ACC accumulator);
-	
-	// 将两个累加器聚合，只在事件时间会话窗口才会用到
-	ACC merge(ACC a, ACC b);
+    
+    // 创建新累加器
+    ACC createAccumulator();
+    
+    // 累加操作的逻辑：将每一条输入元素累加到累加器上，并返回累加器
+    ACC add(IN value, ACC accumulator);
+    
+    // 返回累加结果
+    OUT getResult(ACC accumulator);
+    
+    // 将两个累加器聚合，只在事件时间会话窗口才会用到
+    ACC merge(ACC a, ACC b);
 }
 \end{minted}
 
@@ -2290,34 +2319,34 @@ stream
     .print();
 
 public static class AvgPv implements AggregateFunction<UserBehavior, Tuple2<HashSet<String>, Long>, Double> {
-	@Override
-	public Tuple2<HashSet<String>, Long> createAccumulator() {
+    @Override
+    public Tuple2<HashSet<String>, Long> createAccumulator() {
         return Tuple3.of(new HashSet<String>(), 0L);
-	}
-	
-	@Override
-	public Tuple2<HashSet<String>, Long> add(UserBehavior value, Tuple2<HashSet<String>, Long> accumulator) {
+    }
+    
+    @Override
+    public Tuple2<HashSet<String>, Long> add(UserBehavior value, Tuple2<HashSet<String>, Long> accumulator) {
         return Tuple2.of(accumulator.f0.add(value.userId), accumulator.f1 + 1L);
-	}
-	
-	@Override
-	public Double getResult(Tuple2<HashSet<String>, Long> accumulator) {
+    }
+    
+    @Override
+    public Double getResult(Tuple2<HashSet<String>, Long> accumulator) {
         return accumulator.f0.size() / accumulator.f1;
-	}
-	
-	@Override
-	public Tuple2<HashSet<String>, Long> merge(Tuple2<HashSet<String>, Long> a, Tuple2<HashSet<String>, Long> b) {
-		return null;
-	}
+    }
+    
+    @Override
+    public Tuple2<HashSet<String>, Long> merge(Tuple2<HashSet<String>, Long> a, Tuple2<HashSet<String>, Long> b) {
+        return null;
+    }
 }
 \end{minted}
 
 \textbf{全窗口聚合函数}
 
 \begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.7\textwidth]{images/spaf_0605.png}
-	\caption{全窗口聚合}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/spaf_0605.png}
+    \caption{全窗口聚合}
 \end{figure}
 
 一些业务场景，我们需要收集窗口内所有的数据进行计算，例如计算窗口数据的中位数，或者计算窗口数据中出现频率最高的值。这样的需求，使用ReduceFunction和AggregateFunction就无法实现了。这个时候就需要全窗口聚合函数了。
@@ -2369,9 +2398,9 @@ env
 \textbf{增量聚合和全窗口聚合结合使用}
 
 \begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.7\textwidth]{images/spaf_0606.png}
-	\caption{增量聚合和全窗口聚合结合使用}
+    \centering
+    \includegraphics[width=0.7\textwidth]{images/spaf_0606.png}
+    \caption{增量聚合和全窗口聚合结合使用}
 \end{figure}
 
 我们还可以将ReduceFunction/AggregateFunction和WindowFunction结合起来使用。ReduceFunction/AggregateFunction做增量聚合，WindowFunction提供更多的对数据流的访问权限。如果只使用WindowFunction(底层的实现为将事件都保存在ListState中)，将会非常占用空间。分配到某个窗口的元素将被提前聚合，而当窗口的trigger触发时，也就是窗口收集完数据关闭时，将会把聚合结果发送到WindowFunction中，这时Iterable参数将会只有一个值，就是前面聚合的值。
@@ -4334,11 +4363,11 @@ Table API是一套内嵌在Java和Scala语言中的查询API，它允许我们�
 当前，本模块包含以下可以扩展的接口：
 
 \begin{itemize}
-	\item SerializationSchemaFactory
-	\item DeserializationSchemaFactory
-	\item ScalarFunction
-	\item TableFunction
-	\item AggregateFunction
+    \item SerializationSchemaFactory
+    \item DeserializationSchemaFactory
+    \item ScalarFunction
+    \item TableFunction
+    \item AggregateFunction
 \end{itemize}
 
 \section{概念与通用 API}
@@ -4371,13 +4400,13 @@ tableResult...
 TableEnvironment 是 Table API 和 SQL 的核心概念。它负责:
 
 \begin{itemize}
-	\item 在内部的catalog中注册Table
-	\item 注册外部的catalog
-	\item 加载可插拔模块
-	\item 执行SQL查询
-	\item 注册自定义函数 （scalar、table或aggregation）
-	\item 将DataStream或DataSet转换成Table
-	\item 持有对ExecutionEnvironment或StreamExecutionEnvironment的引用
+    \item 在内部的catalog中注册Table
+    \item 注册外部的catalog
+    \item 加载可插拔模块
+    \item 执行SQL查询
+    \item 注册自定义函数 （scalar、table或aggregation）
+    \item 将DataStream或DataSet转换成Table
+    \item 持有对ExecutionEnvironment或StreamExecutionEnvironment的引用
 \end{itemize}
 
 Table 总是与特定的 TableEnvironment 绑定。不能在同一条查询中使用不同 TableEnvironment 中的表，例如，对它们进行 join 或 union 操作。
@@ -4584,8 +4613,8 @@ tableEnv.executeSql(
 Table API 和 SQL 查询的混用非常简单因为它们都返回 Table 对象：
 
 \begin{itemize}
-	\item 可以在 SQL 查询返回的 Table 对象上定义 Table API 查询。
-	\item 在 TableEnvironment 中注册的结果表可以在 SQL 查询的 FROM 子句中引用，通过这种方法就可以在 Table API 查询的结果上定义 SQL 查询。
+    \item 可以在 SQL 查询返回的 Table 对象上定义 Table API 查询。
+    \item 在 TableEnvironment 中注册的结果表可以在 SQL 查询的 FROM 子句中引用，通过这种方法就可以在 Table API 查询的结果上定义 SQL 查询。
 \end{itemize}
 
 \subsection{输出表}
@@ -6002,109 +6031,109 @@ public class TwoStreamJoin {
 
 \begin{figure}[htbp]
     \centering
-	\begin{tikzpicture}
-		
-		\node[draw] at (-2.5,10.25) {DataStream};
-		
-		\node[draw] at (-2.5,7.75) {KeyedStream};
-		
-		\node[draw] at (-2.5,5.25) {WindowedStream};
-		
-		\node[draw] at (-2.5,2.75) {DataStream};
-		
-		\node[draw] at (-1.5,9) {分区};
-		
-		\node[draw] at (-1.5,6.5) {开窗};
-		
-		\node[draw] at (-1.5,4) {聚合};
-		
-		\draw (-3.5,9) circle [radius=0.3] node {1};
-		
-		\draw (-3.5,6.5) circle [radius=0.3] node {2};
-		
-		\draw (-3.5,4) circle [radius=0.3] node {3};
-		
-		\draw[fill=blue!40] (-0.5,10) rectangle (0,10.5);
-		
-		\draw[fill=blue!40] (-0.5,7.5) rectangle (0,8);
-		
-		\draw[fill=blue!40] (-0.5,5) rectangle (0,5.5);
-		
-		\draw[fill=orange!40] (0.5,4) rectangle (1,4.5);
-		
-		\draw[fill=orange!40] (1.5,4) rectangle (2,4.5);
-		
-		\draw[fill=orange!40] (3.5,4) rectangle (4,4.5);
-		
-		\draw[fill=blue!40,draw=red,line width=0.05cm] (-0.5,2.5) rectangle (0.5,3);
-		
-		\draw[fill=orange!40,draw=red,line width=0.05cm] (1,2.5) rectangle (2,3);
-		
-		\draw[fill=blue!40,draw=green,line width=0.05cm] (2.5,2.5) rectangle (3.5,3);
-		
-		\draw[fill=orange!40,draw=green,line width=0.05cm] (4,2.5) rectangle (5,3);
-		
-		\draw[fill=blue!40,draw=purple,line width=0.05cm] (5.5,2.5) rectangle (6.5,3);
-		
-		\draw[fill=orange!40,draw=purple,line width=0.05cm] (7,2.5) rectangle (8,3);
-		
-		\draw[fill=blue!40] (1.5,5) rectangle (2,5.5);
-		
-		\draw[fill=blue!40] (2.5,5) rectangle (3,5.5);
-		
-		\draw[fill=blue!40] (4.5,5) rectangle (5,5.5);
-		
-		\draw[fill=blue!40] (4.5,7.5) rectangle (5,8);
-		
-		\draw[fill=blue!40] (5.5,5) rectangle (6,5.5);
-		
-		\draw[fill=blue!40] (6.5,5) rectangle (7,5.5);
-		
-		\draw[fill=orange!40] (-0.5,6.5) rectangle (0,7);
-		
-		\draw[fill=orange!40] (0.5,6.5) rectangle (1,7);
-		
-		\draw[fill=orange!40] (1.5,6.5) rectangle (2,7);
-		
-		\draw[fill=blue!40] (0.5,10) rectangle (1,10.5);
-		
-		\draw[fill=blue!40] (0.5,7.5) rectangle (1,8);
-		
-		\draw[fill=orange!40] (1.5,10) rectangle (2,10.5);
-		
-		\draw[fill=blue!40] (1.5,7.5) rectangle (2,8);
-		
-		\draw[fill=blue!40] (2.5,10) rectangle (3,10.5);
-		
-		\draw[fill=blue!40] (2.5,7.5) rectangle (3,8);
-		
-		\draw[fill=orange!40] (3.5,10) rectangle (4,10.5);
-		
-		\draw[fill=blue!40] (3.5,7.5) rectangle (4,8);
-		
-		\draw[fill=blue!40] (4.5,10) rectangle (5,10.5);
-		
-		\draw[fill=orange!40] (5.5,10) rectangle (6,10.5);
-		
-		\draw[fill=blue!40] (6.5,10) rectangle (7,10.5);
-		
-		\draw[fill=orange!40] (7.5,10) rectangle (8,10.5);
-		
-		\draw[fill=blue!40] (8.5,10) rectangle (9,10.5);
-		
-		\draw[draw=red,line width=0.05cm] (-0.5,4) rectangle (3,5.5);
-		
-		\draw[draw=green,line width=0.05cm] (1.5,3.95) rectangle (5,5.45);
-		
-		\draw[draw=purple,line width=0.05cm] (3.5,3.9) rectangle (7,5.4);
-		
-		\draw[->,thick] (-2.5,10) -- (-2.5,8);
-		
-		\draw[->,thick] (-2.5,7.5) -- (-2.5,5.5);
-		
-		\draw[->,thick] (-2.5,5) -- (-2.5,3);
-		
-	\end{tikzpicture}
+    \begin{tikzpicture}
+        
+        \node[draw] at (-2.5,10.25) {DataStream};
+        
+        \node[draw] at (-2.5,7.75) {KeyedStream};
+        
+        \node[draw] at (-2.5,5.25) {WindowedStream};
+        
+        \node[draw] at (-2.5,2.75) {DataStream};
+        
+        \node[draw] at (-1.5,9) {分区};
+        
+        \node[draw] at (-1.5,6.5) {开窗};
+        
+        \node[draw] at (-1.5,4) {聚合};
+        
+        \draw (-3.5,9) circle [radius=0.3] node {1};
+        
+        \draw (-3.5,6.5) circle [radius=0.3] node {2};
+        
+        \draw (-3.5,4) circle [radius=0.3] node {3};
+        
+        \draw[fill=blue!40] (-0.5,10) rectangle (0,10.5);
+        
+        \draw[fill=blue!40] (-0.5,7.5) rectangle (0,8);
+        
+        \draw[fill=blue!40] (-0.5,5) rectangle (0,5.5);
+        
+        \draw[fill=orange!40] (0.5,4) rectangle (1,4.5);
+        
+        \draw[fill=orange!40] (1.5,4) rectangle (2,4.5);
+        
+        \draw[fill=orange!40] (3.5,4) rectangle (4,4.5);
+        
+        \draw[fill=blue!40,draw=red,line width=0.05cm] (-0.5,2.5) rectangle (0.5,3);
+        
+        \draw[fill=orange!40,draw=red,line width=0.05cm] (1,2.5) rectangle (2,3);
+        
+        \draw[fill=blue!40,draw=green,line width=0.05cm] (2.5,2.5) rectangle (3.5,3);
+        
+        \draw[fill=orange!40,draw=green,line width=0.05cm] (4,2.5) rectangle (5,3);
+        
+        \draw[fill=blue!40,draw=purple,line width=0.05cm] (5.5,2.5) rectangle (6.5,3);
+        
+        \draw[fill=orange!40,draw=purple,line width=0.05cm] (7,2.5) rectangle (8,3);
+        
+        \draw[fill=blue!40] (1.5,5) rectangle (2,5.5);
+        
+        \draw[fill=blue!40] (2.5,5) rectangle (3,5.5);
+        
+        \draw[fill=blue!40] (4.5,5) rectangle (5,5.5);
+        
+        \draw[fill=blue!40] (4.5,7.5) rectangle (5,8);
+        
+        \draw[fill=blue!40] (5.5,5) rectangle (6,5.5);
+        
+        \draw[fill=blue!40] (6.5,5) rectangle (7,5.5);
+        
+        \draw[fill=orange!40] (-0.5,6.5) rectangle (0,7);
+        
+        \draw[fill=orange!40] (0.5,6.5) rectangle (1,7);
+        
+        \draw[fill=orange!40] (1.5,6.5) rectangle (2,7);
+        
+        \draw[fill=blue!40] (0.5,10) rectangle (1,10.5);
+        
+        \draw[fill=blue!40] (0.5,7.5) rectangle (1,8);
+        
+        \draw[fill=orange!40] (1.5,10) rectangle (2,10.5);
+        
+        \draw[fill=blue!40] (1.5,7.5) rectangle (2,8);
+        
+        \draw[fill=blue!40] (2.5,10) rectangle (3,10.5);
+        
+        \draw[fill=blue!40] (2.5,7.5) rectangle (3,8);
+        
+        \draw[fill=orange!40] (3.5,10) rectangle (4,10.5);
+        
+        \draw[fill=blue!40] (3.5,7.5) rectangle (4,8);
+        
+        \draw[fill=blue!40] (4.5,10) rectangle (5,10.5);
+        
+        \draw[fill=orange!40] (5.5,10) rectangle (6,10.5);
+        
+        \draw[fill=blue!40] (6.5,10) rectangle (7,10.5);
+        
+        \draw[fill=orange!40] (7.5,10) rectangle (8,10.5);
+        
+        \draw[fill=blue!40] (8.5,10) rectangle (9,10.5);
+        
+        \draw[draw=red,line width=0.05cm] (-0.5,4) rectangle (3,5.5);
+        
+        \draw[draw=green,line width=0.05cm] (1.5,3.95) rectangle (5,5.45);
+        
+        \draw[draw=purple,line width=0.05cm] (3.5,3.9) rectangle (7,5.4);
+        
+        \draw[->,thick] (-2.5,10) -- (-2.5,8);
+        
+        \draw[->,thick] (-2.5,7.5) -- (-2.5,5.5);
+        
+        \draw[->,thick] (-2.5,5) -- (-2.5,3);
+        
+    \end{tikzpicture}
     \caption{分流、开窗、聚合}
 \end{figure}
 
@@ -6116,39 +6145,39 @@ public class TwoStreamJoin {
 
 \begin{figure}[htbp]
     \centering
-	\begin{tikzpicture}
-		
-		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,10) {itemid 1 \\ 10:01};
-		
-		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,8.5) {itemid 2 \\ 10:03};
-		
-		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,7) {itemid 1 \\ 10:04};
-		
-		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,5.5) {itemid 1 \\ 10:05};
-		
-		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,4) {itemid 2 \\ 10:05};
-		
-		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,2.5) {itemid 1 \\ 10:07};
-		
-		\node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,1) {itemid 2 \\ 10:09};
-		
-		\draw[->,line width=0.05cm] (0.5,5.5) -- (2.5,5.5);
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3.5,6.5) {itemid 1 \\ 10:01};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (6,6.5) {itemid 1 \\ 10:04};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8.5,6.5) {itemid 1 \\ 10:05};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (11,6.5) {itemid 1 \\ 10:07};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3.5,4.5) {itemid 2 \\ 10:03};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (6,4.5) {itemid 2 \\ 10:05};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8.5,4.5) {itemid 2 \\ 10:09};
-		
-	\end{tikzpicture}
+    \begin{tikzpicture}
+        
+        \node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,10) {itemid 1 \\ 10:01};
+        
+        \node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,8.5) {itemid 2 \\ 10:03};
+        
+        \node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,7) {itemid 1 \\ 10:04};
+        
+        \node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,5.5) {itemid 1 \\ 10:05};
+        
+        \node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,4) {itemid 2 \\ 10:05};
+        
+        \node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,2.5) {itemid 1 \\ 10:07};
+        
+        \node[rectangle, fill=blue!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-0.5,1) {itemid 2 \\ 10:09};
+        
+        \draw[->,line width=0.05cm] (0.5,5.5) -- (2.5,5.5);
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3.5,6.5) {itemid 1 \\ 10:01};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (6,6.5) {itemid 1 \\ 10:04};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8.5,6.5) {itemid 1 \\ 10:05};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (11,6.5) {itemid 1 \\ 10:07};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3.5,4.5) {itemid 2 \\ 10:03};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (6,4.5) {itemid 2 \\ 10:05};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8.5,4.5) {itemid 2 \\ 10:09};
+        
+    \end{tikzpicture}
     \caption{分流}
 \end{figure}
 
@@ -6156,43 +6185,43 @@ public class TwoStreamJoin {
 
 \begin{figure}[htbp]
     \centering
-	\begin{tikzpicture}
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-1.5,6.5) {itemid 1 \\ 10:01};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (2.5,6.5) {itemid 1 \\ 10:04};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5,6.5) {itemid 1 \\ 10:05};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (7.5,6.5) {itemid 1 \\ 10:07};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,4.5) {itemid 2 \\ 10:03};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5,4.5) {itemid 2 \\ 10:05};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (9.5,4.5) {itemid 2 \\ 10:09};
-		
-		\draw[red,line width=0.05cm] (-2.5,4) -- (-2.5,7);
-		
-		\draw[red,line width=0.05cm] (-2.5,7) -- (10.5,7);
-		
-		\draw[red,line width=0.05cm] (-2.5,4) -- (10.5,4);
-		
-		\draw[blue,line width=0.05cm] (4,3.95) -- (4,6.95);
-		
-		\draw[blue,line width=0.05cm] (4,6.95) -- (10.5,6.95);
-		
-		\draw[blue,line width=0.05cm] (4,3.95) -- (10.5,3.95);
-		
-		\draw[<->,line width=0.05cm,red] (-2.5,3) -- (10.5,3);
-		
-		\draw[<->,line width=0.05cm,blue] (4,2) -- (10.5,2);
-		
-		\node[draw] at (4,3.5) {SlidingWindow [10:00,11:00)};
-		
-		\node[draw] at (7.25,2.5) {SlidingWindow [10:05,11:05)};
-		
-	\end{tikzpicture}
+    \begin{tikzpicture}
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (-1.5,6.5) {itemid 1 \\ 10:01};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (2.5,6.5) {itemid 1 \\ 10:04};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5,6.5) {itemid 1 \\ 10:05};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (7.5,6.5) {itemid 1 \\ 10:07};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,4.5) {itemid 2 \\ 10:03};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5,4.5) {itemid 2 \\ 10:05};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (9.5,4.5) {itemid 2 \\ 10:09};
+        
+        \draw[red,line width=0.05cm] (-2.5,4) -- (-2.5,7);
+        
+        \draw[red,line width=0.05cm] (-2.5,7) -- (10.5,7);
+        
+        \draw[red,line width=0.05cm] (-2.5,4) -- (10.5,4);
+        
+        \draw[blue,line width=0.05cm] (4,3.95) -- (4,6.95);
+        
+        \draw[blue,line width=0.05cm] (4,6.95) -- (10.5,6.95);
+        
+        \draw[blue,line width=0.05cm] (4,3.95) -- (10.5,3.95);
+        
+        \draw[<->,line width=0.05cm,red] (-2.5,3) -- (10.5,3);
+        
+        \draw[<->,line width=0.05cm,blue] (4,2) -- (10.5,2);
+        
+        \node[draw] at (4,3.5) {SlidingWindow [10:00,11:00)};
+        
+        \node[draw] at (7.25,2.5) {SlidingWindow [10:05,11:05)};
+        
+    \end{tikzpicture}
     \caption{开窗}
 \end{figure}
 
@@ -6200,35 +6229,35 @@ public class TwoStreamJoin {
 
 \begin{figure}[htbp]
     \centering
-	\begin{tikzpicture}
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,6.5) {itemid 1 \\ 10:01};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3,6.5) {itemid 1 \\ 10:05};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5.5,6.5) {itemid 1 \\ 10:07};
-		
-		\node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8,6.5) {itemid 1 \\ 10:13};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,4.5) {itemid 2 \\ 10:03};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3,4.5) {itemid 2 \\ 10:05};
-		
-		\node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5.5,4.5) {itemid 2 \\ 10:09};
-		
-		\draw[->,line width=0.05cm] (4.25,4) -- (4.25,3);
-		
-		\node[rectangle,align=center,draw=black] at (0,2) {itemId 1 \\ window [10:00,11:00) \\ count 4};
-		
-		\node[rectangle,align=center,draw=black] at (0,0) {itemId 2 \\ window [10:00,11:00) \\ count 3};
-		
-		\node[rectangle,align=center,draw=black] at (4,2) {itemId 1 \\ window [10:05,11:05) \\ count 2};
-		
-		\node[rectangle,align=center,draw=black] at (4,0) {itemId 2 \\ window [10:05,11:05) \\ count 2};
-		
-		\node[rectangle,align=center,draw=black] at (8,2) {itemId 1 \\ window [10:10,11:10) \\ count 1};
-		
-	\end{tikzpicture}
+    \begin{tikzpicture}
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,6.5) {itemid 1 \\ 10:01};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3,6.5) {itemid 1 \\ 10:05};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5.5,6.5) {itemid 1 \\ 10:07};
+        
+        \node[rectangle, fill=green!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (8,6.5) {itemid 1 \\ 10:13};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (0.5,4.5) {itemid 2 \\ 10:03};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (3,4.5) {itemid 2 \\ 10:05};
+        
+        \node[rectangle, fill=orange!60,align=center,minimum width=2cm,minimum height=1cm,text height=1cm,inner sep=0pt] at (5.5,4.5) {itemid 2 \\ 10:09};
+        
+        \draw[->,line width=0.05cm] (4.25,4) -- (4.25,3);
+        
+        \node[rectangle,align=center,draw=black] at (0,2) {itemId 1 \\ window [10:00,11:00) \\ count 4};
+        
+        \node[rectangle,align=center,draw=black] at (0,0) {itemId 2 \\ window [10:00,11:00) \\ count 3};
+        
+        \node[rectangle,align=center,draw=black] at (4,2) {itemId 1 \\ window [10:05,11:05) \\ count 2};
+        
+        \node[rectangle,align=center,draw=black] at (4,0) {itemId 2 \\ window [10:05,11:05) \\ count 2};
+        
+        \node[rectangle,align=center,draw=black] at (8,2) {itemId 1 \\ window [10:10,11:10) \\ count 1};
+        
+    \end{tikzpicture}
     \caption{聚合}
 \end{figure}
 
@@ -6236,19 +6265,19 @@ public class TwoStreamJoin {
 
 \begin{figure}[htbp]
     \centering
-	\begin{tikzpicture}
-		
-		\node[rectangle,align=center,draw=red,line width=0.05cm] at (0,2) {itemId 1 \\ window [10:00,11:00) \\ count 4};
-		
-		\node[rectangle,align=center,draw=red,line width=0.05cm] at (0,0) {itemId 2 \\ window [10:00,11:00) \\ count 3};
-		
-		\node[rectangle,align=center,draw=blue,line width=0.05cm] at (4,2) {itemId 1 \\ window [10:05,11:05) \\ count 2};
-		
-		\node[rectangle,align=center,draw=blue,line width=0.05cm] at (4,0) {itemId 2 \\ window [10:05,11:05) \\ count 2};
-		
-		\node[rectangle,align=center,draw=purple,line width=0.05cm] at (8,2) {itemId 1 \\ window [10:10,11:10) \\ count 1};
-		
-	\end{tikzpicture}
+    \begin{tikzpicture}
+        
+        \node[rectangle,align=center,draw=red,line width=0.05cm] at (0,2) {itemId 1 \\ window [10:00,11:00) \\ count 4};
+        
+        \node[rectangle,align=center,draw=red,line width=0.05cm] at (0,0) {itemId 2 \\ window [10:00,11:00) \\ count 3};
+        
+        \node[rectangle,align=center,draw=blue,line width=0.05cm] at (4,2) {itemId 1 \\ window [10:05,11:05) \\ count 2};
+        
+        \node[rectangle,align=center,draw=blue,line width=0.05cm] at (4,0) {itemId 2 \\ window [10:05,11:05) \\ count 2};
+        
+        \node[rectangle,align=center,draw=purple,line width=0.05cm] at (8,2) {itemId 1 \\ window [10:10,11:10) \\ count 1};
+        
+    \end{tikzpicture}
     \caption{继续分流}
 \end{figure}
 

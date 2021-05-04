@@ -1,0 +1,28 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStreamSource}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{stream} \PYG{o}{=} \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{addSource}\PYG{o}{(}\PYG{k}{new} \PYG{n}{UserBehaviorSource}\PYG{o}{());}
+
+\PYG{n}{ArrayList}\PYG{o}{\PYGZlt{}}\PYG{n}{HttpHost}\PYG{o}{\PYGZgt{}} \PYG{n}{httpHosts} \PYG{o}{=} \PYG{k}{new} \PYG{n}{ArrayList}\PYG{o}{\PYGZlt{}\PYGZgt{}();}
+\PYG{n}{httpHosts}\PYG{o}{.}\PYG{n+na}{add}\PYG{o}{(}\PYG{k}{new} \PYG{n}{HttpHost}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}127.0.0.1\PYGZdq{}}\PYG{o}{,} \PYG{l+m+mi}{9200}\PYG{o}{,} \PYG{l+s}{\PYGZdq{}http\PYGZdq{}}\PYG{o}{));}
+
+\PYG{n}{ElasticsearchSink}\PYG{o}{.}\PYG{n+na}{Builder}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{esBuilder} \PYG{o}{=} \PYG{k}{new} \PYG{n}{ElasticsearchSink}\PYG{o}{.}\PYG{n+na}{Builder}\PYG{o}{\PYGZlt{}\PYGZgt{}(}
+    \PYG{n}{httpHosts}\PYG{o}{,}
+    \PYG{k}{new} \PYG{n}{ElasticsearchSinkFunction}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{k+kt}{void} \PYG{n+nf}{process}\PYG{o}{(}\PYG{n}{UserBehavior} \PYG{n}{r}\PYG{o}{,} \PYG{n}{RuntimeContext} \PYG{n}{runtimeContext}\PYG{o}{,} \PYG{n}{RequestIndexer} \PYG{n}{requestIndexer}\PYG{o}{)} \PYG{o}{\PYGZob{}}
+            \PYG{n}{HashMap}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{data} \PYG{o}{=} \PYG{k}{new} \PYG{n}{HashMap}\PYG{o}{\PYGZlt{}\PYGZgt{}();}
+            \PYG{n}{data}\PYG{o}{.}\PYG{n+na}{put}\PYG{o}{(}\PYG{n}{r}\PYG{o}{.}\PYG{n+na}{itemId}\PYG{o}{,} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{categoryId}\PYG{o}{);}
+
+            \PYG{n}{IndexRequest} \PYG{n}{indexRequest} \PYG{o}{=} \PYG{n}{Requests}
+                \PYG{o}{.}\PYG{n+na}{indexRequest}\PYG{o}{()}
+                \PYG{o}{.}\PYG{n+na}{index}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}UserBehavior\PYGZdq{}}\PYG{o}{)}
+                \PYG{o}{.}\PYG{n+na}{source}\PYG{o}{(}\PYG{n}{data}\PYG{o}{);}
+
+            \PYG{n}{requestIndexer}\PYG{o}{.}\PYG{n+na}{add}\PYG{o}{(}\PYG{n}{indexRequest}\PYG{o}{);}
+        \PYG{o}{\PYGZcb{}}
+    \PYG{o}{\PYGZcb{}}
+\PYG{o}{);}
+
+\PYG{n}{esBuilder}\PYG{o}{.}\PYG{n+na}{setBulkFlushMaxActions}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{);}
+
+\PYG{n}{stream}\PYG{o}{.}\PYG{n+na}{addSink}\PYG{o}{(}\PYG{n}{esBuilder}\PYG{o}{.}\PYG{n+na}{build}\PYG{o}{());}
+\end{Verbatim}

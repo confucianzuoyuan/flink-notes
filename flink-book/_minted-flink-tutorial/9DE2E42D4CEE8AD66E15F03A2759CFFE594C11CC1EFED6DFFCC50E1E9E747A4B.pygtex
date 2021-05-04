@@ -1,0 +1,9 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{DataStream}\PYG{o}{\PYGZlt{}}\PYG{n}{Tuple2}\PYG{o}{\PYGZlt{}}\PYG{n}{String}\PYG{o}{,} \PYG{n}{Integer}\PYG{o}{\PYGZgt{}\PYGZgt{}} \PYG{n}{persons} \PYG{o}{=} \PYG{n}{env}
+    \PYG{o}{.}\PYG{n+na}{fromElements}\PYG{o}{(}
+        \PYG{n}{Tuple2}\PYG{o}{.}\PYG{n+na}{of}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}Adam\PYGZdq{}}\PYG{o}{,} \PYG{l+m+mi}{17}\PYG{o}{),}
+        \PYG{n}{Tuple2}\PYG{o}{.}\PYG{n+na}{of}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}Sarah\PYGZdq{}}\PYG{o}{,} \PYG{l+m+mi}{23}\PYG{o}{)}
+    \PYG{o}{);}
+
+\PYG{n}{persons}\PYG{o}{.}\PYG{n+na}{filter}\PYG{o}{(}\PYG{n}{p} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{p}\PYG{o}{.}\PYG{n+na}{f1} \PYG{o}{\PYGZgt{}} \PYG{l+m+mi}{18}\PYG{o}{);}
+\end{Verbatim}

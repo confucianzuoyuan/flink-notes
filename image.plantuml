@@ -1,0 +1,11 @@
+digraph G {
+    node[shape=record,color=blue];
+    TaskManager[label="<f0>TaskManager | <f1> TaskManager | <f2> TaskManager"];
+    App -> Dispatcher [label="提交应用"];
+    Dispatcher -> JobManager [label="启动并提交应用"];
+    JobManager -> ResourceManager [label="请求slots"];
+    JobManager -> TaskManager [label="提交要在slots中执行的任务"];
+    "TaskManager" -> JobManager [label="提供slots"];
+    TaskManager -> ResourceManager [label="注册slots"];
+    ResourceManager -> TaskManager [label="发出提供slots的命令"];
+}

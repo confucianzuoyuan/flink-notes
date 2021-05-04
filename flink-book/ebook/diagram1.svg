@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg height='309pt' preserveAspectRatio='xMidYMid meet' viewBox='0.00 0.00 567.50 309.00' width='568pt' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns='http://www.w3.org/2000/svg'>
+<g class='graph' id='graph0' transform='scale(1 1) rotate(0) translate(4 305)'>
+<title>G</title>
+<polygon fill='white' points='-4,4 -4,-305 563.5,-305 563.5,4 -4,4' stroke='transparent'/>
+
+<g class='node' id='node1'>
+<title>TaskManager</title>
+<polygon fill='none' points='0,-176.5 0,-212.5 339,-212.5 339,-176.5 0,-176.5' stroke='blue'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='56.5' y='-190.8'>TaskManager</text>
+<polyline fill='none' points='113,-176.5 113,-212.5 ' stroke='blue'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='169.5' y='-190.8'>TaskManager</text>
+<polyline fill='none' points='226,-176.5 226,-212.5 ' stroke='blue'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='282.5' y='-190.8'>TaskManager</text>
+</g>
+
+<g class='node' id='node4'>
+<title>JobManager</title>
+<polygon fill='none' points='320,-88.5 320,-124.5 423,-124.5 423,-88.5 320,-88.5' stroke='blue'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='371.5' y='-102.8'>JobManager</text>
+</g>
+
+<g class='edge' id='edge5'>
+<title>TaskManager&#45;&gt;JobManager</title>
+<path d='M321.64,-176.44C340.64,-171.69 356.02,-165.66 363.5,-158 369.5,-151.86 372.1,-143.15 373.03,-134.7' fill='none' stroke='black'/>
+<polygon fill='black' points='376.53,-134.83 373.43,-124.69 369.53,-134.54 376.53,-134.83' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='402' y='-146.8'>提供slots</text>
+</g>
+
+<g class='node' id='node5'>
+<title>ResourceManager</title>
+<polygon fill='none' points='79.5,-0.5 79.5,-36.5 225.5,-36.5 225.5,-0.5 79.5,-0.5' stroke='blue'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='152.5' y='-14.8'>ResourceManager</text>
+</g>
+
+<g class='edge' id='edge6'>
+<title>TaskManager&#45;&gt;ResourceManager</title>
+<path d='M126.3,-176.4C104.46,-165.28 79.99,-148.44 67.5,-125 59.77,-110.49 60.4,-102.83 67.5,-88 76.62,-68.93 93.94,-53.47 110.57,-42.1' fill='none' stroke='black'/>
+<polygon fill='black' points='112.67,-44.91 119.16,-36.53 108.86,-39.03 112.67,-44.91' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='99' y='-102.8'>注册slots</text>
+</g>
+
+<g class='node' id='node2'>
+<title>App</title>
+<polygon fill='none' points='444.5,-264.5 444.5,-300.5 498.5,-300.5 498.5,-264.5 444.5,-264.5' stroke='blue'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='471.5' y='-278.8'>App</text>
+</g>
+
+<g class='node' id='node3'>
+<title>Dispatcher</title>
+<polygon fill='none' points='424,-176.5 424,-212.5 519,-212.5 519,-176.5 424,-176.5' stroke='blue'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='471.5' y='-190.8'>Dispatcher</text>
+</g>
+
+<g class='edge' id='edge1'>
+<title>App&#45;&gt;Dispatcher</title>
+<path d='M471.5,-264.1C471.5,-252.25 471.5,-236.32 471.5,-222.79' fill='none' stroke='black'/>
+<polygon fill='black' points='475,-222.58 471.5,-212.58 468,-222.58 475,-222.58' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='500.5' y='-234.8'>提交应用</text>
+</g>
+
+<g class='edge' id='edge2'>
+<title>Dispatcher&#45;&gt;JobManager</title>
+<path d='M467.4,-176.25C464.09,-165.54 458.49,-152.13 449.5,-143 444.41,-137.82 438.42,-133.33 432.07,-129.45' fill='none' stroke='black'/>
+<polygon fill='black' points='433.66,-126.33 423.22,-124.53 430.26,-132.45 433.66,-126.33' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='509.5' y='-146.8'>启动并提交应用</text>
+</g>
+
+<g class='edge' id='edge4'>
+<title>JobManager&#45;&gt;TaskManager</title>
+<path d='M319.71,-119.02C310.02,-121.08 299.96,-123.16 290.5,-125 244.45,-133.96 222.11,-112.47 186.5,-143 179.53,-148.97 175.41,-157.9 172.98,-166.59' fill='none' stroke='black'/>
+<polygon fill='black' points='169.53,-165.98 170.83,-176.5 176.37,-167.47 169.53,-165.98' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='275' y='-146.8'>提交要在slots中执行的任务</text>
+</g>
+
+<g class='edge' id='edge3'>
+<title>JobManager&#45;&gt;ResourceManager</title>
+<path d='M327.97,-88.41C292.82,-74.6 243.2,-55.12 205.69,-40.39' fill='none' stroke='black'/>
+<polygon fill='black' points='206.53,-36.96 195.95,-36.56 203.98,-43.47 206.53,-36.96' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='307' y='-58.8'>请求slots</text>
+</g>
+
+<g class='edge' id='edge7'>
+<title>ResourceManager&#45;&gt;TaskManager</title>
+<path d='M154.17,-36.57C157.12,-66.77 163.28,-129.83 166.83,-166.15' fill='none' stroke='black'/>
+<polygon fill='black' points='163.38,-166.89 167.84,-176.5 170.35,-166.21 163.38,-166.89' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='230.5' y='-102.8'>发出提供slots的命令</text>
+</g>
+</g>
+</svg>

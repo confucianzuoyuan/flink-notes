@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{n}{KeyedStream}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}} \PYG{n}{keyed} \PYG{o}{=} \PYG{n}{stream}\PYG{o}{.}\PYG{n+na}{keyBy}\PYG{o}{(}\PYG{n}{r} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{r}\PYG{o}{.}\PYG{n+na}{itemId}\PYG{o}{);}
+
+\PYG{n}{stream}
+    \PYG{o}{.}\PYG{n+na}{keyBy}\PYG{o}{(}\PYG{k}{new} \PYG{n}{KeySelector}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{,} \PYG{n}{String}\PYG{o}{\PYGZgt{}()} \PYG{o}{\PYGZob{}}
+        \PYG{n+nd}{@Override}
+        \PYG{k+kd}{public} \PYG{n}{String} \PYG{n+nf}{getKey}\PYG{o}{(}\PYG{n}{UserBehavior} \PYG{n}{value}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+            \PYG{k}{return} \PYG{n}{value}\PYG{o}{.}\PYG{n+na}{itemId}\PYG{o}{;}
+        \PYG{o}{\PYGZcb{}}
+    \PYG{o}{\PYGZcb{});}
+\end{Verbatim}

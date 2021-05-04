@@ -1,0 +1,19 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kd}{public} \PYG{k+kd}{static} \PYG{k+kt}{void} \PYG{n+nf}{main}\PYG{o}{(}\PYG{n}{String}\PYG{o}{[]} \PYG{n}{args}\PYG{o}{)} \PYG{k+kd}{throws} \PYG{n}{Exception} \PYG{o}{\PYGZob{}}
+    \PYG{n}{StreamExecutionEnvironment} \PYG{n}{env} \PYG{o}{=} \PYG{n}{StreamExecutionEnvironment}\PYG{o}{.}\PYG{n+na}{getExecutionEnvironment}\PYG{o}{();}
+    \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{setParallelism}\PYG{o}{(}\PYG{l+m+mi}{1}\PYG{o}{);}
+
+    \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{fromElements}\PYG{o}{(}
+        \PYG{k}{new} \PYG{n}{UserBehavior}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}543462\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}1715\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}1464116\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{,}\PYG{l+m+mi}{1511658000} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{o}{),}
+        \PYG{k}{new} \PYG{n}{UserBehavior}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}662867\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}2244074\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}1575622\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{,}\PYG{l+m+mi}{1511658000} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{o}{)}
+    \PYG{o}{);}
+
+    \PYG{n}{ArrayList}\PYG{o}{\PYGZlt{}}\PYG{n}{UserBehavior}\PYG{o}{\PYGZgt{}} \PYG{n}{userBehaviors} \PYG{o}{=} \PYG{k}{new} \PYG{n}{ArrayList}\PYG{o}{\PYGZlt{}\PYGZgt{}();}
+    \PYG{n}{userBehaviors}\PYG{o}{.}\PYG{n+na}{add}\PYG{o}{(}\PYG{k}{new} \PYG{n}{UserBehavior}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}543462\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}1715\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}1464116\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{,}\PYG{l+m+mi}{1511658000} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{o}{));}
+    \PYG{n}{userBehaviors}\PYG{o}{.}\PYG{n+na}{add}\PYG{o}{(}\PYG{k}{new} \PYG{n}{UserBehavior}\PYG{o}{(}\PYG{l+s}{\PYGZdq{}662867\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}2244074\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}1575622\PYGZdq{}}\PYG{o}{,}\PYG{l+s}{\PYGZdq{}pv\PYGZdq{}}\PYG{o}{,}\PYG{l+m+mi}{1511658000} \PYG{o}{*} \PYG{l+m+mi}{1000L}\PYG{o}{));}
+
+    \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{fromCollection}\PYG{o}{(}\PYG{n}{userBehaviors}\PYG{o}{);}
+
+    \PYG{n}{env}\PYG{o}{.}\PYG{n+na}{execute}\PYG{o}{();}
+\PYG{o}{\PYGZcb{}}
+\end{Verbatim}
