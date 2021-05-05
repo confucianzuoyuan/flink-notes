@@ -9156,3 +9156,89 @@ StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironm
 env.setStateBackend(new FsStateBackend("file:///tmp/checkpoints", false));
 env.enableCheckpointing(10000L);
 ----
+
+=== 状态机
+
+连续三次登录失败
+
+[plantuml, state-machine, svg]
+....
+digraph finite_state_machine {
+    rankdir=LR;
+    INITIAL -> SUCCESS [label = "success"];
+    INITIAL -> S1 [label = "fail"];
+    S1 -> S2 [label = "fail"];
+    S2 -> FAIL [label = "fail"];
+    S1 -> SUCCESS [label = "success"];
+    S2 -> SUCCESS [label = "success"];
+    SUCCESS -> INITIAL [label = "重置"];
+    FAIL -> INITIAL [label = "重置"];
+}
+....
+
+[source,java]
+----
+public class Example {
+    private static HashMap<Tuple2<String, String>, String> hashMap = new HashMap<Tuple2<String, String>, String>();
+
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        hashMap.put(Tuple2.of("initial", "fail"), "S1");
+        hashMap.put(Tuple2.of("S1", "fail"), "S2");
+        hashMap.put(Tuple2.of("S2", "fail"), "fail");
+        hashMap.put(Tuple2.of("initial", "success"), "success");
+        hashMap.put(Tuple2.of("S1", "success"), "success");
+        hashMap.put(Tuple2.of("S2", "success"), "success");
+
+        env
+                .fromElements(
+                        Tuple3.of("user-1", "fail", 1000L),
+                        Tuple3.of("user-1", "fail", 2000L),
+                        Tuple3.of("user-1", "fail", 3000L),
+                        Tuple3.of("user-2", "fail", 4000L),
+                        Tuple3.of("user-2", "success", 5000L)
+                )
+                .assignTimestampsAndWatermarks(
+                        WatermarkStrategy.<Tuple3<String, String, Long>>forMonotonousTimestamps()
+                        .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, String, Long>>() {
+                            @Override
+                            public long extractTimestamp(Tuple3<String, String, Long> element, long recordTimestamp) {
+                                return element.f2;
+                            }
+                        })
+                )
+                .keyBy(r -> r.f0)
+                .process(new KeyedProcessFunction<String, Tuple3<String, String, Long>, String>() {
+                    private transient ValueState<String> valueState;
+
+                    @Override
+                    public void open(Configuration parameters) throws Exception {
+                        super.open(parameters);
+                        valueState = getRuntimeContext().getState(new ValueStateDescriptor<String>("state", Types.STRING));
+                    }
+
+                    @Override
+                    public void processElement(Tuple3<String, String, Long> value, Context ctx, Collector<String> out) throws Exception {
+                        if (valueState.value() == null) {
+                            valueState.update("initial");
+                        }
+                        String newState = hashMap.get(Tuple2.of(valueState.value(), value.f1));
+                        if (newState.equals("success")) {
+                            out.collect(value.f0 + "登录成功");
+                            valueState.update("initial");
+                        } else if (newState.equals("fail")) {
+                            out.collect(value.f0 + "登录失败");
+                            valueState.update("initial");
+                        } else {
+                            valueState.update(newState);
+                        }
+                    }
+                })
+                .print();
+
+        env.execute();
+    }
+}
+----

@@ -1,10 +1,9 @@
 digraph finite_state_machine {
-	rankdir=LR;
+    rankdir=LR;
     INITIAL -> SUCCESS [label = "success"];
     INITIAL -> S1 [label = "fail"];
     S1 -> S2 [label = "fail"];
     S2 -> FAIL [label = "fail"];
     S1 -> SUCCESS [label = "success"];
     S2 -> SUCCESS [label = "success"];
-    SUCCESS -> SUCCESS [label = "success"];
 }

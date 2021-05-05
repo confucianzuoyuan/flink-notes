@@ -1,0 +1,93 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg height='206pt' preserveAspectRatio='xMidYMid meet' viewBox='0.00 0.00 567.28 206.00' width='567pt' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns='http://www.w3.org/2000/svg'>
+<g class='graph' id='graph0' transform='scale(1 1) rotate(0) translate(4 202)'>
+<title>finite_state_machine</title>
+<polygon fill='white' points='-4,4 -4,-202 563.28,-202 563.28,4 -4,4' stroke='transparent'/>
+
+<g class='node' id='node1'>
+<title>INITIAL</title>
+<ellipse cx='46.8' cy='-126' fill='none' rx='46.59' ry='18' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='46.8' y='-122.3'>INITIAL</text>
+</g>
+
+<g class='node' id='node2'>
+<title>SUCCESS</title>
+<ellipse cx='501.44' cy='-123' fill='none' rx='57.69' ry='18' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='501.44' y='-119.3'>SUCCESS</text>
+</g>
+
+<g class='edge' id='edge1'>
+<title>INITIAL&#45;&gt;SUCCESS</title>
+<path d='M71.29,-141.46C82.91,-148.23 97.45,-155.43 111.59,-159 246.89,-193.19 289.74,-190.95 425.59,-159 439.24,-155.79 453.31,-149.83 465.52,-143.66' fill='none' stroke='black'/>
+<polygon fill='black' points='467.24,-146.71 474.46,-138.95 463.98,-140.52 467.24,-146.71' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='252.09' y='-186.8'>success</text>
+</g>
+
+<g class='node' id='node3'>
+<title>S1</title>
+<ellipse cx='179.59' cy='-99' fill='none' rx='27' ry='18' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='179.59' y='-95.3'>S1</text>
+</g>
+
+<g class='edge' id='edge2'>
+<title>INITIAL&#45;&gt;S1</title>
+<path d='M88.46,-117.61C106.1,-113.96 126.55,-109.74 143.51,-106.24' fill='none' stroke='black'/>
+<polygon fill='black' points='144.48,-109.62 153.56,-104.17 143.06,-102.76 144.48,-109.62' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='123.09' y='-115.8'>fail</text>
+</g>
+
+<g class='edge' id='edge7'>
+<title>SUCCESS&#45;&gt;INITIAL</title>
+<path d='M445.69,-127.81C438.92,-128.28 432.1,-128.69 425.59,-129 296.4,-135.06 263.93,-130.7 134.59,-131 124.37,-131.02 121.81,-131.4 111.59,-131 108.73,-130.89 105.8,-130.75 102.84,-130.59' fill='none' stroke='black'/>
+<polygon fill='black' points='102.93,-127.09 92.73,-129.96 102.5,-134.07 102.93,-127.09' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='252.09' y='-135.8'>重置</text>
+</g>
+
+<g class='edge' id='edge5'>
+<title>S1&#45;&gt;SUCCESS</title>
+<path d='M206.5,-100.94C255.75,-104.64 364.29,-112.78 434.8,-118.07' fill='none' stroke='black'/>
+<polygon fill='black' points='434.68,-121.58 444.91,-118.83 435.2,-114.59 434.68,-121.58' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='325.09' y='-114.8'>success</text>
+</g>
+
+<g class='node' id='node4'>
+<title>S2</title>
+<ellipse cx='325.09' cy='-48' fill='none' rx='27' ry='18' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='325.09' y='-44.3'>S2</text>
+</g>
+
+<g class='edge' id='edge3'>
+<title>S1&#45;&gt;S2</title>
+<path d='M199.25,-86.36C206.85,-81.65 215.89,-76.58 224.59,-73 245.12,-64.56 269.24,-58.42 288.59,-54.33' fill='none' stroke='black'/>
+<polygon fill='black' points='289.4,-57.74 298.51,-52.32 288.01,-50.87 289.4,-57.74' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='252.09' y='-76.8'>fail</text>
+</g>
+
+<g class='edge' id='edge6'>
+<title>S2&#45;&gt;SUCCESS</title>
+<path d='M351.83,-51.96C372.4,-55.72 401.66,-62.38 425.59,-73 441.64,-80.12 458.03,-90.63 471.36,-100.17' fill='none' stroke='black'/>
+<polygon fill='black' points='469.51,-103.16 479.64,-106.26 473.66,-97.52 469.51,-103.16' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='398.09' y='-76.8'>success</text>
+</g>
+
+<g class='node' id='node5'>
+<title>FAIL</title>
+<ellipse cx='501.44' cy='-18' fill='none' rx='31.7' ry='18' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='501.44' y='-14.3'>FAIL</text>
+</g>
+
+<g class='edge' id='edge4'>
+<title>S2&#45;&gt;FAIL</title>
+<path d='M349.94,-40.3C356.57,-38.36 363.82,-36.42 370.59,-35 400.12,-28.79 433.93,-24.45 459.64,-21.71' fill='none' stroke='black'/>
+<polygon fill='black' points='460.19,-25.17 469.78,-20.67 459.47,-18.21 460.19,-25.17' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='398.09' y='-38.8'>fail</text>
+</g>
+
+<g class='edge' id='edge8'>
+<title>FAIL&#45;&gt;INITIAL</title>
+<path d='M469.6,-15.14C417.49,-11.42 309.39,-8.48 224.59,-38 191.17,-49.63 184.33,-56.34 152.59,-72 129.78,-83.26 104.41,-96.32 84.35,-106.77' fill='none' stroke='black'/>
+<polygon fill='black' points='82.49,-103.79 75.24,-111.53 85.73,-110 82.49,-103.79' stroke='black'/>
+<text font-family='Times,serif' font-size='14.00' text-anchor='middle' x='252.09' y='-41.8'>重置</text>
+</g>
+</g>
+</svg>
