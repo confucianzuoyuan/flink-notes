@@ -8550,4 +8550,609 @@ buyStream
     .print();
 ----
 
+=== 状态变量: VALUESTATE
 
+每个品类的PV值求解
+
+[source,java]
+----
+env
+    .addSource(new UserBehaviorSource())
+    .assignTimestampsAndWatermarks(
+        WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+        .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+            @Override
+            public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                return element.timestamp;
+            }
+        })
+    )
+    .keyBy(r -> r.categoryId)
+    .process(new KeyedProcessFunction<String, UserBehavior, String>() {
+        private ValueState<Long> valueState;
+        private ValueState<Long> timerTs;
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            super.open(parameters);
+            valueState = getRuntimeContext().getState(new ValueStateDescriptor<Long>("pv", Types.LONG));
+        }
+
+        @Override
+        public void processElement(UserBehavior value, Context ctx, Collector<String> out) throws Exception {
+            if (valueState.value() == null) {
+                valueState.update(1L);
+            } else {
+                valueState.update(valueState.value() + 1L);
+            }
+            if (timerTs.value() == null) {
+                timerTs.update(value.timestamp + 10 * 1000L);
+            }
+        }
+
+        @Override
+        public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+            super.onTimer(timestamp, ctx, out);
+            out.collect("品类 " + ctx.getCurrentKey() + " 的PV是：" + valueState.value());
+            timerTs.clear();
+        }
+    })
+    .print();
+----
+
+=== 状态变量: LISTSTATE
+
+实时热门商品
+
+[source,java]
+----
+// 每个小时中的实时热门商品
+public class Example {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        env
+            .addSource(new UserBehaviorSource())
+            .filter(r -> r.behaviorType.equals("pv"))
+            .assignTimestampsAndWatermarks(
+                WatermarkStrategy.<UserBehavior>forBoundedOutOfOrderness(Duration.ofSeconds(0))
+                    .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                        @Override
+                        public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                            return element.timestamp;
+                        }
+                    })
+            )
+            .keyBy(r -> r.itemId)
+            .window(TumblingEventTimeWindows.of(Time.hours(1)))
+            .aggregate(new CountAgg(), new WindowResult())
+            .keyBy(r -> r.windowEnd)
+            .process(new TopN(3))
+            .print();
+
+        env.execute();
+    }
+
+    public static class TopN extends KeyedProcessFunction<Long, ItemViewCount, String> {
+        private ListState<ItemViewCount> listState;
+        private Integer N;
+
+        public TopN(Integer n) {
+            N = n;
+        }
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            super.open(parameters);
+            listState = getRuntimeContext().getListState(
+                    new ListStateDescriptor<ItemViewCount>("list", Types.POJO(ItemViewCount.class))
+            );
+        }
+
+        @Override
+        public void processElement(ItemViewCount itemViewCount, Context context, Collector<String> collector) throws Exception {
+            listState.add(itemViewCount);
+            context.timerService().registerEventTimeTimer(itemViewCount.windowEnd + 100L);
+        }
+
+        @Override
+        public void onTimer(long timestamp, OnTimerContext ctx, Collector<String> out) throws Exception {
+            super.onTimer(timestamp, ctx, out);
+            ArrayList<ItemViewCount> itemViewCounts = new ArrayList<>();
+            for (ItemViewCount e : listState.get()) {
+                itemViewCounts.add(e);
+            }
+            listState.clear();
+
+            itemViewCounts.sort(new Comparator<ItemViewCount>() {
+                @Override
+                public int compare(ItemViewCount t1, ItemViewCount t2) {
+                    return t2.count.intValue() - t1.count.intValue();
+                }
+            });
+
+            StringBuilder result = new StringBuilder();
+            result
+                    .append("=====================================\n");
+            for (int i = 0; i < N; i++) {
+                ItemViewCount itemViewCount = itemViewCounts.get(i);
+                result
+                        .append("窗口结束时间是：" + new Timestamp(timestamp - 100L))
+                        .append("第" + (i + 1) + "名的商品id是：" + itemViewCount.itemId)
+                        .append("浏览次数是：" + itemViewCount.count + "\n");
+            }
+            result
+                    .append("=====================================\n");
+            out.collect(result.toString());
+        }
+    }
+
+    public static class CountAgg implements AggregateFunction<UserBehavior, Long, Long> {
+        @Override
+        public Long createAccumulator() {
+            return 0L;
+        }
+
+        @Override
+        public Long add(UserBehavior value, Long accumulator) {
+            return accumulator + 1L;
+        }
+
+        @Override
+        public Long getResult(Long accumulator) {
+            return accumulator;
+        }
+
+        @Override
+        public Long merge(Long a, Long b) {
+            return null;
+        }
+    }
+
+    public static class WindowResult extends ProcessWindowFunction<Long, ItemViewCount, String, TimeWindow> {
+        @Override
+        public void process(String s, Context context, Iterable<Long> iterable, Collector<ItemViewCount> collector) throws Exception {
+            collector.collect(new ItemViewCount(s, iterable.iterator().next(), context.window().getStart(), context.window().getEnd()));
+        }
+    }
+
+    public static class ItemViewCount {
+        public String itemId;
+        public Long count;
+        public Long windowStart;
+        public Long windowEnd;
+
+        public ItemViewCount() {
+        }
+
+        public ItemViewCount(String itemId, Long count, Long windowStart, Long windowEnd) {
+            this.itemId = itemId;
+            this.count = count;
+            this.windowStart = windowStart;
+            this.windowEnd = windowEnd;
+        }
+
+        @Override
+        public String toString() {
+            return "ItemViewCount{" +
+                    "itemId='" + itemId + '\'' +
+                    ", count=" + count +
+                    ", windowStart=" + new Timestamp(windowStart) +
+                    ", windowEnd=" + new Timestamp(windowEnd) +
+                    '}';
+        }
+    }
+
+    public static class UserBehavior {
+        public String userId;
+        public String itemId;
+        public String categoryId;
+        public String behaviorType;
+        public Long timestamp;
+
+        public UserBehavior() {
+        }
+
+        public UserBehavior(String userId, String itemId, String categoryId, String behaviorType, Long timestamp) {
+            this.userId = userId;
+            this.itemId = itemId;
+            this.categoryId = categoryId;
+            this.behaviorType = behaviorType;
+            this.timestamp = timestamp;
+        }
+
+        @Override
+        public String toString() {
+            return "UserBehavior{" +
+                    "userId='" + userId + '\'' +
+                    ", itemId='" + itemId + '\'' +
+                    ", categoryId='" + categoryId + '\'' +
+                    ", behaviorType='" + behaviorType + '\'' +
+                    ", timestamp=" + new Timestamp(timestamp) +
+                    '}';
+        }
+    }
+}
+----
+
+=== 状态变量: MAPSTATE
+
+数据倾斜的解决
+
+[source,java]
+----
+public class DataSkew {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        env
+            .fromElements(
+                Tuple3.of("a", 1L, 1000L),
+                Tuple3.of("a", 1L, 2000L),
+                Tuple3.of("a", 1L, 3000L),
+                Tuple3.of("a", 1L, 4000L),
+                Tuple3.of("a", 1L, 5000L),
+                Tuple3.of("a", 1L, 6000L),
+                Tuple3.of("a", 1L, 7000L),
+                Tuple3.of("a", 1L, 8000L),
+                Tuple3.of("a", 1L, 9000L),
+                Tuple3.of("a", 1L, 10000L),
+                Tuple3.of("b", 1L, 11000L)
+            )
+            .map(new MapFunction<Tuple3<String, Long, Long>, Tuple3<String, Long, Long>>() {
+                @Override
+                public Tuple3<String, Long, Long> map(Tuple3<String, Long, Long> value) throws Exception {
+                    Random rand = new Random();
+                    return Tuple3.of(value.f0 + "-" + rand.nextInt(4), value.f1, value.f2);
+                }
+            })
+            .assignTimestampsAndWatermarks(WatermarkStrategy.<Tuple3<String, Long, Long>>forMonotonousTimestamps()
+            .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, Long, Long>>() {
+                @Override
+                public long extractTimestamp(Tuple3<String, Long, Long> element, long recordTimestamp) {
+                    return element.f2;
+                }
+            }))
+            .keyBy(r -> r.f0)
+            .process(new KeyedProcessFunction<String, Tuple3<String, Long, Long>, Tuple2<String, Long>>() {
+                private ValueState<Tuple2<String, Long>> sum;
+                private ValueState<Long> timerTs;
+                @Override
+                public void open(Configuration parameters) throws Exception {
+                    super.open(parameters);
+                    sum = getRuntimeContext().getState(new ValueStateDescriptor<Tuple2<String, Long>>("sum", Types.TUPLE(Types.STRING, Types.LONG)));
+                    timerTs = getRuntimeContext().getState(new ValueStateDescriptor<Long>("timer", Types.LONG));
+                }
+
+                @Override
+                public void processElement(Tuple3<String, Long, Long> value, Context ctx, Collector<Tuple2<String, Long>> out) throws Exception {
+                    if (sum.value() == null) {
+                        sum.update(Tuple2.of(value.f0, value.f1));
+                        ctx.timerService().registerEventTimeTimer(value.f2 + 10 * 1000L);
+                        timerTs.update(value.f2 + 10 * 1000L);
+                    } else {
+                        Long cnt = sum.value().f1;
+                        sum.update(Tuple2.of(value.f0, cnt + value.f1));
+                        if (timerTs.value() == null) {
+                            ctx.timerService().registerEventTimeTimer(value.f2 + 10 * 1000L);
+                            timerTs.update(value.f2 + 10 * 1000L);
+                        }
+                    }
+                }
+
+                @Override
+                public void onTimer(long timestamp, OnTimerContext ctx, Collector<Tuple2<String, Long>> out) throws Exception {
+                    super.onTimer(timestamp, ctx, out);
+                    out.collect(Tuple2.of(ctx.getCurrentKey(), sum.value().f1));
+                    timerTs.clear();
+                }
+            })
+            .map(new MapFunction<Tuple2<String, Long>, Tuple3<String, Integer, Long>>() {
+                @Override
+                public Tuple3<String, Integer, Long> map(Tuple2<String, Long> value) throws Exception {
+                    return Tuple3.of(value.f0.split("-")[0], Integer.parseInt(value.f0.split("-")[1]), value.f1);
+                }
+            })
+            .keyBy(r -> r.f0)
+            .process(new KeyedProcessFunction<String, Tuple3<String, Integer, Long>, Tuple2<String, Long>>() {
+                private MapState<Long, Long> mapState;
+
+                @Override
+                public void open(Configuration parameters) throws Exception {
+                    super.open(parameters);
+                    mapState = getRuntimeContext().getMapState(
+                            new MapStateDescriptor<Long, Long>("map", Types.LONG, Types.LONG)
+                    );
+                }
+
+                @Override
+                public void processElement(Tuple3<String, Integer, Long> value, Context ctx, Collector<Tuple2<String, Long>> out) throws Exception {
+                    mapState.put((long)value.f1, value.f2);
+                    long sum = 0L;
+                    for (Long v : mapState.values()) {
+                        sum += v;
+                    }
+                    out.collect(Tuple2.of(value.f0, sum));
+                }
+            })
+            .print();
+
+        env.execute();
+    }
+}
+----
+
+=== 状态变量: AGGREGATINGSTATE
+
+[source,java]
+----
+public class AggregatingStateDemo {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.addSource(new RandomLetterAndNumberSource())
+            .keyBy(0)
+            .flatMap(new CountFunction())
+            .print();
+        env.execute();
+    }
+
+    public static class CountFunction extends RichFlatMapFunction<Tuple2<String, Integer>, Integer> {
+        private int count = 0;
+        private transient AggregatingState<Tuple2<String, Integer>, Integer> aggregatingState;
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            super.open(parameters);
+            AggregatingStateDescriptor<Tuple2<String, Integer>, Integer, Integer> descriptor = new AggregatingStateDescriptor<Tuple2<String, Integer>, Integer, Integer>(
+                    "aggregatingState", new AggregateFunction<Tuple2<String, Integer>, Integer, Integer>() {
+                @Override
+                public Integer createAccumulator() {
+                    return 0;
+                }
+
+                @Override
+                public Integer add(Tuple2<String, Integer> value, Integer accumulator) {
+                    return accumulator + 1;
+                }
+
+                @Override
+                public Integer getResult(Integer accumulator) {
+                    return accumulator;
+                }
+
+                @Override
+                public Integer merge(Integer a, Integer b) {
+                    return a + b;
+                }
+            }, Types.INT);
+            aggregatingState = getRuntimeContext().getAggregatingState(descriptor);
+        }
+
+        @Override
+        public void flatMap(Tuple2<String, Integer> value, Collector<Integer> out) throws Exception {
+            count++;
+            if (count % 1000 == 0) {
+                out.collect(aggregatingState.get());
+                aggregatingState.clear();
+            } else {
+                // 增量更新AggregatingState，这里每来一个新元素，对ACC累加1
+                aggregatingState.add(value);
+            }
+        }
+    }
+}
+----
+
+=== 状态变量: CHECKPOINTEDFUNCTION
+
+[source,java]
+----
+/*
+CheckpointedFunction
+CheckpointedFunction 接口提供了访问 non-keyed state 的方法，需要实现如下两个方法：
+void snapshotState(FunctionSnapshotContext context) throws Exception;
+void initializeState(FunctionInitializationContext context) throws Exception;
+进行 checkpoint 时会调用 snapshotState()。 用户自定义函数初始化时会调用 initializeState()，初始化包括第一次自定义函数初始化和从之前的 checkpoint 恢复。 因此 initializeState() 不仅是定义不同状态类型初始化的地方，也需要包括状态恢复的逻辑。
+当前 operator state 以 list 的形式存在。这些状态是一个 可序列化 对象的集合 List，彼此独立，方便在改变并发后进行状态的重新分派。 换句话说，这些对象是重新分配 non-keyed state 的最细粒度。根据状态的不同访问方式，有如下几种重新分配的模式：
+Even-split redistribution: 每个算子都保存一个列表形式的状态集合，整个状态由所有的列表拼接而成。当作业恢复或重新分配的时候，整个状态会按照算子的并发度进行均匀分配。 比如说，算子 A 的并发读为 1，包含两个元素 element1 和 element2，当并发读增加为 2 时，element1 会被分到并发 0 上，element2 则会被分到并发 1 上。
+Union redistribution: 每个算子保存一个列表形式的状态集合。整个状态由所有的列表拼接而成。当作业恢复或重新分配时，每个算子都将获得所有的状态数据。 Do not use this feature if your list may have high cardinality. Checkpoint metadata will store an offset to each list entry, which could lead to RPC framesize or out-of-memory errors.
+下面的例子中的 SinkFunction 在 CheckpointedFunction 中进行数据缓存，然后统一发送到下游，这个例子演示了列表状态数据的 event-split redistribution。
+ */
+public class BufferingSink implements SinkFunction<Tuple2<String,Integer>>, CheckpointedFunction {
+    private final int threshold;
+
+    private transient ListState<Tuple2<String, Integer>> checkpointedState;
+
+    private List<Tuple2<String, Integer>> bufferedElements;
+
+    public BufferingSink(int threshold) {
+        this.threshold = threshold;
+        this.bufferedElements = new ArrayList<>();
+    }
+
+    @Override
+    public void invoke(Tuple2<String, Integer> value, Context context) throws Exception {
+        bufferedElements.add(value);
+        if (bufferedElements.size() == threshold) {
+            for (Tuple2<String, Integer> element: bufferedElements) {
+                // send it to the sink
+            }
+            bufferedElements.clear();
+        }
+    }
+
+    @Override
+    public void snapshotState(FunctionSnapshotContext context) throws Exception {
+        checkpointedState.clear();
+        for (Tuple2<String, Integer> element : bufferedElements) {
+            checkpointedState.add(element);
+        }
+    }
+
+    /*
+initializeState 方法接收一个 FunctionInitializationContext 参数，会用来初始化 non-keyed state 的 “容器”。这些容器是一个 ListState 用于在 checkpoint 时保存 non-keyed state 对象。
+注意这些状态是如何初始化的，和 keyed state 类系，StateDescriptor 会包括状态名字、以及状态类型相关信息。
+     */
+    @Override
+    public void initializeState(FunctionInitializationContext context) throws Exception {
+        ListStateDescriptor<Tuple2<String, Integer>> descriptor =
+                new ListStateDescriptor<>(
+                        "buffered-elements",
+                        TypeInformation.of(new TypeHint<Tuple2<String, Integer>>() {}));
+
+        /*
+        调用不同的获取状态对象的接口，会使用不同的状态分配算法。比如 getUnionListState(descriptor) 会使用 union redistribution 算法， 而 getListState(descriptor) 则简单的使用 even-split redistribution 算法。
+当初始化好状态对象后，我们通过 isRestored() 方法判断是否从之前的故障中恢复回来，如果该方法返回 true 则表示从故障中进行恢复，会执行接下来的恢复逻辑。
+正如代码所示，BufferingSink 中初始化时，恢复回来的 ListState 的所有元素会添加到一个局部变量中，供下次 snapshotState() 时使用。 然后清空 ListState，再把当前局部变量中的所有元素写入到 checkpoint 中。
+另外，我们同样可以在 initializeState() 方法中使用 FunctionInitializationContext 初始化 keyed state。
+         */
+        checkpointedState = context.getOperatorStateStore().getListState(descriptor);
+
+        if (context.isRestored()) {
+            for (Tuple2<String, Integer> element : checkpointedState.get()) {
+                bufferedElements.add(element);
+            }
+        }
+    }
+}
+/*
+ListCheckpointed
+ListCheckpointed 接口是 CheckpointedFunction 的精简版，仅支持 even-split redistributuion 的 list state。同样需要实现两个方法：
+List<T> snapshotState(long checkpointId, long timestamp) throws Exception;
+void restoreState(List<T> state) throws Exception;
+snapshotState() 需要返回一个将写入到 checkpoint 的对象列表，restoreState 则需要处理恢复回来的对象列表。如果状态不可切分， 则可以在 snapshotState() 中返回 Collections.singletonList(MY_STATE)。
+ */
+----
+
+=== 广播状态
+
+[source,java]
+----
+public class Example {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
+        DataStreamSource<Action> actions = env.fromElements(
+                new Action(1L, "login"),
+                new Action(1L, "pay"),
+                new Action(1L, "login"),
+                new Action(1L, "buy")
+        );
+
+        DataStreamSource<Pattern> patterns = env
+                .fromElements(
+                        new Pattern("login", "pay"),
+                        new Pattern("login", "buy")
+                );
+
+        KeyedStream<Action, Long> actionsByUser = actions
+                .keyBy((KeySelector<Action, Long>) action -> action.userId);
+        MapStateDescriptor<Void, Pattern> bcStateDescriptor = new MapStateDescriptor<>(
+                "patterns", Types.VOID, Types.POJO(Pattern.class));
+        BroadcastStream<Pattern> bcastedPatterns = patterns.broadcast(bcStateDescriptor);
+        DataStream<Tuple2<Long, Pattern>> matches = actionsByUser
+                .connect(bcastedPatterns)
+                .process(new PatternEvaluator());
+
+        matches.print();
+
+        env.execute();
+    }
+
+    public static class PatternEvaluator
+            extends KeyedBroadcastProcessFunction<Long, Action, Pattern, Tuple2<Long, Pattern>> {
+
+        // handle for keyed state (per user)
+        ValueState<String> prevActionState;
+
+        @Override
+        public void open(Configuration conf) {
+            // initialize keyed state
+            prevActionState = getRuntimeContext().getState(
+                    new ValueStateDescriptor<>("lastAction", Types.STRING));
+        }
+
+        @Override
+        public void processBroadcastElement(
+                Pattern pattern,
+                Context ctx,
+                Collector<Tuple2<Long, Pattern>> out) throws Exception {
+
+            BroadcastState<Void, Pattern> bcState = ctx.getBroadcastState(
+                    new MapStateDescriptor<>("patterns", Types.VOID, Types.POJO(Pattern.class)));
+
+            bcState.put(null, pattern);
+        }
+
+        @Override
+        public void processElement(Action action, ReadOnlyContext ctx,
+                                   Collector<Tuple2<Long, Pattern>> out) throws Exception {
+            Pattern pattern = ctx.getBroadcastState(
+                    new MapStateDescriptor<>("patterns", Types.VOID, Types.POJO(Pattern.class))).get(null);
+
+            String prevAction = prevActionState.value();
+            if (pattern != null && prevAction != null) {
+                if (pattern.action1.equals(prevAction) && pattern.action2.equals(action.action)) {
+
+                    // Found a MATCH
+                    out.collect(new Tuple2<>(ctx.getCurrentKey(), pattern));
+                }
+            }
+            prevActionState.update(action.action);
+        }
+    }
+
+    public static class Pattern {
+        public String action1;
+        public String action2;
+
+        public Pattern() {
+        }
+
+        public Pattern(String action1, String action2) {
+            this.action1 = action1;
+            this.action2 = action2;
+        }
+
+        @Override
+        public String toString() {
+            return "Pattern{" +
+                    "action1='" + action1 + '\'' +
+                    ", action2='" + action2 + '\'' +
+                    '}';
+        }
+    }
+
+    public static class Action {
+        public Long userId;
+        public String action;
+
+        public Action() {
+        }
+
+        public Action(Long userId, String action) {
+            this.userId = userId;
+            this.action = action;
+        }
+
+        @Override
+        public String toString() {
+            return "Action{" +
+                    "userId=" + userId +
+                    ", action='" + action + '\'' +
+                    '}';
+        }
+    }
+}
+----
+
+=== 状态后端的配置
+
+[source,java]
+----
+StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+env.setStateBackend(new FsStateBackend("file:///tmp/checkpoints", false));
+env.enableCheckpointing(10000L);
+----
