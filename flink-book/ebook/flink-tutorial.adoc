@@ -4338,17 +4338,17 @@ public class OrderTimeoutDetect {
 
 === 什么是Table API和Flink SQL
 
-Flink本身是批流统一的处理框架，所以Table
-API和SQL，就是批流统一的上层处理API。目前功能尚未完善，处于活跃的开发阶段。
+Table API是一种声明式的DSL（领域专用语言），用来操作动态表。在使用Table API时，我们会将数据流转换成动态表来操作。Table API的编程介于核心API和SQL之间，既像SQL一样是声明式的编程方式，又可以通过链式调用来编写查询的语句。所谓声明式，就是告诉Flink我们要“做什么”，而不是“怎么做”。类似于函数式编程语言和过程式编程语言之间的区别。函数式编程经常采用声明式的编程方式，而过程式变成则告诉了计算机我们具体要怎么做的步骤。同时由于Table API采用编程的方式进行查询，而非SQL那样编写的查询语句是字符串，所以可以和DataStream API进行混合编程，非常的优雅。虽然Table API的表达能力比起核心API有差距，也就是有些核心API所能实现的功能无法使用Table API来实现。但Table API的优点在于针对一些稍微简单的场景，比起核心API，要少写很多的代码，程序看起来更加简洁。
 
-Table
-API是一套内嵌在Java和Scala语言中的查询API，它允许我们以非常直观的方式，组合来自一些关系运算符的查询（比如select、filter和join）。而对于Flink
-SQL，就是直接可以在代码中写SQL，来实现一些查询（Query）操作。Flink的SQL支持，基于实现了SQL标准的Apache
-Calcite（Apache开源SQL解析工具）。
+Flink SQL和Table API的表达能力基本等价，两者能够实现的功能是一样的。区别在于，Table API的使用是编程的方式，而SQL则基本是编写查询的字符串。Flink SQL的能力同样无法和核心API相比，优点在于对于一些不熟悉Flink核心API的开发人员也可以上手来使用Flink，因为SQL可以说是查询语言的标准，从事数据分析行业的开发人员人人都会。这样在不熟悉Flink核心API的情况下，也可以使用Flink SQL来编写一些简单的查询需求。
 
-无论输入是批输入还是流式输入，在这两套API中，指定的查询都具有相同的语义，得到相同的结果。
+=== 两种Planner
+
+Flink Table API和SQL有两个Planner。Old Planner和Blink Planner。Old Planner主要由Flink社区开发，Blink Planner主要有阿里巴巴公司开发。在Flink 1.9中，默认Planner为Old Planner。而在Flink 1.11之后，Blink Planner正式成为了Flink Table API和SQL的默认Planner。Blink Planner相对于Old Planner有诸多提升，其本书Flink版本为1.13，所以我们的讲解重点是Blink Planner。
 
 === 需要引入的依赖
+
+可以看到我们引入的依赖是Blink Planner。
 
 [source,xml]
 ----
@@ -4365,8 +4365,7 @@ Calcite（Apache开源SQL解析工具）。
 </dependency>
 ----
 
-内部实现上，部分 table 相关的代码是用 Scala
-实现的。所以，下面的依赖也需要添加到你的程序里，不管是批式还是流式的程序：
+内部实现上，部分 Table API 相关的代码是用 Scala 实现的。所以，下面的依赖也需要添加：
 
 [source,xml]
 ----
@@ -4379,9 +4378,7 @@ Calcite（Apache开源SQL解析工具）。
 
 *扩展依赖*
 
-如果你想实现自定义格式来解析 Kafka
-数据，或者自定义函数，下面的依赖就足够了，编译出来的 jar 文件可以直接给
-SQL Client 使用：
+如果你想实现自定义格式来解析 Kafka 数据，或者自定义函数，下面的依赖就足够了，编译出来的 JAR 包可以直接给 SQL Client 使用：
 
 [source,xml]
 ----
@@ -4404,9 +4401,151 @@ SQL Client 使用：
 
 ==== Table API 和 SQL 程序的结构
 
-所有用于批处理和流处理的 Table API 和 SQL
-程序都遵循相同的模式。下面的代码示例展示了 Table API 和 SQL
-程序的通用结构。
+我们先来看一个简单需求的Table API和Flink SQL的实现，方便读者对程序结构有一个简单的认识。我们来计算一下每个商品在每个窗口中的PV数据。窗口为滚动事件时间窗口。
+
+[source,java]
+----
+public static void main(String[] args) throws Exception {
+    // 获取流环境
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    env.setParallelism(1);
+
+    // 读入流并设置水位线
+    SingleOutputStreamOperator<UserBehavior> stream = env
+        .addSource(new UserBehaviorSource())
+        .filter(r -> r.behaviorType.equals("pv"))
+        .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+            .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                @Override
+                public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                    return element.timestamp;
+                }
+            }));
+
+    // 表环境的配置，默认是Blink Planner
+    EnvironmentSettings settings = EnvironmentSettings
+        .newInstance()
+        .inStreamingMode()
+        .build();
+
+    // 创建表环境
+    StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+    // 将流转换成动态表
+    Table dynamicTable = tEnv.fromDataStream(
+        stream,                            // 待转换的流
+        $("itemId"),                       // 商品ID
+        $("timestamp").rowtime().as("ts")  // 指定timestamp为事件时间（rowtime），并起别名ts
+    );
+
+    // 在动态表上进行查询
+    Table result = dynamicTable
+        .window(
+            Tumble                    // 滚动窗口
+                .over(lit(1).hours()) // 窗口长度1小时
+                .on($("ts"))          // 在ts字段上开窗口
+                .as("w")              // 起别名为w
+        )
+        .groupBy(                     // 使用商品ID和窗口w进行分组
+            $("itemId"),
+            $("w")
+        )
+        .select(                      // 查询语句
+            $("itemId"),              // 商品ID
+            $("itemId").count(),      // 统计PV
+            $("w").start(),           // 窗口开始时间
+            $("w").end()              // 窗口结束时间
+        );
+
+    // 将查询结果表（也是动态表）转换回数据流
+    tEnv
+        .toRetractStream(             // 由于查询中有聚合操作，使用撤回流
+            result,                   // 查询结果动态表
+            Row.class                 // 行数据的泛型
+        )
+        .print();                     // 输出
+
+    // 执行流程序
+    env.execute();
+}
+----
+
+可以看到，我们在使用Table API时，标准流程为：
+
+. 获取流环境
+. 将流读入成DataStream数据结构
+. 获取表环境
+. 将DataStream转换成动态表Table数据结构
+. 在动态表上进行查询，查询结果还是动态表，Table数据结构
+. 将查询结果动态表转换回DataStream数据结构
+. 执行流程序
+
+下面我们将以上程序使用Flink SQL编写一下。
+
+[source,java]
+----
+public static void main(String[] args) throws Exception {
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    env.setParallelism(1);
+
+    SingleOutputStreamOperator<UserBehavior> stream = env
+        .addSource(new UserBehaviorSource())
+        .filter(r -> r.behaviorType.equals("pv"))
+        .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
+            .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
+                @Override
+                public long extractTimestamp(UserBehavior element, long recordTimestamp) {
+                    return element.timestamp;
+                }
+            }));
+
+    EnvironmentSettings settings = EnvironmentSettings
+        .newInstance()
+        .inStreamingMode()
+        .build();
+
+    StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+    // 创建临时视图
+    tEnv.createTemporaryView(
+        "userbehavior",                    // 临时视图的名字
+        stream,
+        $("itemId"),
+        $("timestamp").rowtime().as("ts")
+    );
+
+    Table result = tEnv.sqlQuery(
+        "SELECT " +
+            "itemId, " +
+            "COUNT(itemId), " +
+            "TUMBLE_START(ts, INTERVAL '1' HOUR), " +    // 窗口开始时间
+            "TUMBLE_END(ts, INTERVAL '1' HOUR) " +       // 窗口结束时间
+            "FROM userbehavior GROUP BY " +
+            "itemId, TUMBLE(ts, INTERVAL '1' HOUR)"      // 按照窗口和商品ID进行分组
+    );
+
+    tEnv
+        .toRetractStream(
+            result,
+            Row.class
+        )
+        .print();
+
+    env.execute();
+}
+----
+
+可以看到Table API和SQL的代码阅读起来非常相似，编写SQL的标准流程如下：
+
+. 获取流环境
+. 将流读入成DataStream数据结构
+. 获取表环境
+. 将DataStream转换成临时视图
+. 在临时视图上使用SQL进行查询，查询结果还是动态表，Table数据结构
+. 将查询结果动态表转换回DataStream数据结构
+. 执行流程序
+
+所有用于批处理和流处理的 Table API 和 SQL 程序都遵循相同的模式。下面的代码示例展示了 Table API 和 SQL 程序的通用结构。
 
 [source,java]
 ----
