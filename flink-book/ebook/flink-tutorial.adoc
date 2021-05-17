@@ -4336,17 +4336,19 @@ public class OrderTimeoutDetect {
 
 == Flink Table API & SQL
 
-=== 什么是Table API和Flink SQL
+=== Flink Table API和SQL简介
+
+==== 什么是Table API和Flink SQL
 
 Table API是一种声明式的DSL（领域专用语言），用来操作动态表。在使用Table API时，我们会将数据流转换成动态表来操作。Table API的编程介于核心API和SQL之间，既像SQL一样是声明式的编程方式，又可以通过链式调用来编写查询的语句。所谓声明式，就是告诉Flink我们要“做什么”，而不是“怎么做”。类似于函数式编程语言和过程式编程语言之间的区别。函数式编程经常采用声明式的编程方式，而过程式变成则告诉了计算机我们具体要怎么做的步骤。同时由于Table API采用编程的方式进行查询，而非SQL那样编写的查询语句是字符串，所以可以和DataStream API进行混合编程，非常的优雅。虽然Table API的表达能力比起核心API有差距，也就是有些核心API所能实现的功能无法使用Table API来实现。但Table API的优点在于针对一些稍微简单的场景，比起核心API，要少写很多的代码，程序看起来更加简洁。
 
 Flink SQL和Table API的表达能力基本等价，两者能够实现的功能是一样的。区别在于，Table API的使用是编程的方式，而SQL则基本是编写查询的字符串。Flink SQL的能力同样无法和核心API相比，优点在于对于一些不熟悉Flink核心API的开发人员也可以上手来使用Flink，因为SQL可以说是查询语言的标准，从事数据分析行业的开发人员人人都会。这样在不熟悉Flink核心API的情况下，也可以使用Flink SQL来编写一些简单的查询需求。
 
-=== 两种Planner
+==== 两种Planner
 
 Flink Table API和SQL有两个Planner。Old Planner和Blink Planner。Old Planner主要由Flink社区开发，Blink Planner主要有阿里巴巴公司开发。在Flink 1.9中，默认Planner为Old Planner。而在Flink 1.11之后，Blink Planner正式成为了Flink Table API和SQL的默认Planner。Blink Planner相对于Old Planner有诸多提升，其本书Flink版本为1.13，所以我们的讲解重点是Blink Planner。
 
-=== 需要引入的依赖
+==== 需要引入的依赖
 
 可以看到我们引入的依赖是Blink Planner。
 
@@ -4397,23 +4399,20 @@ Flink Table API和SQL有两个Planner。Old Planner和Blink Planner。Old Planne
 * TableFunction
 * AggregateFunction
 
-=== 概念与通用 API
+=== 通过两个案例快速上手
 
-==== Table API 和 SQL 程序的结构
+我们先来看两个简单需求的Flink SQL的实现，方便读者对程序结构有一个简单的认识。
 
-我们先来看一个简单需求的Table API和Flink SQL的实现，方便读者对程序结构有一个简单的认识。我们来计算一下每个商品在每个窗口中的PV数据。窗口为滚动事件时间窗口。
+第一个案例，我们会计算一下随着时间的推移，每个商品的PV数值是怎样变化的。以下是代码和详细的注释：
 
 [source,java]
 ----
 public static void main(String[] args) throws Exception {
-    // 获取流环境
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     env.setParallelism(1);
 
-    // 读入流并设置水位线
     SingleOutputStreamOperator<UserBehavior> stream = env
         .addSource(new UserBehaviorSource())
-        .filter(r -> r.behaviorType.equals("pv"))
         .assignTimestampsAndWatermarks(WatermarkStrategy.<UserBehavior>forMonotonousTimestamps()
             .withTimestampAssigner(new SerializableTimestampAssigner<UserBehavior>() {
                 @Override
@@ -4422,65 +4421,42 @@ public static void main(String[] args) throws Exception {
                 }
             }));
 
-    // 表环境的配置，默认是Blink Planner
     EnvironmentSettings settings = EnvironmentSettings
         .newInstance()
         .inStreamingMode()
         .build();
 
-    // 创建表环境
     StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
 
-    // 将流转换成动态表
-    Table dynamicTable = tEnv.fromDataStream(
-        stream,                            // 待转换的流
-        $("itemId"),                       // 商品ID
-        $("timestamp").rowtime().as("ts")  // 指定timestamp为事件时间（rowtime），并起别名ts
+    // 创建临时视图
+    tEnv.createTemporaryView(
+        "userbehavior",                    // 临时视图的名字
+        stream,
+        $("itemId"),
+        $("behaviorType")
     );
 
-    // 在动态表上进行查询
-    Table result = dynamicTable
-        .window(
-            Tumble                    // 滚动窗口
-                .over(lit(1).hours()) // 窗口长度1小时
-                .on($("ts"))          // 在ts字段上开窗口
-                .as("w")              // 起别名为w
-        )
-        .groupBy(                     // 使用商品ID和窗口w进行分组
-            $("itemId"),
-            $("w")
-        )
-        .select(                      // 查询语句
-            $("itemId"),              // 商品ID
-            $("itemId").count(),      // 统计PV
-            $("w").start(),           // 窗口开始时间
-            $("w").end()              // 窗口结束时间
-        );
+    Table result = tEnv.sqlQuery(
+        "SELECT " +
+            "itemId, " +
+            "COUNT(itemId), " +
+            "FROM userbehavior WHERE behaviorType='pv' " +
+            "GROUP BY itemId"      // 按照商品ID进行分组
+    );
 
-    // 将查询结果表（也是动态表）转换回数据流
     tEnv
-        .toRetractStream(             // 由于查询中有聚合操作，使用撤回流
-            result,                   // 查询结果动态表
-            Row.class                 // 行数据的泛型
+        .toRetractStream(
+            result,
+            Row.class
         )
-        .print();                     // 输出
+        .print();
 
-    // 执行流程序
     env.execute();
 }
 ----
 
-可以看到，我们在使用Table API时，标准流程为：
 
-. 获取流环境
-. 将流读入成DataStream数据结构
-. 获取表环境
-. 将DataStream转换成动态表Table数据结构
-. 在动态表上进行查询，查询结果还是动态表，Table数据结构
-. 将查询结果动态表转换回DataStream数据结构
-. 执行流程序
-
-下面我们将以上程序使用Flink SQL编写一下。
+第二个案例，我们来计算一下每个商品在每个窗口中的PV数据。窗口为滚动事件时间窗口。
 
 [source,java]
 ----
@@ -4511,6 +4487,7 @@ public static void main(String[] args) throws Exception {
         "userbehavior",                    // 临时视图的名字
         stream,
         $("itemId"),
+        $("behaviorType"),
         $("timestamp").rowtime().as("ts")
     );
 
@@ -4520,8 +4497,8 @@ public static void main(String[] args) throws Exception {
             "COUNT(itemId), " +
             "TUMBLE_START(ts, INTERVAL '1' HOUR), " +    // 窗口开始时间
             "TUMBLE_END(ts, INTERVAL '1' HOUR) " +       // 窗口结束时间
-            "FROM userbehavior GROUP BY " +
-            "itemId, TUMBLE(ts, INTERVAL '1' HOUR)"      // 按照窗口和商品ID进行分组
+            "FROM userbehavior WHERE behaviorType='pv' " +
+            "GROUP BY itemId, TUMBLE(ts, INTERVAL '1' HOUR)"      // 按照窗口和商品ID进行分组
     );
 
     tEnv
@@ -4535,7 +4512,7 @@ public static void main(String[] args) throws Exception {
 }
 ----
 
-可以看到Table API和SQL的代码阅读起来非常相似，编写SQL的标准流程如下：
+可以看到，编写Flink SQL的标准流程如下：
 
 . 获取流环境
 . 将流读入成DataStream数据结构
@@ -4545,669 +4522,31 @@ public static void main(String[] args) throws Exception {
 . 将查询结果动态表转换回DataStream数据结构
 . 执行流程序
 
-所有用于批处理和流处理的 Table API 和 SQL 程序都遵循相同的模式。下面的代码示例展示了 Table API 和 SQL 程序的通用结构。
+以上编写的Flink SQL的程序具有通用性，将数据流转换成动态表或者临时视图进行查询，然后再转换回数据流，尽管看起来有些繁琐，但编写起来很灵活，可以按照自己的想法对数据进行各种ETL操作，读取数据源和写入到第三方设备，也都可以去自定义。我们后面还会介绍一下SQL DDL的写法，编写程序会更加简洁。
 
-[source,java]
-----
-// create a TableEnvironment for specific planner batch or streaming
-TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
+=== 流与动态表的关系
 
-// create an input Table
-tableEnv.executeSql("CREATE TEMPORARY TABLE table1 ... WITH ( 'connector' = ... )");
-// register an output Table
-tableEnv.executeSql("CREATE TEMPORARY TABLE outputTable ... WITH ( 'connector' = ... )");
-
-// create a Table object from a Table API query
-Table table2 = tableEnv.from("table1").select(...);
-// create a Table object from a SQL query
-Table table3 = tableEnv.sqlQuery("SELECT ... FROM table1 ... ");
-
-// emit a Table API result Table to a TableSink, same for SQL result
-TableResult tableResult = table2.executeInsert("outputTable");
-tableResult...
-----
-
-==== 创建 TableEnvironment
-
-TableEnvironment 是 Table API 和 SQL 的核心概念。它负责:
-
-* 在内部的catalog中注册Table
-* 注册外部的catalog
-* 加载可插拔模块
-* 执行SQL查询
-* 注册自定义函数 （scalar、table或aggregation）
-* 将DataStream或DataSet转换成Table
-* 持有对ExecutionEnvironment或StreamExecutionEnvironment的引用
-
-Table 总是与特定的 TableEnvironment 绑定。不能在同一条查询中使用不同
-TableEnvironment 中的表，例如，对它们进行 join 或 union 操作。
-
-TableEnvironment 可以通过静态方法 BatchTableEnvironment.create() 或者
-StreamTableEnvironment.create() 在 StreamExecutionEnvironment 或者
-ExecutionEnvironment 中创建，TableConfig
-是可选项。TableConfig可用于配置TableEnvironment或定制的查询优化和转换过程。
-
-[source,java]
-----
-// **********************
-// FLINK STREAMING QUERY
-// **********************
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-
-EnvironmentSettings fsSettings = EnvironmentSettings.newInstance().useOldPlanner().inStreamingMode().build();
-StreamExecutionEnvironment fsEnv = StreamExecutionEnvironment.getExecutionEnvironment();
-StreamTableEnvironment fsTableEnv = StreamTableEnvironment.create(fsEnv, fsSettings);
-// or TableEnvironment fsTableEnv = TableEnvironment.create(fsSettings);
-
-// ******************
-// FLINK BATCH QUERY
-// ******************
-import org.apache.flink.api.java.ExecutionEnvironment;
-import org.apache.flink.table.api.bridge.java.BatchTableEnvironment;
-
-ExecutionEnvironment fbEnv = ExecutionEnvironment.getExecutionEnvironment();
-BatchTableEnvironment fbTableEnv = BatchTableEnvironment.create(fbEnv);
-
-// **********************
-// BLINK STREAMING QUERY
-// **********************
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
-
-StreamExecutionEnvironment bsEnv = StreamExecutionEnvironment.getExecutionEnvironment();
-EnvironmentSettings bsSettings = EnvironmentSettings.newInstance().useBlinkPlanner().inStreamingMode().build();
-StreamTableEnvironment bsTableEnv = StreamTableEnvironment.create(bsEnv, bsSettings);
-// or TableEnvironment bsTableEnv = TableEnvironment.create(bsSettings);
-
-// ******************
-// BLINK BATCH QUERY
-// ******************
-import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.TableEnvironment;
-
-EnvironmentSettings bbSettings = EnvironmentSettings.newInstance().useBlinkPlanner().inBatchMode().build();
-TableEnvironment bbTableEnv = TableEnvironment.create(bbSettings);
-----
-
-==== 在Catalog中创建表
-
-TableEnvironment维护着一个由标识符（identifier）创建的表catalog的映射。标识符由三个部分组成：catalog名称、数据库名称以及对象名称。如果catalog或者数据库没有指明，就会使用当前默认值。
-
-Table 可以是虚拟的（视图 VIEWS）也可以是常规的（表
-TABLES）。视图VIEWS可以从已经存在的Table中创建，一般是Table
-API或者SQL的查询结果。表TABLES描述的是外部数据，例如文件、数据库表或者消息队列。
-
-*临时表（Temporary Table）和永久表（Permanent Table）*
-
-表可以是临时的，并与单个Flink会话（session）的生命周期相关，也可以是永久的，并且在多个Flink会话和群集（cluster）中可见。
-
-永久表需要catalog（例如Hive
-Metastore）以维护表的元数据。一旦永久表被创建，它将对任何连接到catalog的Flink会话可见且持续存在，直至被明确删除。
-
-另一方面，临时表通常保存于内存中并且仅在创建它们的Flink会话持续期间存在。这些表对于其它会话是不可见的。它们不与任何catalog或者数据库绑定但可以在一个命名空间（namespace）中创建。即使它们对应的数据库被删除，临时表也不会被删除。
-
-*创建表*
-
-_虚拟表_
-
-在 SQL 的术语中，Table API
-的对象对应于视图（虚拟表）。它封装了一个逻辑查询计划。它可以通过以下方法在
-catalog 中创建：
-
-[source,java]
-----
-// get a TableEnvironment
-TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// table is the result of a simple projection query 
-Table projTable = tableEnv.from("X").select(...);
-
-// register the Table projTable as table "projectedTable"
-tableEnv.createTemporaryView("projectedTable", projTable);
-----
-
-_Connector Tables_
-
-另外一个方式去创建 TABLE 是通过 connector 声明。Connector
-描述了存储表数据的外部系统。存储系统例如 Apache Kafka
-或者常规的文件系统都可以通过这种方式来声明。
-
-[source,java]
-----
-tableEnvironment
-    .connect(...)
-    .withFormat(...)
-    .withSchema(...)
-    .inAppendMode()
-    .createTemporaryTable("MyTable")
-----
-
-*扩展表标识符*
-
-表总是通过三元标识符注册，包括 catalog 名、数据库名和表名。
-
-用户可以指定一个 catalog 和数据库作为 ``当前catalog``
-和”当前数据库”。有了这些，那么刚刚提到的三元标识符的前两个部分就可以被省略了。如果前两部分的标识符没有指定，
-那么会使用当前的 catalog 和当前数据库。用户也可以通过 Table API 或 SQL
-切换当前的 catalog 和当前的数据库。
-
-标识符遵循 SQL 标准，因此使用时需要用反引号（`）进行转义。
-
-[source,java]
-----
-TableEnvironment tEnv = ...;
-tEnv.useCatalog("custom_catalog");
-tEnv.useDatabase("custom_database");
-
-Table table = ...;
-
-// register the view named 'exampleView' in the catalog named 'custom_catalog'
-// in the database named 'custom_database' 
-tableEnv.createTemporaryView("exampleView", table);
-
-// register the view named 'exampleView' in the catalog named 'custom_catalog'
-// in the database named 'other_database' 
-tableEnv.createTemporaryView("other_database.exampleView", table);
-
-// register the view named 'example.View' in the catalog named 'custom_catalog'
-// in the database named 'custom_database' 
-tableEnv.createTemporaryView("`example.View`", table);
-
-// register the view named 'exampleView' in the catalog named 'other_catalog'
-// in the database named 'other_database' 
-tableEnv.createTemporaryView("other_catalog.other_database.exampleView", table);
-----
-
-==== 查询表
-
-*Table API*
-
-Table API 是关于 Scala 和 Java 的集成语言式查询 API。与 SQL 相反，Table
-API 的查询不是由字符串指定，而是在宿主语言中逐步构建。
-
-Table API 是基于 Table
-类的，该类表示一个表（流或批处理），并提供使用关系操作的方法。这些方法返回一个新的
-Table 对象，该对象表示对输入 Table 进行关系操作的结果。
-一些关系操作由多个方法调用组成，例如 table.groupBy(…).select()，其中
-groupBy(…) 指定 table 的分组，而 select(…) 在 table 分组上的投影。
-
-文档 Table API 说明了所有流处理和批处理表支持的 Table API 算子。
-
-以下示例展示了一个简单的 Table API 聚合查询：
-
-[source,java]
-----
-// get a TableEnvironment
-TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// register Orders table
-
-// scan registered Orders table
-Table orders = tableEnv.from("Orders");
-// compute revenue for all customers from France
-Table revenue = orders
-  .filter($("cCountry").isEqual("FRANCE"))
-  .groupBy($("cID"), $("cName")
-  .select($("cID"), $("cName"), $("revenue").sum().as("revSum"));
-
-// emit or convert Table
-// execute query
-----
-
-*SQL*
-
-Flink SQL 是基于实现了SQL标准的 Apache Calcite 的。SQL
-查询由常规字符串指定。
-
-文档 SQL 描述了Flink对流处理和批处理表的SQL支持。
-
-下面的示例演示了如何指定查询并将结果作为 Table 对象返回。
-
-[source,java]
-----
-// get a TableEnvironment
-TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// register Orders table
-
-// compute revenue for all customers from France
-Table revenue = tableEnv.sqlQuery(
-    "SELECT cID, cName, SUM(revenue) AS revSum " +
-    "FROM Orders " +
-    "WHERE cCountry = 'FRANCE' " +
-    "GROUP BY cID, cName"
-);
-
-// emit or convert Table
-// execute query
-----
-
-如下的示例展示了如何指定一个更新查询，将查询的结果插入到已注册的表中。
-
-[source,java]
-----
-// get a TableEnvironment
-TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// register "Orders" table
-// register "RevenueFrance" output table
-
-// compute revenue for all customers from France and emit to "RevenueFrance"
-tableEnv.executeSql(
-    "INSERT INTO RevenueFrance " +
-    "SELECT cID, cName, SUM(revenue) AS revSum " +
-    "FROM Orders " +
-    "WHERE cCountry = 'FRANCE' " +
-    "GROUP BY cID, cName"
-);
-----
-
-*混用 Table API 和 SQL*
-
-Table API 和 SQL 查询的混用非常简单因为它们都返回 Table 对象：
-
-* 可以在 SQL 查询返回的 Table 对象上定义 Table API 查询。
-* 在 TableEnvironment 中注册的结果表可以在 SQL 查询的 FROM
-子句中引用，通过这种方法就可以在 Table API 查询的结果上定义 SQL 查询。
-
-==== 输出表
-
-Table 通过写入 TableSink 输出。TableSink
-是一个通用接口，用于支持多种文件格式（如 CSV、Apache Parquet、Apache
-Avro）、存储系统（如 JDBC、Apache HBase、Apache
-Cassandra、Elasticsearch）或消息队列系统（如 Apache Kafka、RabbitMQ）。
-
-批处理 Table 只能写入 BatchTableSink，而流处理 Table 需要指定写入
-AppendStreamTableSink，RetractStreamTableSink 或者
-UpsertStreamTableSink。
-
-方法 Table.executeInsert(String tableName) 将 Table 发送至已注册的
-TableSink。该方法通过名称在 catalog 中查找 TableSink 并确认Table schema
-和 TableSink schema 一致。
-
-下面的示例演示如何输出 Table：
-
-[source,java]
-----
-// get a TableEnvironment
-TableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// create an output Table
-final Schema schema = new Schema()
-    .field("a", DataTypes.INT())
-    .field("b", DataTypes.STRING())
-    .field("c", DataTypes.BIGINT());
-
-tableEnv.connect(new FileSystem().path("/path/to/file"))
-    .withFormat(new Csv().fieldDelimiter('|').deriveSchema())
-    .withSchema(schema)
-    .createTemporaryTable("CsvSinkTable");
-
-// compute a result Table using Table API operators and/or SQL queries
-Table result = ...
-// emit the result Table to the registered TableSink
-result.executeInsert("CsvSinkTable");
-----
-
-==== 与 DataStream 和 DataSet API 结合
-
-*通过 DataSet 或 DataStream 创建视图*
-
-在 TableEnvironment 中可以将 DataStream 或 DataSet
-注册成视图。结果视图的 schema 取决于注册的 DataStream 或 DataSet
-的数据类型。
-
-____
-通过 DataStream 或 DataSet 创建的视图只能注册成临时视图。
-____
-
-[source,java]
-----
-// get StreamTableEnvironment
-// registration of a DataSet in a BatchTableEnvironment is equivalent
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-DataStream<Tuple2<Long, String>> stream = ...
-
-// register the DataStream as View "myTable" with fields "f0", "f1"
-tableEnv.createTemporaryView("myTable", stream);
-
-// register the DataStream as View "myTable2" with fields "myLong", "myString"
-tableEnv.createTemporaryView("myTable2", stream, $("myLong"), $("myString"));
-----
-
-*将 DataStream 或 DataSet 转换成表*
-
-与在 TableEnvironment 注册 DataStream 或 DataSet 不同，DataStream 和
-DataSet 还可以直接转换成 Table。如果你想在 Table API
-的查询中使用表，这将非常便捷。
-
-[source,java]
-----
-// get StreamTableEnvironment
-// registration of a DataSet in a BatchTableEnvironment is equivalent
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-DataStream<Tuple2<Long, String>> stream = ...
-
-// Convert the DataStream into a Table with default fields "f0", "f1"
-Table table1 = tableEnv.fromDataStream(stream);
-
-// Convert the DataStream into a Table with fields "myLong", "myString"
-Table table2 = tableEnv.fromDataStream(stream, $("myLong"), $("myString"));
-----
-
-*将表转换成 DataStream 或 DataSet*
-
-Table 可以被转换成 DataStream 或 DataSet。通过这种方式，定制的 DataSet
-或 DataStream 程序就可以在 Table API 或者 SQL 的查询结果上运行了。
-
-将 Table 转换为 DataStream 或者 DataSet 时，你需要指定生成的 DataStream
-或者 DataSet 的数据类型，即，Table
-的每行数据要转换成的数据类型。通常最方便的选择是转换成 Row
-。以下列表概述了不同选项的功能：
-
-* Row: 字段按位置映射，字段数量任意，支持 null
-值，无类型安全（type-safe）检查。
-* POJO: 字段按名称映射（POJO 必须按Table
-中字段名称命名），字段数量任意，支持 null 值，无类型安全检查。
-* Case Class: 字段按位置映射，不支持 null 值，有类型安全检查。
-* Tuple: 字段按位置映射，字段数量少于 22（Scala）或者 25（Java），不支持
-null 值，无类型安全检查。
-* Atomic Type: Table 必须有一个字段，不支持 null 值，有类型安全检查。
-
-_将表转换成DataStream_
-
-流式查询（streaming
-query）的结果表会动态更新，即，当新纪录到达查询的输入流时，查询结果会改变。因此，像这样将动态查询结果转换成
-DataStream 需要对表的更新方式进行编码。
-
-将 Table 转换为 DataStream 有两种模式：
-
-* Append Mode: 仅当动态 Table
-仅通过INSERT更改进行修改时，才可以使用此模式，即，它仅是追加操作，并且之前输出的结果永远不会更新。
-* Retract Mode: 任何情形都可以使用此模式。它使用 boolean 值对 INSERT 和
-DELETE 操作的数据进行标记。
-
-[source,java]
-----
-// get StreamTableEnvironment. 
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// Table with two fields (String name, Integer age)
-Table table = ...
-
-// convert the Table into an append DataStream of Row by specifying the class
-DataStream<Row> dsRow = tableEnv.toAppendStream(table, Row.class);
-
-// convert the Table into an append DataStream of Tuple2<String, Integer> 
-//   via a TypeInformation
-TupleTypeInfo<Tuple2<String, Integer>> tupleType = new TupleTypeInfo<>(
-  Types.STRING(),
-  Types.INT());
-DataStream<Tuple2<String, Integer>> dsTuple = 
-  tableEnv.toAppendStream(table, tupleType);
-
-// convert the Table into a retract DataStream of Row.
-//   A retract stream of type X is a DataStream<Tuple2<Boolean, X>>. 
-//   The boolean field indicates the type of the change. 
-//   True is INSERT, false is DELETE.
-DataStream<Tuple2<Boolean, Row>> retractStream = 
-  tableEnv.toRetractStream(table, Row.class);
-----
-
-_将表转换成DataSet_
-
-将 Table 转换成 DataSet 的过程如下：
-
-[source,java]
-----
-// get BatchTableEnvironment
-BatchTableEnvironment tableEnv = BatchTableEnvironment.create(env);
-
-// Table with two fields (String name, Integer age)
-Table table = ...
-
-// convert the Table into a DataSet of Row by specifying a class
-DataSet<Row> dsRow = tableEnv.toDataSet(table, Row.class);
-
-// convert the Table into a DataSet of Tuple2<String, Integer> via a TypeInformation
-TupleTypeInfo<Tuple2<String, Integer>> tupleType = new TupleTypeInfo<>(
-  Types.STRING(),
-  Types.INT());
-DataSet<Tuple2<String, Integer>> dsTuple = 
-  tableEnv.toDataSet(table, tupleType);
-----
-
-*数据类型到 Table Schema 的映射*
-
-Flink 的 DataStream 和 DataSet APIs 支持多样的数据类型。例如
-Tuple（Scala 内置以及Flink Java tuple）、POJO 类型、Scala case class
-类型以及 Flink 的 Row
-类型等允许嵌套且有多个可在表的表达式中访问的字段的复合数据类型。其他类型被视为原子类型。下面，我们讨论
-Table API 如何将这些数据类型类型转换为内部 row 表示形式，并提供将
-DataStream 转换成 Table 的样例。
-
-数据类型到 table schema 的映射有两种方式：基于字段位置或基于字段名称。
-
-_基于位置映射_
-
-基于位置的映射可在保持字段顺序的同时为字段提供更有意义的名称。这种映射方式可用于具有特定的字段顺序的复合数据类型以及原子类型。如
-tuple、row 以及 case class
-这些复合数据类型都有这样的字段顺序。然而，POJO
-类型的字段则必须通过名称映射。可以将字段投影出来，但不能使用as重命名。
-
-定义基于位置的映射时，输入数据类型中一定不能存在指定的名称，否则 API
-会假定应该基于字段名称进行映射。如果未指定任何字段名称，则使用默认的字段名称和复合数据类型的字段顺序，或者使用
-f0 表示原子类型。
-
-[source,java]
-----
-// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section;
-
-DataStream<Tuple2<Long, Integer>> stream = ...
-
-// convert DataStream into Table with default field names "f0" and "f1"
-Table table = tableEnv.fromDataStream(stream);
-
-// convert DataStream into Table with field "myLong" only
-Table table = tableEnv.fromDataStream(stream, $("myLong"));
-
-// convert DataStream into Table with field names "myLong" and "myInt"
-Table table = tableEnv.fromDataStream(stream, $("myLong"), $("myInt"));
-----
-
-_基于名称的映射_
-
-基于名称的映射适用于任何数据类型包括 POJO 类型。这是定义 table schema
-映射最灵活的方式。映射中的所有字段均按名称引用，并且可以通过 as
-重命名。字段可以被重新排序和映射。
-
-若果没有指定任何字段名称，则使用默认的字段名称和复合数据类型的字段顺序，或者使用
-f0 表示原子类型。
-
-[source,java]
-----
-// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-DataStream<Tuple2<Long, Integer>> stream = ...
-
-// convert DataStream into Table with default field names "f0" and "f1"
-Table table = tableEnv.fromDataStream(stream);
-
-// convert DataStream into Table with field "f1" only
-Table table = tableEnv.fromDataStream(stream, $("f1"));
-
-// convert DataStream into Table with swapped fields
-Table table = tableEnv.fromDataStream(stream, $("f1"), $("f0"));
-
-// convert DataStream into Table with swapped fields and field names "myInt" and "myLong"
-Table table = tableEnv.fromDataStream(stream, $("f1").as("myInt"), $("f0").as("myLong"));
-----
-
-_原子类型_
-
-Flink
-将基础数据类型（Integer、Double、String）或者通用数据类型（不可再拆分的数据类型）视为原子类型。原子类型的
-DataStream 或者 DataSet 会被转换成只有一条属性的
-Table。属性的数据类型可以由原子类型推断出，还可以重新命名属性。
-
-[source,java]
-----
-// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-DataStream<Long> stream = ...
-
-// convert DataStream into Table with default field name "f0"
-Table table = tableEnv.fromDataStream(stream);
-
-// convert DataStream into Table with field name "myLong"
-Table table = tableEnv.fromDataStream(stream, $("myLong"));
-----
-
-_Tuple类型_
-
-Flink 支持 Scala 的内置 tuple 类型并给 Java 提供自己的 tuple 类型。两种
-tuple 的 DataStream 和 DataSet
-都能被转换成表。可以通过提供所有字段名称来重命名字段（基于位置映射）。如果没有指明任何字段名称，则会使用默认的字段名称。如果引用了原始字段名称（对于
-Flink tuple 为f0、f1 ……），则 API
-会假定映射是基于名称的而不是基于位置的。基于名称的映射可以通过 as
-对字段和投影进行重新排序。
-
-[source,java]
-----
-// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-DataStream<Tuple2<Long, String>> stream = ...
-
-// convert DataStream into Table with default field names "f0", "f1"
-Table table = tableEnv.fromDataStream(stream);
-
-// convert DataStream into Table with renamed field names "myLong", "myString" (position-based)
-Table table = tableEnv.fromDataStream(stream, $("myLong"), $("myString"));
-
-// convert DataStream into Table with reordered fields "f1", "f0" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("f1"), $("f0"));
-
-// convert DataStream into Table with projected field "f1" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("f1"));
-
-// convert DataStream into Table with reordered and aliased fields "myString", "myLong" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("f1").as("myString"), $("f0").as("myLong"));
-----
-
-_POJO类型_
-
-Flink 支持 POJO 类型作为复合类型。确定 POJO 类型的规则记录在这里.
-
-在不指定字段名称的情况下将 POJO 类型的 DataStream 或 DataSet 转换成
-Table 时，将使用原始 POJO
-类型字段的名称。名称映射需要原始名称，并且不能按位置进行。字段可以使用别名（带有
-as 关键字）来重命名，重新排序和投影。
-
-[source,java]
-----
-// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// Person is a POJO with fields "name" and "age"
-DataStream<Person> stream = ...
-
-// convert DataStream into Table with default field names "age", "name" (fields are ordered by name!)
-Table table = tableEnv.fromDataStream(stream);
-
-// convert DataStream into Table with renamed fields "myAge", "myName" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("age").as("myAge"), $("name").as("myName"));
-
-// convert DataStream into Table with projected field "name" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("name"));
-
-// convert DataStream into Table with projected and renamed field "myName" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("name").as("myName"));
-----
-
-_Row类型_
-
-Row 类型支持任意数量的字段以及具有 null 值的字段。字段名称可以通过
-RowTypeInfo 指定，也可以在将 Row 的 DataStream 或 DataSet 转换为 Table
-时指定。Row
-类型的字段映射支持基于名称和基于位置两种方式。字段可以通过提供所有字段的名称的方式重命名（基于位置映射）或者分别选择进行投影/排序/重命名（基于名称映射）。
-
-[source,java]
-----
-// get a StreamTableEnvironment, works for BatchTableEnvironment equivalently
-StreamTableEnvironment tableEnv = ...; // see "Create a TableEnvironment" section
-
-// DataStream of Row with two fields "name" and "age" specified in `RowTypeInfo`
-DataStream<Row> stream = ...
-
-// convert DataStream into Table with default field names "name", "age"
-Table table = tableEnv.fromDataStream(stream);
-
-// convert DataStream into Table with renamed field names "myName", "myAge" (position-based)
-Table table = tableEnv.fromDataStream(stream, $("myName"), $("myAge"));
-
-// convert DataStream into Table with renamed fields "myName", "myAge" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("name").as("myName"), $("age").as("myAge"));
-
-// convert DataStream into Table with projected field "name" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("name"));
-
-// convert DataStream into Table with projected and renamed field "myName" (name-based)
-Table table = tableEnv.fromDataStream(stream, $("name").as("myName"));
-----
-
-=== 流式概念
-
-Flink 的 Table API 和 SQL 是流批统一的 API。 这意味着 Table API & SQL
-在无论有限的批式输入还是无限的流式输入下，都具有相同的语义。
-因为传统的关系代数以及 SQL 最开始都是为了批式处理而设计的，
-关系型查询在流式场景下不如在批式场景下容易懂。
-
-==== 动态表 (Dynamic Table)
-
-SQL 和关系代数在设计时并未考虑流数据。因此，在关系代数(和
-SQL)之间几乎没有概念上的差异。
-
-本文会讨论这种差异，并介绍 Flink
-如何在无界数据集上实现与数据库引擎在有界数据上的处理具有相同的语义。
-
-*DataStream上的关系查询*
+SQL和关系代数在设计时并未考虑流数据。因此，在关系代数(和SQL)之间几乎没有概念上的差异。因为传统的关系代数以及SQL最开始都是为了批处理而设计的，关系型查询在流式场景下不如在批处理场景下容易懂。
 
 下表比较了传统的关系代数和流处理与输入数据、执行和输出结果的关系。
 
-image:images/flink-sql-table.svg[image]
+[cols="1,1"]
+|===
+| *关系代数 / SQL* | *流处理*
+| 关系(或表)是有界(多)元组集合。 | 流是一个无限元组序列。
+| 对批数据(例如关系数据库中的表)执行的查询可以访问完整的输入数据。 | 流式查询在启动时不能访问所有数据，必须“等待”数据流入。
+| 批处理查询在产生固定大小的结果后终止。 | 流查询不断地根据接收到的记录更新其结果，并且始终不会结束。
+|===
 
-尽管存在这些差异，但是使用关系查询和 SQL
-处理流并不是不可能的。高级关系数据库系统提供了一个称为
-物化视图(Materialized Views) 的特性。物化视图被定义为一条 SQL
-查询，就像常规的虚拟视图一样。与虚拟视图相反，物化视图缓存查询的结果，因此在访问视图时不需要对查询进行计算。缓存的一个常见难题是防止缓存为过期的结果提供服务。当其定义查询的基表被修改时，物化视图将过期。
-即时视图维护(Eager View Maintenance)
-是一种一旦更新了物化视图的基表就立即更新视图的技术。
+之前曾经说过，事件是某个时刻发生的事情的记录。发生的事情可能是用户操作（例如输入搜索查询）或传感器读取，但也可能是写入数据库。将内容写入数据库的事实是一个可以被捕获、存储和处理的事件。这一观察结果表明，数据库和数据流之间的联系比磁盘上日志的物理存储更紧密，这点非常重要。如果我们考虑以下问题，那么表的查询操作和流上的SQL查询之间的联系就会变得显而易见：
 
-如果我们考虑以下问题，那么即时视图维护和流上的SQL查询之间的联系就会变得显而易见：
+* 动态表是INSERT、UPDATE和DELETE DML语句的流的结果，通常称为更新日志流。也就是说，流中的每个事件都是一个INSERT、UPDATE和DELETE语句。
+* 动态表被定义为一条SQL查询。为了更新动态表，查询不断地处理动态表的基本关系的更新日志流。
+* 动态表是流式SQL查询的结果。
 
-* 数据库表是 INSERT、UPDATE 和 DELETE DML 语句的 stream 的结果，通常称为
-changelog stream 。
-* 物化视图被定义为一条 SQL
-查询。为了更新视图，查询不断地处理视图的基本关系的changelog 流。
-* 物化视图是流式 SQL 查询的结果。
+了解了这些要点之后，我们开始详细介绍动态表(Dynamic tables)的概念。
 
-了解了这些要点之后，我们将在下一节中介绍 动态表(Dynamic tables) 的概念。
-
-*动态表 & 连续查询(Continuous Query)*
-
-动态表 是 Flink 的支持流数据的 Table API 和 SQL
-的核心概念。与表示批处理数据的静态表不同，动态表是随时间变化的。可以像查询静态批处理表一样查询它们。查询动态表将生成一个
-连续查询
-。一个连续查询永远不会终止，结果会生成一个动态表。查询不断更新其(动态)结果表，以反映其(动态)输入表上的更改。本质上，动态表上的连续查询非常类似于定义物化视图的查询。
+动态表是Flink的支持流数据的Table API和SQL的核心概念。与表示批处理数据的静态表不同，动态表是随时间变化的。可以像查询静态批处理表一样查询它们。查询动态表将生成一个连续查询。一个连续查询永远不会终止，结果会生成一个动态表。查询不断更新其(动态)结果表，以反映其(动态)输入表上的更改。本质上，动态表上的连续查询非常类似于静态表的查询。
 
 需要注意的是，连续查询的结果在语义上总是等价于以批处理模式在输入表快照上执行的相同查询的结果。
 
@@ -5219,427 +4558,145 @@ image:images/stream-query-stream.png[image]
 * 在动态表上计算一个连续查询，生成一个新的动态表。
 * 生成的动态表被转换回流。
 
-____
-动态表首先是一个逻辑概念。在查询执行期间不一定(完全)物化动态表。
-____
+这里要注意的是，动态表是一个与静态表相对应的逻辑概念。
 
-在下面，我们将解释动态表和连续查询的概念，并使用具有以下模式的单击事件流：
+在下面，我们将使用之前写的两个案例来解释动态表和连续查询的概念。流中的事件类型如下所示：
 
-[source,java]
+[source,json]
 ----
-[
-  user:  VARCHAR,   // 用户名
-  cTime: TIMESTAMP, // 访问 URL 的时间
-  url:   VARCHAR    // 用户访问的 URL
-]
+{
+  userId:  VARCHAR,  // 用户ID
+  itemId: VARCHAR,   // 商品ID
+  categoryId: VARCHAR, // 品类ID
+  behaviorType: VARCHAR, // 用户事件类型
+  timestamp: BIGINT    // 事件时间
+}
 ----
 
 *在流上定义表*
 
-为了使用关系查询处理流，必须将其转换成
-Table。从概念上讲，流的每条记录都被解释为对结果表的 INSERT
-操作。本质上我们正在从一个 INSERT-only 的 changelog 流构建表。
+为了使用关系查询处理流，必须将其转换成Table。从概念上讲，流的每条记录都被解释为对结果表的INSERT操作。本质上我们正在从一个仅允许插入操作的更新日志流构建表。
 
-下图显示了单击事件流(左侧)如何转换为表(右侧)。当插入更多的单击流记录时，结果表将不断增长。
+下图显示了事件流(左侧)如何转换为表(右侧)。当插入更多的事件流记录时，结果表将不断增长。
 
-image:images/append-mode.png[image]
+image:datastream-to-table.png[image]
 
-____
-在流上定义的表在内部没有物化。
-____
-
-_连续查询_
+*在动态表上连续查询*
 
 在动态表上计算一个连续查询，并生成一个新的动态表。与批处理查询不同，连续查询从不终止，并根据其输入表上的更新更新其结果表。在任何时候，连续查询的结果在语义上与以批处理模式在输入表快照上执行的相同查询的结果相同。
 
-在接下来的代码中，我们将展示 clicks
-表上的两个示例查询，这个表是在点击事件流上定义的。
+第一个案例是一个简单的GROUP-BY COUNT聚合查询。它基于itemId字段对UserBehavior表进行分组，并统计访问（PV）的数量。下面的图显示了当UserBehavior表被附加的行更新时，查询是如何被求值的。
 
-第一个查询是一个简单的 GROUP-BY COUNT 聚合查询。它基于 user 字段对
-clicks 表进行分组，并统计访问的 URL 的数量。下面的图显示了当 clicks
-表被附加的行更新时，查询是如何被评估的。
+image:table-query.png[image]
 
-image:images/query-groupBy-cnt.png[image]
+当查询开始，UserBehavior表(左侧)是空的。当第一行数据被插入到UserBehavior表时，查询开始计算结果表。第一行数据 `UserBehavior(1,1,1,pv,1000L)` 插入后，结果表(右侧，上部)由一行 `(1,1)` 组成。当第二行 `UserBehavior(2,2,2,pv,2000L)` 插入到UserBehavior表时，查询会更新结果表并插入了一行新数据 `(2,1)` 。第三行 `UserBehavior(1,1,1,pv,3000L)` 将产生已计算的结果行的更新， `(1,1)` 更新成 `(1,2)` 。最后，当第四行数据加入UserBehavior表时，查询将第三行 `UserBehavior(3,3,3,pv,4000L)` 插入到结果表中。
 
-当查询开始，clicks 表(左侧)是空的。当第一行数据被插入到 clicks
-表时，查询开始计算结果表。第一行数据 [Mary,./home]
-插入后，结果表(右侧，上部)由一行 [Mary, 1] 组成。当第二行 [Bob, ./cart]
-插入到 clicks 表时，查询会更新结果表并插入了一行新数据 [Bob, 1]。第三行
-[Mary, ./prod?id=1] 将产生已计算的结果行的更新，[Mary, 1] 更新成 [Mary,
-2]。最后，当第四行数据加入 clicks 表时，查询将第三行 [Liz, 1]
-插入到结果表中。
+第二条查询与第一条类似，但是除了用户属性之外，还将UserBehavior分组至每小时滚动窗口中，然后计算pv数量(基于时间的计算，例如基于特定时间属性的窗口，后面会讨论)。同样，该图显示了不同时间点的输入和输出，以可视化动态表的变化特性。
 
-第二条查询与第一条类似，但是除了用户属性之外，还将 clicks
-分组至每小时滚动窗口中，然后计算 url
-数量(基于时间的计算，例如基于特定时间属性的窗口，后面会讨论)。同样，该图显示了不同时间点的输入和输出，以可视化动态表的变化特性。
+左边显示了输入表userbehavior。查询每小时持续计算结果并更新结果表。userbehavior表包含三行带有时间戳(timestamp)的数据，时间戳在12:00:00和12:59:59之间。查询从这个输入计算出两个结果行(每个itemId一个)，并将它们附加到结果表中。对于13:00:00和13:59:59之间的下一个窗口，userbehavior表包含一行，这将导致另外一行被追加到结果表。随着时间的推移，更多的行被添加到userbehavior表中，结果表将被更新。
 
-image:images/query-groupBy-window-cnt.png[image]
-
-与前面一样，左边显示了输入表
-clicks。查询每小时持续计算结果并更新结果表。clicks表包含四行带有时间戳(cTime)的数据，时间戳在
-12:00:00 和 12:59:59 之间。查询从这个输入计算出两个结果行(每个 user
-一个)，并将它们附加到结果表中。对于 13:00:00 和 13:59:59
-之间的下一个窗口，clicks
-表包含三行，这将导致另外两行被追加到结果表。随着时间的推移，更多的行被添加到
-click 中，结果表将被更新。
-
-_更新和追加查询_
+*更新和追加查询*
 
 虽然这两个示例查询看起来非常相似(都计算分组计数聚合)，但它们在一个重要方面不同：
 
-* 第一个查询更新先前输出的结果，即定义结果表的 changelog 流包含 INSERT
-和 UPDATE 操作。
-* 第二个查询只附加到结果表，即结果表的 changelog 流只包含 INSERT 操作。
+* 第一个查询更新先前输出的结果，即定义结果表的更新日志流包含INSERT和UPDATE操作。
+* 第二个查询只附加到结果表，即结果表的更新日志流只包含INSERT操作。
 
 一个查询是产生一个只追加的表还是一个更新的表有一些含义：
 
 * 产生更新更改的查询通常必须维护更多的状态(请参阅以下部分)。
-* 将 append-only 的表转换为流与将已更新的表转换为流是不同的。
+* 将append-only的表转换为流与将已更新的表转换为流是不同的。
 
 *表到流的转换*
 
-动态表可以像普通数据库表一样通过 INSERT、UPDATE 和 DELETE
-来不断修改。它可能是一个只有一行、不断更新的表，也可能是一个 insert-only
-的表，没有 UPDATE 和 DELETE 修改，或者介于两者之间的其他表。
+动态表可以像普通数据库表一样通过INSERT、UPDATE和DELETE来不断修改。它可能是一个只有一行、不断更新的表，也可能是一个insert-only的表，没有UPDATE和DELETE修改，或者介于两者之间的其他表。
 
-在将动态表转换为流或将其写入外部系统时，需要对这些更改进行编码。Flink的
-Table API 和 SQL 支持三种方式来编码一个动态表的变化：
+在将动态表转换为流或将其写入外部系统时，需要对这些更改进行编码。Flink的Table API和SQL支持三种方式来编码一个动态表的变化：
 
-* Append-only 流： 仅通过 INSERT
-操作修改的动态表可以通过输出插入的行转换为流。
-* Retract 流： retract 流包含两种类型的 message： add messages 和
-retract messages 。通过将INSERT 操作编码为 add message、将 DELETE
-操作编码为 retract message、将 UPDATE 操作编码为更新(先前)行的 retract
-message 和更新(新)行的 add message，将动态表转换为 retract
+* Append-only 流： 仅通过INSERT操作修改的动态表可以通过输出插入的行转换为流。
+* Retract 流： retract 流包含两种类型的 message： add messages和retract messages 。通过将INSERT 操作编码为 add message、将DELETE操作编码为 retract message、将 UPDATE 操作编码为更新(先前)行的 retract message 和更新(新)行的 add message，将动态表转换为 retract
 流。下图显示了将动态表转换为 retract 流的过程。
+
 image:images/undo-redo-mode.png[image]
-* Upsert 流: upsert 流包含两种类型的 message： upsert messages 和delete
-messages。转换为 upsert 流的动态表需要(可能是组合的)唯一键。通过将
-INSERT 和 UPDATE 操作编码为 upsert message，将 DELETE 操作编码为 delete
-message
-，将具有唯一键的动态表转换为流。消费流的算子需要知道唯一键的属性，以便正确地应用
-message。与 retract 流的主要区别在于 UPDATE 操作是用单个 message
-编码的，因此效率更高。下图显示了将动态表转换为 upsert 流的过程。
+
+* Upsert 流: upsert 流包含两种类型的 message： upsert messages 和delete messages。转换为 upsert 流的动态表需要(可能是组合的)唯一键。通过将INSERT和UPDATE操作编码为upsert message，将DELETE操作编码为delete message，将具有唯一键的动态表转换为流。消费流的算子需要知道唯一键的属性，以便正确地应用message。与retract流的主要区别在于UPDATE操作是用单个message编码的，因此效率更高。下图显示了将动态表转换为upsert流的过程。
+
 image:images/redo-mode.png[image]
 
 ____
-在将动态表转换为 DataStream 时，只支持 append 流和 retract 流。
+在将动态表转换为DataStream时，只支持append流和retract流。
 ____
 
-==== 时间属性
+=== Flink SQL的使用方法
 
-Flink 可以基于几种不同的 时间 概念来处理数据。
+==== Table API中常用的方法
 
-* 处理时间 指的是执行具体操作时的机器时间（也称作”挂钟时间”）
-* 事件时间 指的是数据本身携带的时间。这个时间是在事件产生时的时间。
-* 摄入时间 指的是数据进入 Flink
-的时间；在系统内部，会把它当做事件时间来处理。
+===== 将数据源转换成动态表
 
-*时间属性介绍*
+*原子类型*
 
-像窗口（在 Table API 和 SQL
-）这种基于时间的操作，需要有时间信息。因此，Table API
-中的表就需要提供逻辑时间属性来表示时间，以及支持时间相关的操作。
-
-每种类型的表都可以有时间属性，可以在用CREATE TABLE
-DDL创建表的时候指定、也可以在 DataStream 中指定、也可以在定义
-TableSource
-时指定。一旦时间属性定义好，它就可以像普通列一样使用，也可以在时间相关的操作中使用。
-
-只要时间属性没有被修改，而是简单地从一个表传递到另一个表，它就仍然是一个有效的时间属性。时间属性可以像普通的时间戳的列一样被使用和计算。一旦时间属性被用在了计算中，它就会被物化，进而变成一个普通的时间戳。普通的时间戳是无法跟
-Flink
-的时间以及watermark等一起使用的，所以普通的时间戳就无法用在时间相关的操作中。
-
-*处理时间*
-
-处理时间是基于机器的本地时间来处理数据，它是最简单的一种时间概念，但是它不能提供确定性。它既不需要从数据里获取时间，也不需要生成
-watermark。
-
-共有三种方法可以定义处理时间。
-
-_在创建表的 DDL 中定义_
-
-处理时间属性可以在创建表的 DDL 中用计算列的方式定义，用 PROCTIME()
-就可以定义处理时间。
+Flink 将基础数据类型（Integer、Double、String）或者通用数据类型（不可再拆分的数据类型）视为原子类型。原子类型的 DataStream 或者 DataSet 会被转换成只有一条属性的 Table。属性的数据类型可以由原子类型推断出，还可以重新命名属性。
 
 [source,java]
 ----
-CREATE TABLE user_actions (
-  user_name STRING,
-  data STRING,
-  user_action_time AS PROCTIME() -- 声明一个额外的列作为处理时间属性
-) WITH (
-  ...
-);
+StreamTableEnvironment tableEnv = ...;
 
-SELECT TUMBLE_START(user_action_time, INTERVAL '10' MINUTE), COUNT(DISTINCT user_name)
-FROM user_actions
-GROUP BY TUMBLE(user_action_time, INTERVAL '10' MINUTE);
+DataStream<Long> stream = ...;
+
+// 将数据流转换成动态表，动态表只有一个字段myLong
+Table table = tableEnv.fromDataStream(stream, $("myLong"));
 ----
 
-_在 DataStream 到 Table 转换时定义_
+*Tuple类型*
 
-处理时间属性可以在 schema 定义的时候用 .proctime
-后缀来定义。时间属性一定不能定义在一个已有字段上，所以它只能定义在
-schema 定义的最后。
+基于名称的映射适用于任何数据类型包括 POJO 类型。这是定义 table schema 映射最灵活的方式。映射中的所有字段均按名称引用，并且可以通过 as 重命名。字段可以被重新排序和映射。
+
+若果没有指定任何字段名称，则使用默认的字段名称和复合数据类型的字段顺序，或者使用 f0 表示原子类型。
 
 [source,java]
 ----
-DataStream<Tuple2<String, String>> stream = ...;
+StreamTableEnvironment tableEnv = ...;
 
-// 声明一个额外的字段作为时间属性字段
-Table table = tEnv.fromDataStream(stream, $("user_name"), $("data"), $("user_action_time").proctime());
+DataStream<Tuple2<Long, Integer>> stream = ...;
 
-WindowedTable windowedTable = table.window(
-        Tumble.over(lit(10).minutes())
-            .on($("user_action_time"))
-            .as("userActionWindow"));
+// 将数据流转换成只包含f1字段的动态表
+Table table = tableEnv.fromDataStream(stream, $("f1"));
+
+// 将数据流转换成包含f0和f1字段的动态表，在动态表中f0和f1位置交换
+Table table = tableEnv.fromDataStream(stream, $("f1"), $("f0"));
+
+// 命名别名
+Table table = tableEnv.fromDataStream(stream, $("f1").as("myInt"), $("f0").as("myLong"));
 ----
 
-*事件时间*
+*POJO 类型*
 
-事件时间允许程序按照数据中包含的时间来处理，这样可以在有乱序或者晚到的数据的情况下产生一致的处理结果。它可以保证从外部存储读取数据后产生可以复现（replayable）的结果。
+Flink 支持 POJO 类型作为复合类型。
 
-除此之外，事件时间可以让程序在流式和批式作业中使用同样的语法。在流式程序中的事件时间属性，在批式程序中就是一个正常的时间字段。
-
-为了能够处理乱序的事件，并且区分正常到达和晚到的事件，Flink
-需要从事件中获取事件时间并且产生 watermark（watermarks）。
-
-事件时间属性也有类似于处理时间的三种定义方式：在DDL中定义、在 DataStream
-到 Table 转换时定义、用 TableSource 定义。
-
-_在 DDL 中定义_
-
-事件时间属性可以用 WATERMARK 语句在 CREATE TABLE DDL
-中进行定义。WATERMARK 语句在一个已有字段上定义一个 watermark
-生成表达式，同时标记这个已有字段为时间属性字段。
+在不指定字段名称的情况下将 POJO 类型的 DataStream转换成 Table 时，将使用原始 POJO 类型字段的名称。名称映射需要原始名称，并且不能按位置进行。字段可以使用别名（带有 as 关键字）来重命名，重新排序和投影。
 
 [source,java]
 ----
-CREATE TABLE user_actions (
-  user_name STRING,
-  data STRING,
-  user_action_time TIMESTAMP(3),
-  -- 声明 user_action_time 是事件时间属性，并且用 延迟 5 秒的策略来生成 watermark
-  WATERMARK FOR user_action_time AS user_action_time - INTERVAL '5' SECOND
-) WITH (
-  ...
-);
+StreamTableEnvironment tableEnv = ...;
 
-SELECT TUMBLE_START(user_action_time, INTERVAL '10' MINUTE), COUNT(DISTINCT user_name)
-FROM user_actions
-GROUP BY TUMBLE(user_action_time, INTERVAL '10' MINUTE);
+DataStream<UserBehavior> stream = ...;
+
+Table table = tableEnv.fromDataStream(stream, $("userId").as("myUserId"), $("itemId").as("myItemId"));
+
+Table table = tableEnv.fromDataStream(stream, $("userId"));
+
+Table table = tableEnv.fromDataStream(stream, $("name").as("myName"));
 ----
 
-_在 DataStream 到 Table 转换时定义_
+===== 动态表上的查询语法
 
-事件时间属性可以用 .rowtime 后缀在定义 DataStream schema
-的时候来定义。时间戳和 watermark 在这之前一定是在 DataStream
-上已经定义好了。
+===== 时间属性的定义
 
-在从 DataStream 到 Table 转换时定义事件时间属性有两种方式。取决于用
-.rowtime 后缀修饰的字段名字是否是已有字段，事件时间字段可以是：
+==== SQL中常用的方法
 
-* 在 schema 的结尾追加一个新的字段
-* 替换一个已经存在的字段。
+=== 使用DDL的方式来编写Flink SQL
 
-不管在哪种情况下，事件时间字段都表示 DataStream 中定义的事件的时间戳。
-
-[source,java]
-----
-// Option 1:
-
-// 基于 stream 中的事件产生时间戳和 watermark
-DataStream<Tuple2<String, String>> stream = inputStream.assignTimestampsAndWatermarks(...);
-
-// 声明一个额外的逻辑字段作为事件时间属性
-Table table = tEnv.fromDataStream(stream, $("user_name"), $("data"), $("user_action_time").rowtime());
-
-// Option 2:
-
-// 从第一个字段获取事件时间，并且产生 watermark
-DataStream<Tuple3<Long, String, String>> stream = inputStream.assignTimestampsAndWatermarks(...);
-
-// 第一个字段已经用作事件时间抽取了，不用再用一个新字段来表示事件时间了
-Table table = tEnv.fromDataStream(stream, $("user_action_time").rowtime(), $("user_name"), $("data"));
-
-// Usage:
-
-WindowedTable windowedTable = table.window(Tumble
-       .over(lit(10).minutes())
-       .on($("user_action_time"))
-       .as("userActionWindow"));
-----
-
-=== 例子
-
-==== 分流求平均值
-
-[source,java]
-----
-public class AvgTemp {
-    public static void main(String[] args) throws Exception {
-        // 获取流执行环境
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
-
-        // 表环境配置
-        EnvironmentSettings settings = EnvironmentSettings
-                .newInstance()
-                .inStreamingMode()
-                .build();
-
-        // 获取表环境
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
-
-        SingleOutputStreamOperator<SensorReading> stream = env.addSource(new SensorSource()).filter(r -> r.id.equals("sensor_1"));
-
-        // Table API
-        // 将DataStream转换成Table
-        Table table = tEnv.fromDataStream(stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"));
-
-        // 查询
-        Table tableResult = table
-                .groupBy($("id"))
-                .select($("id"), $("temp").avg());
-
-        // 将Table转换成DataStream[Row]
-        // 只要查询中有聚合操作，必须使用toRetractStream
-        tEnv.toRetractStream(tableResult, Row.class).print();
-
-        // SQL
-
-        // 将DataStream转换成临时视图
-        tEnv.createTemporaryView("sensor", stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"));
-
-        // 查询
-        Table sqlResult = tEnv
-                .sqlQuery("SELECT id, AVG(temp) FROM sensor GROUP BY id");
-
-        // 转换成DataStream
-        tEnv.toRetractStream(sqlResult, Row.class).print();
-
-        // 别忘了执行
-        env.execute();
-    }
-}
-----
-
-==== 求窗口温度平均值
-
-[source,java]
-----
-// 处理时间，10s滚动窗口的温度平均值
-public class AvgTempPerWindow {
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
-
-        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
-
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
-
-        SingleOutputStreamOperator<SensorReading> stream = env.addSource(new SensorSource()).filter(r -> r.id.equals("sensor_1"));
-
-        // 添加处理时间字段
-        Table table = tEnv.fromDataStream(stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"), $("ptime").proctime());
-
-        Table tableResult = table
-                .window(Tumble.over(lit(10).seconds()).on($("ptime")).as("w"))
-                .groupBy($("id"), $("w"))
-                .select($("id"), $("temp").avg(), $("w").end());
-
-        tEnv.toRetractStream(tableResult, Row.class).print();
-
-        // SQL
-
-        tEnv.createTemporaryView("sensor", stream, $("id"), $("temperature").as("temp"), $("timestamp").as("ts"), $("ptime").proctime());
-        Table sqlResult = tEnv
-                .sqlQuery("SELECT id, AVG(temp), TUMBLE_START(ptime, INTERVAL '10' SECOND), TUMBLE_END(ptime, INTERVAL '10' SECOND) FROM sensor GROUP BY id, TUMBLE(ptime, INTERVAL '10' SECOND)");
-        tEnv.toRetractStream(sqlResult, Row.class).print();
-
-        env.execute();
-    }
-}
-----
-
-==== 追加流
-
-[source,java]
-----
-public class AppendExample {
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
-
-        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
-
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
-
-        SingleOutputStreamOperator<SensorReading> stream = env.addSource(new SensorSource()).filter(r -> r.id.equals("sensor_1"));
-
-        Table table = tEnv.fromDataStream(stream);
-
-        Table result = table
-                .select($("id"), $("temperature"));
-
-        // 查询中没有聚合操作的情况下，使用toAppendStream
-        tEnv.toAppendStream(result, Row.class).print();
-
-        env.execute();
-
-    }
-}
-----
-
-==== 事件时间例子
-
-[source,java]
-----
-public class EventTimeExample {
-    public static void main(String[] args) throws Exception {
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(1);
-
-        SingleOutputStreamOperator<Tuple2<String, Long>> stream = env
-                .socketTextStream("localhost", 9999)
-                .map(new MapFunction<String, Tuple2<String, Long>>() {
-                    @Override
-                    public Tuple2<String, Long> map(String value) throws Exception {
-                        String[] arr = value.split(" ");
-                        return Tuple2.of(arr[0], Long.parseLong(arr[1]) * 1000L);
-                    }
-                })
-                .assignTimestampsAndWatermarks(WatermarkStrategy.<Tuple2<String, Long>>forMonotonousTimestamps()
-                        .withTimestampAssigner(new SerializableTimestampAssigner<Tuple2<String, Long>>() {
-                            @Override
-                            public long extractTimestamp(Tuple2<String, Long> element, long recordTimestamp) {
-                                return element.f1;
-                            }
-                        }));
-
-        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
-
-        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
-
-        // .rowtime将字段指定为事件时间
-        Table table = tEnv.fromDataStream(stream, $("key"), $("ts").rowtime());
-        Table tableResult = table
-                .window(Tumble.over(lit(5).seconds()).on($("ts")).as("w"))
-                .groupBy($("key"), $("w"))
-                .select($("key"), $("key").count());
-
-        tEnv.toRetractStream(tableResult, Row.class).print();
-
-        // SQL
-        tEnv.createTemporaryView("t", stream, $("key"), $("ts").rowtime());
-        Table sqlResult = tEnv.sqlQuery("SELECT key, COUNT(key) FROM t GROUP BY key, TUMBLE(ts, INTERVAL '5' SECOND)");
-        tEnv.toRetractStream(sqlResult, Row.class).print();
-
-        env.execute();
-    }
-}
-----
+=== 实时TopN程序的编写
 
 == 案例集
 
