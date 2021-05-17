@@ -4429,8 +4429,7 @@ public static void main(String[] args) throws Exception {
     StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
 
     // 创建临时视图
-    tEnv.createTemporaryView(
-        "userbehavior",                    // 临时视图的名字
+    Table table = tEnv.fromDataStream(
         stream,
         $("itemId"),
         $("behaviorType")
@@ -4440,7 +4439,7 @@ public static void main(String[] args) throws Exception {
         "SELECT " +
             "itemId, " +
             "COUNT(itemId), " +
-            "FROM userbehavior WHERE behaviorType='pv' " +
+            "FROM " + table + " WHERE behaviorType='pv' " +
             "GROUP BY itemId"      // 按照商品ID进行分组
     );
 
@@ -4483,8 +4482,7 @@ public static void main(String[] args) throws Exception {
     StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
 
     // 创建临时视图
-    tEnv.createTemporaryView(
-        "userbehavior",                    // 临时视图的名字
+    Table table = tEnv.fromDataStream(
         stream,
         $("itemId"),
         $("behaviorType"),
@@ -4497,7 +4495,7 @@ public static void main(String[] args) throws Exception {
             "COUNT(itemId), " +
             "TUMBLE_START(ts, INTERVAL '1' HOUR), " +    // 窗口开始时间
             "TUMBLE_END(ts, INTERVAL '1' HOUR) " +       // 窗口结束时间
-            "FROM userbehavior WHERE behaviorType='pv' " +
+            "FROM " + table + " WHERE behaviorType='pv' " +
             "GROUP BY itemId, TUMBLE(ts, INTERVAL '1' HOUR)"      // 按照窗口和商品ID进行分组
     );
 
