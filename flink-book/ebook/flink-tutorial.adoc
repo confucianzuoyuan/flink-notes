@@ -4775,9 +4775,7 @@ NOTE: 请注意，在将动态表转换为 DataStream 时，只支持 append 流
 
 === Flink SQL的使用方法
 
-==== Table API中常用的方法
-
-===== 将数据源转换成动态表
+==== 将数据源转换成动态表
 
 *原子类型*
 
@@ -4819,7 +4817,7 @@ Table table = tableEnv.fromDataStream(stream, $("f1").as("myInt"), $("f0").as("m
 
 Flink 支持 POJO 类型作为复合类型。
 
-在不指定字段名称的情况下将 POJO 类型的 DataStream转换成 Table 时，将使用原始 POJO 类型字段的名称。名称映射需要原始名称，并且不能按位置进行。字段可以使用别名（带有 as 关键字）来重命名，重新排序和投影。
+在不指定字段名称的情况下将 POJO 类型的 DataStream 转换成 Table 时，将使用原始 POJO 类型字段的名称。名称映射需要原始名称，并且不能按位置进行。字段可以使用别名（带有 as 关键字）来重命名，重新排序和投影。
 
 [source,java]
 ----
@@ -4834,11 +4832,242 @@ Table table = tableEnv.fromDataStream(stream, $("userId"));
 Table table = tableEnv.fromDataStream(stream, $("name").as("myName"));
 ----
 
-===== 动态表上的查询语法
+==== 时间属性的定义
 
-===== 时间属性的定义
+处理时间属性可以在 schema 定义的时候用 .proctime 后缀来定义。时间属性一定不能定义在一个已有字段上，所以它只能定义在 schema 定义的最后。
 
-==== SQL中常用的方法
+处理时间的定义方法：
+
+[source,java]
+----
+DataStream<Tuple2<String, String>> stream = ...;
+
+// 声明一个额外的字段作为时间属性字段
+Table table = tEnv.fromDataStream(stream, $("user"), $("url"), $("user_action_time").proctime());
+
+// 注册临时视图
+tEnv.createTemporaryView("clicks", table);
+
+// 定义窗口
+// 一小时的滚动窗口，时间戳使用处理时间user_action_time
+tEnv.sqlQuery("SELECT user, COUNT(url), TUMBLE_START(user_action_time, INTERVAL '1' HOURS), TUMBLE_END(user_action_time, INTERVAL '1' HOURS) FROM clicks GROUP BY user, TUMBLE(user_action_time, INTERVAL '1' HOURS)");
+
+// 滑动窗口长度1小时，滑动距离30分钟
+tEnv.sqlQuery("SELECT user, COUNT(url), HOP_START(user_action_time, INTERVAL '30' MINUTES, INTERVAL '1' HOURS), HOP_END(user_action_time, INTERVAL '30' MINUTES, INTERVAL '1' HOURS) FROM clicks GROUP BY user, HOP(user_action_time, INTERVAL '30' MINUTES, INTERVAL '1' HOURS)");
+
+// 会话窗口，超时时间是1小时
+tEnv.sqlQuery("SELECT user, COUNT(url), SESSION_START(user_action_time, INTERVAL '1' HOURS), SESSION_END(user_action_time, INTERVAL '1' HOURS) FROM clicks GROUP BY user, SESSION(user_action_time, INTERVAL '1' HOURS)");
+----
+
+事件时间属性可以用 .rowtime 后缀在定义 DataStream schema 的时候来定义。时间戳和 watermark 在这之前一定是在 DataStream 上已经定义好了。 在从 DataStream 转换到 Table 时，由于 DataStream 没有时区概念，因此 Flink 总是将 rowtime 属性解析成 TIMESTAMP WITHOUT TIME ZONE 类型，并且将所有事件时间的值都视为 UTC 时区的值。
+
+在从 DataStream 到 Table 转换时定义事件时间属性有两种方式。取决于用 .rowtime 后缀修饰的字段名字是否是已有字段，事件时间字段可以是：
+
+* 在 schema 的结尾追加一个新的字段
+* 替换一个已经存在的字段。
+
+不管在哪种情况下，事件时间字段都表示 DataStream 中定义的事件的时间戳。事件时间的定义方法：
+
+[source,java]
+----
+// Option 1:
+
+// 基于 stream 中的事件产生时间戳和 watermark
+DataStream<Tuple2<String, String>> stream = inputStream.assignTimestampsAndWatermarks(...);
+
+// 声明一个额外的逻辑字段作为事件时间属性
+Table table = tEnv.fromDataStream(stream, $("user_name"), $("data"), $("user_action_time").rowtime());
+
+// Option 2:
+
+// 从第一个字段获取事件时间，并且产生 watermark
+DataStream<Tuple3<String, String, Long>> stream = inputStream.assignTimestampsAndWatermarks(...);
+
+// 第一个字段已经用作事件时间抽取了，不用再用一个新字段来表示事件时间了
+Table table = tEnv.fromDataStream(stream, $("user_name"), $("data"), $("user_action_time").rowtime());
+
+// 注册临时视图
+tEnv.createTemporaryView("clicks", table);
+
+// 定义窗口
+// 一小时的滚动窗口，时间戳使用处理时间user_action_time
+tEnv.sqlQuery("SELECT user, COUNT(url), TUMBLE_START(user_action_time, INTERVAL '1' HOURS), TUMBLE_END(user_action_time, INTERVAL '1' HOURS) FROM clicks GROUP BY user, TUMBLE(user_action_time, INTERVAL '1' HOURS)");
+
+// 滑动窗口长度1小时，滑动距离30分钟
+tEnv.sqlQuery("SELECT user, COUNT(url), HOP_START(user_action_time, INTERVAL '30' MINUTES, INTERVAL '1' HOURS), HOP_END(user_action_time, INTERVAL '30' MINUTES, INTERVAL '1' HOURS) FROM clicks GROUP BY user, HOP(user_action_time, INTERVAL '30' MINUTES, INTERVAL '1' HOURS)");
+
+// 会话窗口，超时时间是1小时
+tEnv.sqlQuery("SELECT user, COUNT(url), SESSION_START(user_action_time, INTERVAL '1' HOURS), SESSION_END(user_action_time, INTERVAL '1' HOURS) FROM clicks GROUP BY user, SESSION(user_action_time, INTERVAL '1' HOURS)");
+----
+
+==== OVER聚合
+
+OVER聚合为一系列有序行中的每个输入行计算一个聚合值。与GROUP BY聚合相反，OVER聚合不会将每个组的分组数据聚合为一行。OVER聚合会为每个输入行生成一个聚合值。
+
+OVER聚合的语法如下：
+
+[source,sql]
+----
+SELECT
+  agg_func(agg_col) OVER (
+    [PARTITION BY col1[, col2, ...]]
+    ORDER BY time_col
+    range_definition),
+  ...
+FROM ...
+----
+
+我们现在来举一个例子，计算一下1小时滚动窗口中访问量最大的用户。
+
+[source,java]
+----
+import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
+
+import static org.apache.flink.table.api.Expressions.$;
+
+public class TopPvUserPerWindow {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<Tuple3<String, String, Long>> stream = env
+                .fromElements(
+                        Tuple3.of("Mary", "./home", 12 * 60 * 60 * 1000L),
+                        Tuple3.of("Bob", "./cart", 12 * 60 * 60 * 1000L),
+                        Tuple3.of("Mary", "./prod?id=1", 12 * 60 * 60 * 1000L + 2 * 60 * 1000L),
+                        Tuple3.of("Mary", "./prod?id=4", 12 * 60 * 60 * 1000L + 55 * 60 * 1000L),
+                        Tuple3.of("Bob", "./prod?id=5", 13 * 60 * 60 * 1000L + 60 * 1000L),
+                        Tuple3.of("Liz", "./home", 13 * 60 * 60 * 1000L + 30 * 60 * 1000L),
+                        Tuple3.of("Liz", "./prod?id=7", 13 * 60 * 60 * 1000L + 59 * 60 * 1000L),
+                        Tuple3.of("Mary", "./cart", 14 * 60 * 60 * 1000L),
+                        Tuple3.of("Liz", "./home", 14 * 60 * 60 * 1000L + 2 * 60 * 1000L),
+                        Tuple3.of("Bob", "./prod?id=3", 14 * 60 * 60 * 1000L + 30 * 60 * 1000L),
+                        Tuple3.of("Bob", "./home", 14 * 60 * 60 * 1000L + 40 * 60 * 1000L)
+                )
+                .assignTimestampsAndWatermarks(
+                        WatermarkStrategy.<Tuple3<String, String, Long>>forMonotonousTimestamps()
+                                .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, String, Long>>() {
+                                    @Override
+                                    public long extractTimestamp(Tuple3<String, String, Long> element, long recordTimestamp) {
+                                        return element.f2;
+                                    }
+                                })
+                );
+
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+
+        StreamTableEnvironment tableEnvironment = StreamTableEnvironment.create(env, settings);
+
+        Table table = tableEnvironment
+                .fromDataStream(
+                        stream,
+                        $("f0").as("user"),
+                        $("f1").as("url"),
+                        $("f2").rowtime().as("cTime")
+                );
+
+        tableEnvironment.createTemporaryView("clicks", table);
+
+        // 每个用户在每个一小时滚动窗口中的访问次数
+        String innerSQL = "SELECT " +
+                            "user, " +
+                            "TUMBLE_END(" +
+                              "cTime," +
+                              "INTERVAL '1' HOUR)" +
+                            "AS endT," +
+                            "COUNT(url) AS cnt " +
+                          "FROM clicks " +
+                            "GROUP BY " +
+                              "user, " +
+                              "TUMBLE(" +
+                                "cTime, " +
+                                "INTERVAL '1' HOUR)";
+
+        // 按照窗口结束时间分区，然后按照浏览量降序排列
+        String midSQL = "SELECT *, ROW_NUMBER() OVER (PARTITION BY endT ORDER BY cnt DESC) as row_num" +
+                " FROM (" + innerSQL + ")";
+
+        // 取出第一名
+        String outerSQL = "SELECT * FROM (" + midSQL + ") WHERE row_num = 1";
+
+        Table result = tableEnvironment.sqlQuery(outerSQL);
+
+        tableEnvironment
+                .toRetractStream(
+                        result,
+                        Row.class
+                )
+                .print();
+
+        env.execute();
+    }
+}
+----
+
+OVER窗口是在有序的行序列上定义的。由于表没有固有的顺序，因此ORDER BY子句是强制书写的。对于流查询，Flink当前仅支持以时间属性顺序升序定义的OVER窗口。不支持其他顺序。
+
+==== JOINS
+
+Flink SQL支持对动态表进行复杂而灵活的联接操作。有几种不同类型的联接可解决可能需要的各种语义查询。
+
+默认情况下，未优化连接顺序。表按照在FROM子句中指定的顺序进行连接。通过首先列出更新频率最低的表，最后列出更新频率最高的表，可以调整联接查询的性能。确保以不产生交叉联接（笛卡尔乘积）的顺序指定表，该顺序不受支持，并且会导致查询失败。
+
+===== 常规连接
+
+常规联接是最通用的联接类型，在该联接中，任何新记录或对联接的任一侧所做的更改都是可见的，并且会影响整个联接结果。例如，如果左侧有新记录，则它将与右侧的所有以前和将来的记录合并在一起。
+
+[source,sql]
+----
+SELECT * FROM Orders
+INNER JOIN Product
+ON Orders.productId = Product.id
+----
+
+对于流查询，常规联接的语法是最灵活的，并且允许任何类型的更新（插入，更新，删除）输入表。但是，此操作具有重要的操作含义：它要求将连接输入的两端始终保持在Flink状态。因此，根据所有输入表和中间联接结果的不同输入行的数量，用于计算查询结果的所需状态可能会无限增长。您可以为查询配置提供适当的状态生存时间（TTL），以防止状态大小过大。请注意，这可能会影响查询结果的正确性。有关详细信息，请参见查询配置。
+
+对于流式查询，根据聚合的类型和不同的分组键的数量，计算查询结果所需的状态可能会无限增长。请提供具有有效保留间隔的查询配置，以防止出现过多的状态。有关详细信息，请参见查询配置。
+
+*INNER Equi-JOIN*
+
+返回受联接条件限制的简单笛卡尔积。当前，仅支持等联接，即具有至少一个具有相等谓词的联合条件的联接。不支持任意交叉或theta联接。
+
+[source,sql]
+----
+SELECT *
+FROM Orders
+INNER JOIN Product
+ON Orders.product_id = Product.id
+----
+
+*OUTER Equi-JOIN*
+
+返回合格笛卡尔乘积中的所有行（即，通过其联接条件的所有组合行），以及外部表中联接条件与另一表的任何行都不匹配的每行的一个副本。 Flink支持LEFT，RIGHT和FULL外部联接。当前，仅支持等联接，即，具有至少一个具有相等谓词的联合条件的联接。不支持任意交叉或theta联接。
+
+[source,sql]
+----
+SELECT *
+FROM Orders
+LEFT JOIN Product
+ON Orders.product_id = Product.id
+
+SELECT *
+FROM Orders
+RIGHT JOIN Product
+ON Orders.product_id = Product.id
+
+SELECT *
+FROM Orders
+FULL OUTER JOIN Product
+ON Orders.product_id = Product.id
+----
 
 === 使用DDL的方式来编写Flink SQL
 
