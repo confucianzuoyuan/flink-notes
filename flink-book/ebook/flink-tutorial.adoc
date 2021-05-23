@@ -5014,6 +5014,11 @@ public class TopPvUserPerWindow {
 
 OVER窗口是在有序的行序列上定义的。由于表没有固有的顺序，因此ORDER BY子句是强制书写的。对于流查询，Flink当前仅支持以时间属性顺序升序定义的OVER窗口。不支持其他顺序。
 
+以上的程序涉及到了TopN的求值，也就是计算每个窗口中访问量最大的用户。在计算TopN的SQL中，设计到了这样几个参数：
+
+* ROW_NUMBER()：根据分区中各行的顺序，为每一行分配一个唯一的顺序号（从1开始）。目前，我们仅支持ROW_NUMBER作为窗口功能。
+* WHERE row_num <= N：Flink要求row_num <= N才能将该查询识别为Top-N查询。N代表将保留N个最小或最大记录。
+
 ==== JOINS
 
 Flink SQL支持对动态表进行复杂而灵活的联接操作。有几种不同类型的联接可解决可能需要的各种语义查询。
@@ -5069,9 +5074,517 @@ FULL OUTER JOIN Product
 ON Orders.product_id = Product.id
 ----
 
+===== 基于间隔的JOIN
+
+返回受连接条件和时间限制的简单笛卡尔积。间隔联接需要至少一个等联接谓词和在两侧限制时间的联接条件。两个适当的范围谓词可以定义这样的条件（<，<=，> =，>），BETWEEN谓词或用于比较两个输入的相同类型（即处理时间或事件时间）的时间属性的单个相等谓词的动态表。
+
+例如，如果订单在收到订单后四个小时内发货，则此查询会将所有订单与其相应的发货合并在一起。
+
+[source,sql]
+----
+SELECT *
+FROM Orders o, Shipments s
+WHERE o.id = s.order_id
+AND o.order_time BETWEEN s.ship_time - INTERVAL '4' HOUR AND s.ship_time
+----
+
+以下谓词是有效间隔加入条件的示例：
+
+* ltime = rtime
+* ltime >= rtime AND ltime < rtime + INTERVAL '10' MINUTE
+* ltime BETWEEN rtime - INTERVAL '10' SECOND AND rtime + INTERVAL '5' SECOND
+
+对于流查询，与常规联接相比，间隔联接仅支持具有时间属性的仅追加表。由于时间属性是准单调增加的，因此Flink可以从其状态中删除旧值，而不会影响结果的正确性。
+
+=== 用户自定义函数
+
+Flink Table API & SQL 为用户提供了很多内置的系统函数，例如大小写转换、比较大小等有用的函数，由于这些函数在MySQL、Hive等SQL写法中也很常见，我们这里就不详细讲解了，具体用法可以参阅官方文档。我们这里要重点讲解的是如何编写用户自定义函数。
+
+当前 Flink 有如下几种用户自定义函数：
+
+* 标量函数： 将标量值转换成一个新标量值；
+* 表值函数： 将标量值转换成新的行数据；
+* 聚合函数： 将多行数据里的标量值转换成一个新标量值；
+* 表值聚合函数： 将多行数据里的标量值转换成新的行数据；
+* 异步表值函数： 是异步查询外部数据系统的特殊函数。
+
+==== 标量函数
+
+自定义标量函数可以把 0 到多个标量值映射成 1 个标量值，任何数据类型都可作为求值方法的参数和返回值类型。
+
+想要实现自定义标量函数，你需要扩展 org.apache.flink.table.functions 里面的 ScalarFunction 并且实现一个或者多个求值方法。标量函数的行为取决于你写的求值方法。求值方法必须是 public 的，而且名字必须是 eval。
+
+下面的例子展示了如何实现一个求哈希值的函数并在查询里调用它，这里要注意的是，在eval的参数中，我们对输入参数的类型做了标注，使用了DataTypeHint方法。
+
+[source,java]
+----
+public static class HashFunction extends ScalarFunction {
+  // 接受任意类型输入，返回 INT 型输出
+  public int eval(@DataTypeHint(inputGroup = InputGroup.ANY) Object o) {
+    return o.hashCode();
+  }
+}
+
+// 注册函数
+env.createTemporarySystemFunction("HashFunction", HashFunction.class);
+
+// 在 SQL 里调用注册好的函数
+env.sqlQuery("SELECT HashFunction(myField) FROM MyTable");
+----
+
+==== 表值函数
+
+跟自定义标量函数一样，自定义表值函数的输入参数也可以是 0 到多个标量。但是跟标量函数只能返回一个值不同的是，它可以返回任意多行。返回的每一行可以包含 1 到多列，如果输出行只包含 1 列，会省略结构化信息并生成标量值，这个标量值在运行阶段会隐式地包装进行里。
+
+要定义一个表值函数，你需要扩展 org.apache.flink.table.functions 下的 TableFunction，可以通过实现多个名为 eval 的方法对求值方法进行重载。像其他函数一样，输入和输出类型也可以通过反射自动提取出来。表值函数返回的表的类型取决于 TableFunction 类的泛型参数 T，不同于标量函数，表值函数的求值方法本身不包含返回类型，而是通过 collect(T) 方法来发送要输出的行。
+
+在 SQL 里面用 JOIN 或者 以 ON TRUE 为条件的 LEFT JOIN 来配合 LATERAL TABLE(<TableFunction>) 的使用。
+
+下面的例子展示了如何实现一个分隔函数并在查询里调用它：
+
+[source,java]
+----
+@FunctionHint(output = @DataTypeHint("ROW<word STRING, length INT>"))
+public static class SplitFunction extends TableFunction<Row> {
+
+  public void eval(String str) {
+    for (String s : str.split(" ")) {
+      // use collect(...) to emit a row
+      collect(Row.of(s, s.length()));
+    }
+  }
+}
+
+// 注册函数
+env.createTemporarySystemFunction("SplitFunction", SplitFunction.class);
+
+// 在 SQL 里调用注册好的函数
+env.sqlQuery(
+  "SELECT myField, word, length " +
+  "FROM MyTable, LATERAL TABLE(SplitFunction(myField))");
+env.sqlQuery(
+  "SELECT myField, word, length " +
+  "FROM MyTable " +
+  "LEFT JOIN LATERAL TABLE(SplitFunction(myField)) ON TRUE");
+
+// 在 SQL 里重命名函数字段
+env.sqlQuery(
+  "SELECT myField, newWord, newLength " +
+  "FROM MyTable " +
+  "LEFT JOIN LATERAL TABLE(SplitFunction(myField)) AS T(newWord, newLength) ON TRUE");
+----
+
+==== 聚合函数
+
+自定义聚合函数（UDAGG）是把一个表（一行或者多行，每行可以有一列或者多列）聚合成一个标量值。
+
+image:images/udagg-mechanism.png[image]
+
+上面的图片展示了一个聚合的例子。假设你有一个关于饮料的表。表里面有三个字段，分别是 id、name、price，表里有 5 行数据。假设你需要找到所有饮料里最贵的饮料的价格，即执行一个 max() 聚合。你需要遍历所有 5 行数据，而结果就只有一个数值。
+
+自定义聚合函数是通过扩展 AggregateFunction 来实现的。AggregateFunction 的工作过程如下。首先，它需要一个 accumulator，它是一个数据结构，存储了聚合的中间结果。通过调用 AggregateFunction 的 createAccumulator() 方法创建一个空的 accumulator。接下来，对于每一行数据，会调用 accumulate() 方法来更新 accumulator。当所有的数据都处理完了之后，通过调用 getValue 方法来计算和返回最终的结果。
+
+下面几个方法是每个 AggregateFunction 必须要实现的：
+
+* createAccumulator()
+* accumulate()
+* getValue()
+
+Flink 的类型推导在遇到复杂类型的时候可能会推导出错误的结果，比如那些非基本类型和普通的 POJO 类型的复杂类型。所以跟 ScalarFunction 和 TableFunction 一样，AggregateFunction 也提供了 AggregateFunction#getResultType() 和 AggregateFunction#getAccumulatorType() 来分别指定返回值类型和 accumulator 的类型，两个函数的返回值类型也都是 TypeInformation。
+
+除了上面的方法，还有几个方法可以选择实现。这些方法有些可以让查询更加高效，而有些是在某些特定场景下必须要实现的。例如，如果聚合函数用在会话窗口（当两个会话窗口合并的时候需要 merge 他们的 accumulator）的话，merge() 方法就是必须要实现的。
+
+AggregateFunction 的以下方法在某些场景下是必须实现的：
+
+* retract() 在 bounded OVER 窗口中是必须实现的。
+* merge() 在许多批式聚合和会话以及滚动窗口聚合中是必须实现的。除此之外，这个方法对于优化也很多帮助。例如，两阶段聚合优化就需要所有的 AggregateFunction 都实现 merge 方法。
+* resetAccumulator() 在许多批式聚合中是必须实现的。
+
+AggregateFunction 的所有方法都必须是 public 的，不能是 static 的，而且名字必须跟上面写的一样。createAccumulator、getValue、getResultType 以及 getAccumulatorType 这几个函数是在抽象类 AggregateFunction 中定义的，而其他函数都是约定的方法。如果要定义一个聚合函数，你需要扩展 org.apache.flink.table.functions.AggregateFunction，并且实现一个（或者多个）accumulate 方法。accumulate 方法可以重载，每个方法的参数类型不同，并且支持变长参数。
+
+下面的例子展示了如何：
+
+* 定义一个聚合函数来计算某一列的加权平均，
+* 在 TableEnvironment 中注册函数，
+* 在查询中使用函数。
+
+为了计算加权平均值，accumulator 需要存储加权总和以及数据的条数。在我们的例子里，我们定义了一个类 WeightedAvgAccum 来作为 accumulator。Flink 的 checkpoint 机制会自动保存 accumulator，在失败时进行恢复，以此来保证精确一次的语义。
+
+我们的 WeightedAvg（聚合函数）的 accumulate 方法有三个输入参数。第一个是 WeightedAvgAccum accumulator，另外两个是用户自定义的输入：输入的值 ivalue 和 输入的权重 iweight。尽管 retract()、merge()、resetAccumulator() 这几个方法在大多数聚合类型中都不是必须实现的，我们也在样例中提供了他们的实现。请注意我们在 Scala 样例中也是用的是 Java 的基础类型，并且定义了 getResultType() 和 getAccumulatorType()，因为 Flink 的类型推导对于 Scala 的类型推导做的不是很好。
+
+[source,java]
+----
+/**
+ * Accumulator for WeightedAvg.
+ */
+public static class WeightedAvgAccum {
+    public long sum = 0;
+    public int count = 0;
+}
+
+/**
+ * Weighted Average user-defined aggregate function.
+ */
+public static class WeightedAvg extends AggregateFunction<Long, WeightedAvgAccum> {
+
+    @Override
+    public WeightedAvgAccum createAccumulator() {
+        return new WeightedAvgAccum();
+    }
+
+    @Override
+    public Long getValue(WeightedAvgAccum acc) {
+        if (acc.count == 0) {
+            return null;
+        } else {
+            return acc.sum / acc.count;
+        }
+    }
+
+    public void accumulate(WeightedAvgAccum acc, long iValue, int iWeight) {
+        acc.sum += iValue * iWeight;
+        acc.count += iWeight;
+    }
+
+    public void retract(WeightedAvgAccum acc, long iValue, int iWeight) {
+        acc.sum -= iValue * iWeight;
+        acc.count -= iWeight;
+    }
+
+    public void merge(WeightedAvgAccum acc, Iterable<WeightedAvgAccum> it) {
+        Iterator<WeightedAvgAccum> iter = it.iterator();
+        while (iter.hasNext()) {
+            WeightedAvgAccum a = iter.next();
+            acc.count += a.count;
+            acc.sum += a.sum;
+        }
+    }
+
+    public void resetAccumulator(WeightedAvgAccum acc) {
+        acc.count = 0;
+        acc.sum = 0L;
+    }
+}
+
+// 注册函数
+StreamTableEnvironment tEnv = ...
+tEnv.registerFunction("wAvg", new WeightedAvg());
+
+// 使用函数
+tEnv.sqlQuery("SELECT user, wAvg(points, level) AS avgPoints FROM userScores GROUP BY user");
+----
+
+==== 表值聚合函数
+
+自定义表值聚合函数（UDTAGG）可以把一个表（一行或者多行，每行有一列或者多列）聚合成另一张表，结果中可以有多行多列。
+
+image:images/udtagg-mechanism.png[image]
+
+上图展示了一个表值聚合函数的例子。假设你有一个饮料的表，这个表有 3 列，分别是 id、name 和 price，一共有 5 行。假设你需要找到价格最高的两个饮料，类似于 top2() 表值聚合函数。你需要遍历所有 5 行数据，结果是有 2 行数据的一个表。
+
+用户自定义表值聚合函数是通过扩展 TableAggregateFunction 类来实现的。一个 TableAggregateFunction 的工作过程如下。首先，它需要一个 accumulator，这个 accumulator 负责存储聚合的中间结果。 通过调用 TableAggregateFunction 的 createAccumulator 方法来构造一个空的 accumulator。接下来，对于每一行数据，会调用 accumulate 方法来更新 accumulator。当所有数据都处理完之后，调用 emitValue 方法来计算和返回最终的结果。
+
+下面几个 TableAggregateFunction 的方法是必须要实现的：
+
+* createAccumulator()
+* accumulate()
+
+Flink 的类型推导在遇到复杂类型的时候可能会推导出错误的结果，比如那些非基本类型和普通的 POJO 类型的复杂类型。所以类似于 ScalarFunction 和 TableFunction，TableAggregateFunction 也提供了 TableAggregateFunction#getResultType() 和 TableAggregateFunction#getAccumulatorType() 方法来指定返回值类型和 accumulator 的类型，这两个方法都需要返回 TypeInformation。
+
+除了上面的方法，还有几个其他的方法可以选择性的实现。有些方法可以让查询更加高效，而有些方法对于某些特定场景是必须要实现的。比如，在会话窗口（当两个会话窗口合并时会合并两个 accumulator）中使用聚合函数时，必须要实现merge() 方法。
+
+下面几个 TableAggregateFunction 的方法在某些特定场景下是必须要实现的：
+
+* retract() 在 bounded OVER 窗口中的聚合函数必须要实现。
+* merge() 在许多批式聚合和以及流式会话和滑动窗口聚合中是必须要实现的。
+* resetAccumulator() 在许多批式聚合中是必须要实现的。
+* emitValue() 在批式聚合以及窗口聚合中是必须要实现的。
+
+下面的 TableAggregateFunction 的方法可以提升流式任务的效率：
+
+* emitUpdateWithRetract() 在 retract 模式下，该方法负责发送被更新的值。
+
+emitValue 方法会发送所有 accumulator 给出的结果。拿 TopN 来说，emitValue 每次都会发送所有的最大的 n 个值。这在流式任务中可能会有一些性能问题。为了提升性能，用户可以实现 emitUpdateWithRetract 方法。这个方法在 retract 模式下会增量的输出结果，比如有数据更新了，我们必须要撤回老的数据，然后再发送新的数据。如果定义了 emitUpdateWithRetract 方法，那它会优先于 emitValue 方法被使用，因为一般认为 emitUpdateWithRetract 会更加高效，因为它的输出是增量的。
+
+TableAggregateFunction 的所有方法都必须是 public 的、非 static 的，而且名字必须跟上面提到的一样。createAccumulator、getResultType 和 getAccumulatorType 这三个方法是在抽象父类 TableAggregateFunction 中定义的，而其他的方法都是约定的方法。要实现一个表值聚合函数，你必须扩展 org.apache.flink.table.functions.TableAggregateFunction，并且实现一个（或者多个）accumulate 方法。accumulate 方法可以有多个重载的方法，也可以支持变长参数。
+
+下面的例子展示了如何
+
+* 定义一个 TableAggregateFunction 来计算给定列的最大的 2 个值，
+* 在 TableEnvironment 中注册函数，
+* 在 Table API 查询中使用函数（当前只在 Table API 中支持 TableAggregateFunction）。
+* 为了计算最大的 2 个值，accumulator 需要保存当前看到的最大的 2 个值。在我们的例子中，我们定义了类 Top2Accum 来作为 accumulator。Flink 的 checkpoint 机制会自动保存 accumulator，并且在失败时进行恢复，来保证精确一次的语义。
+
+我们的 Top2 表值聚合函数（TableAggregateFunction）的 accumulate() 方法有两个输入，第一个是 Top2Accum accumulator，另一个是用户定义的输入：输入的值 v。尽管 merge() 方法在大多数聚合类型中不是必须的，我们也在样例中提供了它的实现。请注意，我们在 Scala 样例中也使用的是 Java 的基础类型，并且定义了 getResultType() 和 getAccumulatorType() 方法，因为 Flink 的类型推导对于 Scala 的类型推导支持的不是很好。
+
+[source,java]
+----
+/**
+ * Accumulator for Top2.
+ */
+public class Top2Accum {
+    public Integer first;
+    public Integer second;
+}
+
+/**
+ * The top2 user-defined table aggregate function.
+ */
+public static class Top2 extends TableAggregateFunction<Tuple2<Integer, Integer>, Top2Accum> {
+
+    @Override
+    public Top2Accum createAccumulator() {
+        Top2Accum acc = new Top2Accum();
+        acc.first = Integer.MIN_VALUE;
+        acc.second = Integer.MIN_VALUE;
+        return acc;
+    }
+
+
+    public void accumulate(Top2Accum acc, Integer v) {
+        if (v > acc.first) {
+            acc.second = acc.first;
+            acc.first = v;
+        } else if (v > acc.second) {
+            acc.second = v;
+        }
+    }
+
+    public void merge(Top2Accum acc, java.lang.Iterable<Top2Accum> iterable) {
+        for (Top2Accum otherAcc : iterable) {
+            accumulate(acc, otherAcc.first);
+            accumulate(acc, otherAcc.second);
+        }
+    }
+
+    public void emitValue(Top2Accum acc, Collector<Tuple2<Integer, Integer>> out) {
+        // emit the value and rank
+        if (acc.first != Integer.MIN_VALUE) {
+            out.collect(Tuple2.of(acc.first, 1));
+        }
+        if (acc.second != Integer.MIN_VALUE) {
+            out.collect(Tuple2.of(acc.second, 2));
+        }
+    }
+}
+
+// 注册函数
+StreamTableEnvironment tEnv = ...
+tEnv.registerFunction("top2", new Top2());
+
+// 初始化表
+Table tab = ...;
+
+// 使用函数
+tab.groupBy("key")
+    .flatAggregate("top2(a) as (v, rank)")
+    .select("key, v, rank");
+----
+
+下面的例子展示了如何使用 emitUpdateWithRetract 方法来只发送更新的数据。为了只发送更新的结果，accumulator 保存了上一次的最大的2个值，也保存了当前最大的2个值。注意：如果 TopN 中的 n 非常大，这种既保存上次的结果，也保存当前的结果的方式不太高效。一种解决这种问题的方式是把输入数据直接存储到 accumulator 中，然后在调用 emitUpdateWithRetract 方法时再进行计算。
+
+[source,java]
+----
+/**
+ * Accumulator for Top2.
+ */
+public class Top2Accum {
+    public Integer first;
+    public Integer second;
+    public Integer oldFirst;
+    public Integer oldSecond;
+}
+
+/**
+ * The top2 user-defined table aggregate function.
+ */
+public static class Top2 extends TableAggregateFunction<Tuple2<Integer, Integer>, Top2Accum> {
+
+    @Override
+    public Top2Accum createAccumulator() {
+        Top2Accum acc = new Top2Accum();
+        acc.first = Integer.MIN_VALUE;
+        acc.second = Integer.MIN_VALUE;
+        acc.oldFirst = Integer.MIN_VALUE;
+        acc.oldSecond = Integer.MIN_VALUE;
+        return acc;
+    }
+
+    public void accumulate(Top2Accum acc, Integer v) {
+        if (v > acc.first) {
+            acc.second = acc.first;
+            acc.first = v;
+        } else if (v > acc.second) {
+            acc.second = v;
+        }
+    }
+
+    public void emitUpdateWithRetract(Top2Accum acc, RetractableCollector<Tuple2<Integer, Integer>> out) {
+        if (!acc.first.equals(acc.oldFirst)) {
+            // if there is an update, retract old value then emit new value.
+            if (acc.oldFirst != Integer.MIN_VALUE) {
+                out.retract(Tuple2.of(acc.oldFirst, 1));
+            }
+            out.collect(Tuple2.of(acc.first, 1));
+            acc.oldFirst = acc.first;
+        }
+
+        if (!acc.second.equals(acc.oldSecond)) {
+            // if there is an update, retract old value then emit new value.
+            if (acc.oldSecond != Integer.MIN_VALUE) {
+                out.retract(Tuple2.of(acc.oldSecond, 2));
+            }
+            out.collect(Tuple2.of(acc.second, 2));
+            acc.oldSecond = acc.second;
+        }
+    }
+}
+
+// 注册函数
+StreamTableEnvironment tEnv = ...
+tEnv.registerFunction("top2", new Top2());
+
+// 初始化表
+Table tab = ...;
+
+// 使用函数
+tab.groupBy("key")
+    .flatAggregate("top2(a) as (v, rank)")
+    .select("key, v, rank");
+----
+
+
 === 使用DDL的方式来编写Flink SQL
 
-=== 实时TopN程序的编写
+==== 快速上手
+
+我们之前写的Flink SQL代码，都遵循了将数据流转换成动态表，在表上进行查询，然后再将查询所得的结果动态表转换成数据流这样的编程流程，这种写法虽然很灵活，但写起来确实感觉不太简洁，实际上我们还可以使用DDL的方式来编写Flink SQL程序，也就是尽量将所有操作都SQL化。我们先来看一个例子，看一下整体流程。
+
+我们先提供一个 `file.csv` 文件，内容如下
+
+[source,csv]
+----
+Mary,./home
+Bob,./cart
+Mary,./prod?id=1
+Liz,./home
+----
+
+我们在这个文件上进行查询。代码如下：
+
+[source,java]
+----
+public class DDLExample {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+        StreamTableEnvironment tableEnvironment = StreamTableEnvironment.create(env, settings);
+
+        tableEnvironment
+                .executeSql("CREATE TABLE clicks (`user` STRING, `url` STRING) " +
+                        "WITH (" +
+                        "'connector' = 'filesystem'," +
+                        "'path' = 'file.csv'," +
+                        "'format' = 'csv')");
+
+        tableEnvironment
+                .executeSql("CREATE TABLE OutTable (`user` STRING, `cnt` BIGINT) " +
+                        "WITH ('connector' = 'print')");
+
+        tableEnvironment
+                .executeSql("INSERT INTO OutTable SELECT user, COUNT(url) as cnt FROM clicks GROUP BY user");
+
+    }
+}
+----
+
+首先我们创建了两张表，一张输入表，一张输出表，我们在创建表时，需要指定连接器，来明确数据从哪里来以及到哪里去。然后将查询结果插入到结果表中去。
+
+输出结果是：
+
+[source,text]
+----
+3> +I[Mary, 1]
+3> -U[Mary, 1]
+3> +U[Mary, 2]
+5> +I[Liz, 1]
+5> +I[Bob, 1]
+----
+
+==== 连接器
+
+我们使用连接器来读取数据源的数据，以及将查询结果写入到第三方设备中。我们来看几个例子
+
+*Kafka*
+
+[source,sql]
+----
+CREATE TABLE KafkaTable (
+  `user_id` BIGINT,
+  `item_id` BIGINT,
+  `behavior` STRING,
+  `ts` TIMESTAMP(3) METADATA FROM 'timestamp'
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'user_behavior',
+  'properties.bootstrap.servers' = 'localhost:9092',
+  'properties.group.id' = 'testGroup',
+  'scan.startup.mode' = 'earliest-offset',
+  'format' = 'csv'
+)
+----
+
+*文件系统*
+
+[source,sql]
+----
+CREATE TABLE MyUserTable (
+  column_name1 INT,
+  column_name2 STRING,
+  ...
+  part_name1 INT,
+  part_name2 STRING
+) PARTITIONED BY (part_name1, part_name2) WITH (
+  'connector' = 'filesystem',           -- required: specify the connector
+  'path' = 'file:///path/to/whatever',  -- required: path to a directory
+  'format' = '...',                     -- required: file system connector requires to specify a format,
+                                        -- Please refer to Table Formats
+                                        -- section for more details
+  'partition.default-name' = '...',     -- optional: default partition name in case the dynamic partition
+                                        -- column value is null/empty string
+
+  -- optional: the option to enable shuffle data by dynamic partition fields in sink phase, this can greatly
+  -- reduce the number of file for filesystem sink but may lead data skew, the default value is false.
+  'sink.shuffle-by-partition.enable' = '...',
+  ...
+)
+----
+
+*打印*
+
+[source,sql]
+----
+CREATE TABLE print_table (
+  f0 INT,
+  f1 INT,
+  f2 STRING,
+  f3 DOUBLE
+) WITH (
+  'connector' = 'print'
+);
+----
+
+=== Flink Table API编程简介
+
+== Flink CEP简介
+
+=== Flink CEP快速上手
+
+=== Flink CEP工作原理
+
+=== 使用Flink CEP处理超时事件
+
+=== Flink CEP常用API简介
 
 == 案例集
 
