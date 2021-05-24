@@ -5947,9 +5947,539 @@ digraph finite_state_machine {
 }
 ....
 
+代码如下
+
+[source,java]
+----
+import org.apache.flink.api.common.functions.RichFlatMapFunction;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.util.Collector;
+
+import java.io.Serializable;
+
+import static org.apache.flink.util.Preconditions.checkNotNull;
+
+public class NFAExample {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(1);
+
+        env
+                .fromElements(
+                        new Event("user-1", EventType.fail),
+                        new Event("user-1", EventType.fail),
+                        new Event("user-1", EventType.fail),
+                        new Event("user-2", EventType.fail),
+                        new Event("user-2", EventType.success)
+                )
+                .keyBy(r -> r.userId)
+                .flatMap(new StateMachineMapper())
+                .print();
+
+        env.execute();
+    }
+
+    @SuppressWarnings("serial")
+    public static class StateMachineMapper extends RichFlatMapFunction<Event, Alert> {
+
+        /** The state for the current key. */
+        private ValueState<State> currentState;
+
+        @Override
+        public void open(Configuration conf) {
+            // get access to the state object
+            currentState = getRuntimeContext().getState(new ValueStateDescriptor<>("state", State.class));
+        }
+
+        @Override
+        public void flatMap(Event evt, Collector<Alert> out) throws Exception {
+            // get the current state for the key (source address)
+            // if no state exists, yet, the state must be the state machine's initial state
+            State state = currentState.value();
+            if (state == null) {
+                state = State.Initial;
+            }
+
+            // ask the state machine what state we should go to based on the given event
+            State nextState = state.transition(evt.type);
+
+            if (nextState == State.InvalidTransition) {
+                // the current event resulted in an invalid transition
+                // raise an alert!
+                out.collect(new Alert(evt.userId, state, evt.type));
+            } else if (nextState.isTerminal()) {
+                // we reached a terminal state, clean up the current state
+                currentState.clear();
+            } else {
+                // remember the new state
+                currentState.update(nextState);
+            }
+        }
+    }
+
+    public static class Alert {
+
+        private final String userId;
+
+        private final State state;
+
+        private final EventType transition;
+
+        public Alert(String userId, State state, EventType transition) {
+            this.userId = userId;
+            this.state = checkNotNull(state);
+            this.transition = checkNotNull(transition);
+        }
+
+        @Override
+        public String toString() {
+            return "Alert{" +
+                    "userId='" + userId + '\'' +
+                    ", state=" + state +
+                    ", transition=" + transition +
+                    '}';
+        }
+    }
+
+    public static class Event {
+
+        private final EventType type;
+
+        private final String userId;
+
+        public Event(String userId, EventType type) {
+            this.type = checkNotNull(type);
+            this.userId= userId;
+        }
+    }
+
+    public enum EventType {
+        success, fail;
+    }
+
+    public enum State {
+
+        Terminal,
+
+        InvalidTransition,
+
+        S2(new Transition(EventType.fail, InvalidTransition), new Transition(EventType.success, Terminal)),
+
+        S1(new Transition(EventType.fail, S2), new Transition(EventType.success, Terminal)),
+
+        /** The initial state from which all state sequences start. */
+        Initial(new Transition(EventType.fail, S1), new Transition(EventType.success, Terminal));
+
+        private final Transition[] transitions;
+
+        State(Transition... transitions) {
+            this.transitions = transitions;
+        }
+
+        public boolean isTerminal() {
+            return transitions.length == 0;
+        }
+
+        public State transition(EventType evt) {
+            for (Transition t : transitions) {
+                if (t.eventType() == evt) {
+                    return t.targetState();
+                }
+            }
+
+            return InvalidTransition;
+        }
+    }
+
+    public static class Transition implements Serializable {
+
+        // this class is serializable to be able to interact cleanly with enums.
+        private static final long serialVersionUID = 1L;
+
+        /** The event that triggers the transition. */
+        private final EventType eventType;
+
+        /** The target state after the transition. */
+        private final State targetState;
+
+        public Transition(EventType eventType, State targetState) {
+            this.eventType = checkNotNull(eventType);
+            this.targetState = checkNotNull(targetState);
+        }
+
+        public EventType eventType() {
+            return eventType;
+        }
+
+        public State targetState() {
+            return targetState;
+        }
+    }
+}
+----
+
 === 使用Flink CEP处理超时事件
 
+订单超时使用Flink CEP实现：
+
+在电商平台中，最终创造收入和利润的是用户下单购买的环节；更具体一点，是用户真正完成支付动作的时候。用户下单的行为可以表明用户对商品的需求，但在现实中，并不是每次下单都会被用户立刻支付。当拖延一段时间后，用户支付的意愿会降低。所以为了让用户更有紧迫感从而提高支付转化率，同时也为了防范订单支付环节的安全风险，电商网站往往会对订单状态进行监控，设置一个失效时间（比如15分钟），如果下单后一段时间仍未支付，订单就会被取消。
+
+我们将会利用CEP库来实现这个功能。我们先将事件流按照订单号orderId分流，然后定义这样的一个事件模式：在15分钟内，事件``create``与``pay``严格紧邻：
+
+[source,java]
+----
+Pattern<OrderEvent, OrderEvent> pattern = Pattern
+    .<OrderEvent>begin("create")
+    .where(new SimpleCondition<OrderEvent>() {
+        @Override
+        public boolean filter(OrderEvent value) throws Exception {
+            return value.eventType.equals("create");
+        }
+    })
+    .next("pay")
+    .where(new SimpleCondition<OrderEvent>() {
+        @Override
+        public boolean filter(OrderEvent value) throws Exception {
+            return value.eventType.equals("pay");
+        }
+    })
+    .within(Time.seconds(5));
+----
+
+这样调用.select方法时，就可以同时获取到匹配出的事件和超时未匹配的事件了。在src/main/java下继续创建OrderTimeout.java文件，新建一个单例对象。定义样例类OrderEvent，这是输入的订单事件流；另外还有OrderResult，这是输出显示的订单状态结果。由于没有现成的数据，我们还是用几条自定义的示例数据来做演示。
+
+完整代码如下：
+
+POJO类实现
+
+[source,java]
+----
+public class OrderEvent {
+    public String orderId;
+    public String eventType;
+    public Long eventTime;
+
+    public OrderEvent() {
+    }
+
+    public OrderEvent(String orderId, String eventType, Long eventTime) {
+        this.orderId = orderId;
+        this.eventType = eventType;
+        this.eventTime = eventTime;
+    }
+
+    @Override
+    public String toString() {
+        return "OrderEvent{" +
+                "orderId='" + orderId + '\'' +
+                ", eventType='" + eventType + '\'' +
+                ", eventTime=" + eventTime +
+                '}';
+    }
+}
+----
+
+检测程序如下：
+
+[source,java]
+----
+public class OrderTimeoutDetect {
+    public static void main(String[] args) throws Exception {
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.setParallelism(1);
+
+        SingleOutputStreamOperator<OrderEvent> stream = env
+            .fromElements(
+                new OrderEvent("order_1", "create", 1000L),
+                new OrderEvent("order_2", "create", 2000L),
+                new OrderEvent("order_1", "pay", 3000L)
+            )
+            .assignTimestampsAndWatermarks(
+                WatermarkStrategy.<OrderEvent>forMonotonousTimestamps()
+                    .withTimestampAssigner(new SerializableTimestampAssigner<OrderEvent>() {
+                        @Override
+                        public long extractTimestamp(OrderEvent element, long recordTimestamp) {
+                            return element.eventTime;
+                        }
+                    })
+            );
+
+        Pattern<OrderEvent, OrderEvent> pattern = Pattern
+            .<OrderEvent>begin("create")
+            .where(new SimpleCondition<OrderEvent>() {
+                @Override
+                public boolean filter(OrderEvent value) throws Exception {
+                    return value.eventType.equals("create");
+                }
+            })
+            .next("pay")
+            .where(new SimpleCondition<OrderEvent>() {
+                @Override
+                public boolean filter(OrderEvent value) throws Exception {
+                    return value.eventType.equals("pay");
+                }
+            })
+            .within(Time.seconds(5));
+
+        PatternStream<OrderEvent> patternStream = CEP.pattern(stream.keyBy(r -> r.orderId), pattern);
+
+        SingleOutputStreamOperator<String> result = patternStream
+            .select(
+                new OutputTag<String>("order-timeout") {
+                },
+                new PatternTimeoutFunction<OrderEvent, String>() {
+                    @Override
+                    public String timeout(Map<String, List<OrderEvent>> map, long l) throws Exception {
+                        return "订单ID为 " + map.get("create").get(0).orderId + " 没有支付！";
+                    }
+                },
+                new PatternSelectFunction<OrderEvent, String>() {
+                    @Override
+                    public String select(Map<String, List<OrderEvent>> map) throws Exception {
+                        return "订单ID为 " + map.get("pay").get(0).orderId + " 已经支付！";
+                    }
+                }
+            );
+
+        result.print();
+
+        result.getSideOutput(new OutputTag<String>("order-timeout") {}).print();
+
+        env.execute();
+    }
+}
+----
+
+同样的需求我们使用核心API在之前的章节中已经实现过了，可以看到Flink CEP编写起来还是很简洁的。
+
 === Flink CEP常用API简介
+
+这里我们主要简单介绍一下模板的各种定义方式。
+
+==== 单个模式
+
+一个模式可以是一个单例或者循环模式。单例模式只接受一个事件，循环模式可以接受多个事件。 在模式匹配表达式中，模式"a b+ c? d"（或者"a"，后面跟着一个或者多个"b"，再往后可选择的跟着一个"c"，最后跟着一个"d"）， a，c?，和 d都是单例模式，b+是一个循环模式。默认情况下，模式都是单例的，你可以通过使用量词把它们转换成循环模式。 每个模式可以有一个或者多个条件来决定它接受哪些事件。
+
+===== 量词
+
+在FlinkCEP中，你可以通过这些方法指定循环模式：pattern.oneOrMore()，指定期望一个给定事件出现一次或者多次的模式（例如前面提到的b+模式）； pattern.times(#ofTimes)，指定期望一个给定事件出现特定次数的模式，例如出现4次a； pattern.times(#fromTimes, #toTimes)，指定期望一个给定事件出现次数在一个最小值和最大值中间的模式，比如出现2-4次a。
+
+你可以使用pattern.greedy()方法让循环模式变成贪心的，但现在还不能让模式组贪心。 你可以使用pattern.optional()方法让所有的模式变成可选的，不管是否是循环模式。
+
+对一个命名为start的模式，以下量词是有效的：
+
+[source,java]
+----
+// 期望出现4次
+start.times(4);
+
+// 期望出现0或者4次
+start.times(4).optional();
+
+// 期望出现2、3或者4次
+start.times(2, 4);
+
+// 期望出现2、3或者4次，并且尽可能的重复次数多
+start.times(2, 4).greedy();
+
+// 期望出现0、2、3或者4次
+start.times(2, 4).optional();
+
+// 期望出现0、2、3或者4次，并且尽可能的重复次数多
+start.times(2, 4).optional().greedy();
+
+// 期望出现1到多次
+start.oneOrMore();
+
+// 期望出现1到多次，并且尽可能的重复次数多
+start.oneOrMore().greedy();
+
+// 期望出现0到多次
+start.oneOrMore().optional();
+
+// 期望出现0到多次，并且尽可能的重复次数多
+start.oneOrMore().optional().greedy();
+
+// 期望出现2到多次
+start.timesOrMore(2);
+
+// 期望出现2到多次，并且尽可能的重复次数多
+start.timesOrMore(2).greedy();
+
+// 期望出现0、2或多次
+start.timesOrMore(2).optional();
+
+// 期望出现0、2或多次，并且尽可能的重复次数多
+start.timesOrMore(2).optional().greedy();
+----
+
+===== 条件
+
+对每个模式你可以指定一个条件来决定一个进来的事件是否被接受进入这个模式，例如，它的value字段应该大于5，或者大于前面接受的事件的平均值。 指定判断事件属性的条件可以通过pattern.where()、pattern.or()或者pattern.until()方法。 这些可以是IterativeCondition或者SimpleCondition。
+
+*迭代条件* : 这是最普遍的条件类型。使用它可以指定一个基于前面已经被接受的事件的属性或者它们的一个子集的统计数据来决定是否接受时间序列的条件。
+
+下面是一个迭代条件的代码，它接受"middle"模式下一个事件的名称开头是"foo"， 并且前面已经匹配到的事件加上这个事件的价格小于5.0。 迭代条件非常强大，尤其是跟循环模式结合使用时。
+
+[source,java]
+----
+middle.oneOrMore()
+    .subtype(SubEvent.class)
+    .where(new IterativeCondition<SubEvent>() {
+        @Override
+        public boolean filter(SubEvent value, Context<SubEvent> ctx) throws Exception {
+            if (!value.getName().startsWith("foo")) {
+                return false;
+            }
+
+            double sum = value.getPrice();
+            for (Event event : ctx.getEventsForPattern("middle")) {
+                sum += event.getPrice();
+            }
+            return Double.compare(sum, 5.0) < 0;
+        }
+    });
+----
+
+NOTE: 调用ctx.getEventsForPattern(...)可以获得所有前面已经接受作为可能匹配的事件。 调用这个操作的代价可能很小也可能很大，所以在实现你的条件时，尽量少使用它。
+
+*简单条件* ： 这种类型的条件扩展了前面提到的IterativeCondition类，它决定是否接受一个事件只取决于事件自身的属性。
+
+[source,java]
+----
+start.where(new SimpleCondition<Event>() {
+    @Override
+    public boolean filter(Event value) {
+        return value.getName().startsWith("foo");
+    }
+});
+----
+
+最后，你可以通过pattern.subtype(subClass)方法限制接受的事件类型是初始事件的子类型。
+
+[source,java]
+----
+start.subtype(SubEvent.class).where(new SimpleCondition<SubEvent>() {
+    @Override
+    public boolean filter(SubEvent value) {
+        return ... // 一些判断条件
+    }
+});
+----
+
+*组合条件* ： 如上所示，你可以把subtype条件和其他的条件结合起来使用。这适用于任何条件，你可以通过依次调用where()来组合条件。 最终的结果是每个单一条件的结果的逻辑AND。如果想使用OR来组合条件，你可以像下面这样使用or()方法。
+
+[source,java]
+----
+pattern.where(new SimpleCondition<Event>() {
+    @Override
+    public boolean filter(Event value) {
+        return ... // 一些判断条件
+    }
+}).or(new SimpleCondition<Event>() {
+    @Override
+    public boolean filter(Event value) {
+        return ... // 一些判断条件
+    }
+});
+----
+
+*停止条件* ： 如果使用循环模式（oneOrMore()和oneOrMore().optional()），你可以指定一个停止条件，例如，接受事件的值大于5直到值的和小于50。
+
+为了更好的理解它，看下面的例子。给定
+
+* 模式如"(a+ until b)" (一个或者更多的"a"直到"b")
+
+* 到来的事件序列"a1" "c" "a2" "b" "a3"
+
+* 输出结果会是： {a1 a2} {a1} {a2} {a3}.
+
+你可以看到{a1 a2 a3}和{a2 a3}由于停止条件没有被输出。
+
+==== 组合模式
+
+现在你已经看到单个的模式是什么样的了，该去看看如何把它们连接起来组成一个完整的模式序列。
+
+模式序列由一个初始模式作为开头，如下所示：
+
+[source,java]
+----
+Pattern<Event, ?> start = Pattern.<Event>begin("start");
+----
+
+接下来，你可以增加更多的模式到模式序列中并指定它们之间所需的连续条件。FlinkCEP支持事件之间如下形式的连续策略：
+
+. 严格连续: 期望所有匹配的事件严格的一个接一个出现，中间没有任何不匹配的事件。
+
+. 松散连续: 忽略匹配的事件之间的不匹配的事件。
+
+. 不确定的松散连续: 更进一步的松散连续，允许忽略掉一些匹配事件的附加匹配。
+
+可以使用下面的方法来指定模式之间的连续策略：
+
+. next()，指定严格连续，
+. followedBy()，指定松散连续，
+. followedByAny()，指定不确定的松散连续。
+
+或者
+
+. notNext()，如果不想后面直接连着一个特定事件
+. notFollowedBy()，如果不想一个特定事件发生在两个事件之间的任何地方。
+
+NOTE: 模式序列不能以notFollowedBy()结尾。
+
+NOTE: 一个NOT模式前面不能是可选的模式。
+
+[source,java]
+----
+// 严格连续
+Pattern<Event, ?> strict = start.next("middle").where(...);
+
+// 松散连续
+Pattern<Event, ?> relaxed = start.followedBy("middle").where(...);
+
+// 不确定的松散连续
+Pattern<Event, ?> nonDetermin = start.followedByAny("middle").where(...);
+
+// 严格连续的NOT模式
+Pattern<Event, ?> strictNot = start.notNext("not").where(...);
+
+// 松散连续的NOT模式
+Pattern<Event, ?> relaxedNot = start.notFollowedBy("not").where(...);
+----
+
+松散连续意味着跟着的事件中，只有第一个可匹配的事件会被匹配上，而不确定的松散连接情况下，有着同样起始的多个匹配会被输出。 举例来说，模式"a b"，给定事件序列"a"，"c"，"b1"，"b2"，会产生如下的结果：
+
+. "a"和"b"之间严格连续： {} （没有匹配），"a"之后的"c"导致"a"被丢弃。
+
+. "a"和"b"之间松散连续： {a b1}，松散连续会"跳过不匹配的事件直到匹配上的事件"。
+
+. "a"和"b"之间不确定的松散连续： {a b1}, {a b2}，这是最常见的情况。
+
+也可以为模式定义一个有效时间约束。 例如，你可以通过pattern.within()方法指定一个模式应该在10秒内发生。 这种时间模式支持处理时间和事件时间.
+
+NOTE: 一个模式序列只能有一个时间限制。如果限制了多个时间在不同的单个模式上，会使用最小的那个时间限制。
+
+[source,java]
+----
+next.within(Time.seconds(10));
+----
+
+===== 循环模式中的连续性
+
+你可以在循环模式中使用和前面章节讲过的同样的连续性。 连续性会被运用在被接受进入模式的事件之间。 用这个例子来说明上面所说的连续性，一个模式序列"a b+ c"（"a"后面跟着一个或者多个（不确定连续的）"b"，然后跟着一个"c"） 输入为"a"，"b1"，"d1"，"b2"，"d2"，"b3"，"c"，输出结果如下：
+
+. 严格连续: {a b3 c} – "b1"之后的"d1"导致"b1"被丢弃，同样"b2"因为"d2"被丢弃。
+
+. 松散连续: {a b1 c}，{a b1 b2 c}，{a b1 b2 b3 c}，{a b2 c}，{a b2 b3 c}，{a b3 c} - "d"都被忽略了。
+
+. 不确定松散连续: {a b1 c}，{a b1 b2 c}，{a b1 b3 c}，{a b1 b2 b3 c}，{a b2 c}，{a b2 b3 c}，{a b3 c} - 注意{a b1 b3 c}，这是因为"b"之间是不确定松散连续产生的。
+
+对于循环模式（例如oneOrMore()和times())），默认是松散连续。如果想使用严格连续，你需要使用consecutive()方法明确指定， 如果想使用不确定松散连续，你可以使用allowCombinations()方法。
 
 == 案例集
 
