@@ -5456,6 +5456,10 @@ tab.groupBy("key")
 
 === 使用DDL的方式来编写Flink SQL
 
+==== 程序结构
+
+所有用于批处理和流处理的 Table API 和 SQL 程序都遵循相同的模式。下面的代码示例展示了 Table API 和 SQL 程序的通用结构。
+
 ==== 快速上手
 
 我们之前写的Flink SQL代码，都遵循了将数据流转换成动态表，在表上进行查询，然后再将查询所得的结果动态表转换成数据流这样的编程流程，这种写法虽然很灵活，但写起来确实感觉不太简洁，实际上我们还可以使用DDL的方式来编写Flink SQL程序，也就是尽量将所有操作都SQL化。我们先来看一个例子，看一下整体流程。
@@ -5511,6 +5515,78 @@ public class DDLExample {
 5> +I[Bob, 1]
 ----
 
+==== 时间属性
+
+时间属性的设置和我们上一节在SQL中设置窗口和指定时间戳的写法是一样的。这里主要看一下在SQL中如何设置处理时间和事件时间以及水位线，因为我们之前设置水位线和事件时间是通过核心API的方式来设置的。
+
+[source,java]
+----
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+
+public class SetWatermark {
+
+    public static void main(String[] args) throws Exception {
+        // set up execution environment
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+        StreamTableEnvironment tEnv = StreamTableEnvironment.create(env, settings);
+
+        String ddl =
+                "CREATE TABLE clicks (\n"
+                        + "  `user` STRING,\n"
+                        + "  url STRING,\n"
+                        + "  cTime TIMESTAMP(3),\n"
+                        + "  WATERMARK FOR cTime AS cTime - INTERVAL '3' SECOND\n" // 最大延迟时间设置为3秒
+                        + ") WITH (\n"
+                        + "  'connector.type' = 'filesystem',\n"
+                        + "  'connector.path' = '"
+                        + "file.csv"
+                        + "',\n"
+                        + "  'format.type' = 'csv'\n"
+                        + ")";
+        tEnv.executeSql(ddl);
+
+        tEnv.executeSql("CREATE TABLE ResultTable (" +
+                "`user` STRING, " +
+                "endT TIMESTAMP(3), " +
+                "cnt BIGINT) WITH (" +
+                "'connector' = 'print')");
+
+        // 每个用户在每个一小时滚动窗口中的访问次数
+        String query = "SELECT " +
+                "user, " +
+                "TUMBLE_END(" +
+                "cTime," +
+                "INTERVAL '1' HOUR)" +
+                "AS endT," +
+                "COUNT(url) AS cnt " +
+                "FROM clicks " +
+                "GROUP BY " +
+                "user, " +
+                "TUMBLE(" +
+                "cTime, " +
+                "INTERVAL '1' HOUR)";
+
+        tEnv.executeSql("INSERT INTO ResultTable " + query);
+    }
+}
+----
+
+输出结果是：
+
+[source,text]
+----
+3> +I[Mary, 1970-01-01T13:00, 3]
+5> +I[Bob, 1970-01-01T13:00, 1]
+3> +I[Mary, 1970-01-01T15:00, 1]
+5> +I[Liz, 1970-01-01T14:00, 2]
+5> +I[Bob, 1970-01-01T14:00, 1]
+5> +I[Liz, 1970-01-01T15:00, 1]
+5> +I[Bob, 1970-01-01T15:00, 2]
+----
+
 ==== 连接器
 
 我们使用连接器来读取数据源的数据，以及将查询结果写入到第三方设备中。我们来看几个例子
@@ -5560,7 +5636,7 @@ CREATE TABLE MyUserTable (
 )
 ----
 
-*打印*
+*打印到控制台*
 
 [source,sql]
 ----
@@ -5574,7 +5650,118 @@ CREATE TABLE print_table (
 );
 ----
 
+*JDBC*
+
+[source,sql]
+----
+-- 在 Flink SQL 中注册一张 MySQL 表 'users'
+CREATE TABLE MyUserTable (
+  id BIGINT,
+  name STRING,
+  age INT,
+  status BOOLEAN,
+  PRIMARY KEY (id) NOT ENFORCED
+) WITH (
+   'connector' = 'jdbc',
+   'url' = 'jdbc:mysql://localhost:3306/mydatabase',
+   'table-name' = 'users'
+);
+
+-- 从另一张表 "T" 将数据写入到 JDBC 表中
+INSERT INTO MyUserTable
+SELECT id, name, age, status FROM T;
+
+-- 查看 JDBC 表中的数据
+SELECT id, name, age, status FROM MyUserTable;
+----
+
+*ElasticSearch*
+
+[source,sql]
+----
+CREATE TABLE myUserTable (
+  user_id STRING,
+  user_name STRING
+  uv BIGINT,
+  pv BIGINT,
+  PRIMARY KEY (user_id) NOT ENFORCED
+) WITH (
+  'connector' = 'elasticsearch-7',
+  'hosts' = 'http://localhost:9200',
+  'index' = 'users'
+);
+----
+
 === Flink Table API编程简介
+
+我们来将之前的一个程序用Table API写一下，感受一下Table API的使用，Table API我们不会详细讲解，具体可以参看官方文档。
+
+[source,java]
+----
+import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.table.api.EnvironmentSettings;
+import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.Tumble;
+import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
+
+import static org.apache.flink.table.api.Expressions.*;
+
+public class TableAPIExample {
+
+    public static void main(String[] args) throws Exception {
+        // set up execution environment
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        SingleOutputStreamOperator<Tuple3<String, String, Long>> stream = env
+                .fromElements(
+                        Tuple3.of("Mary", "./home", 12 * 60 * 60 * 1000L),
+                        Tuple3.of("Bob", "./cart", 12 * 60 * 60 * 1000L),
+                        Tuple3.of("Mary", "./prod?id=1", 12 * 60 * 60 * 1000L + 2 * 60 * 1000L),
+                        Tuple3.of("Mary", "./prod?id=4", 12 * 60 * 60 * 1000L + 55 * 60 * 1000L),
+                        Tuple3.of("Bob", "./prod?id=5", 13 * 60 * 60 * 1000L + 60 * 1000L),
+                        Tuple3.of("Liz", "./home", 13 * 60 * 60 * 1000L + 30 * 60 * 1000L),
+                        Tuple3.of("Liz", "./prod?id=7", 13 * 60 * 60 * 1000L + 59 * 60 * 1000L),
+                        Tuple3.of("Mary", "./cart", 14 * 60 * 60 * 1000L),
+                        Tuple3.of("Liz", "./home", 14 * 60 * 60 * 1000L + 2 * 60 * 1000L),
+                        Tuple3.of("Bob", "./prod?id=3", 14 * 60 * 60 * 1000L + 30 * 60 * 1000L),
+                        Tuple3.of("Bob", "./home", 14 * 60 * 60 * 1000L + 40 * 60 * 1000L)
+                )
+                .assignTimestampsAndWatermarks(
+                        WatermarkStrategy.<Tuple3<String, String, Long>>forMonotonousTimestamps()
+                                .withTimestampAssigner(new SerializableTimestampAssigner<Tuple3<String, String, Long>>() {
+                                    @Override
+                                    public long extractTimestamp(Tuple3<String, String, Long> element, long recordTimestamp) {
+                                        return element.f2;
+                                    }
+                                })
+                );
+
+        EnvironmentSettings settings = EnvironmentSettings.newInstance().inStreamingMode().build();
+
+        StreamTableEnvironment tableEnvironment = StreamTableEnvironment.create(env, settings);
+
+        Table table = tableEnvironment
+                .fromDataStream(
+                        stream,
+                        $("f0").as("user"),
+                        $("f1").as("url"),
+                        $("f2").rowtime().as("cTime"));
+
+        Table result = table
+                .window(Tumble.over(lit(1).hours()).on($("cTime")).as("w"))
+                .groupBy($("user"), $("w"))
+                .select($("user"), $("url").count().as("cnt"), $("w").end().as("endT"));
+
+        tableEnvironment.toRetractStream(result, Row.class).print();
+
+        env.execute();
+    }
+}
+----
 
 == Flink CEP简介
 
