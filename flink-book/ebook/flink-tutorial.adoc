@@ -5980,9 +5980,26 @@ public class LoginFailDetect {
 }
 ----
 
+在上面的程序中，我们使用了 `.next()` 方法，表示 *严格紧邻* ，也就是紧挨着的意思。如果只需要一个事件出现在另一个事件的后面，不需要紧挨着，可以使用 `.followedBy()` 方法。连续三次登录失败事件，由于都是相同类型的事件，所以我们的模板定义也可以如下：
+
+[source,java]
+----
+Pattern<LoginEvent, LoginEvent> pattern = Pattern
+    .<LoginEvent>begin("fail")
+    .where(new SimpleCondition<LoginEvent>() {
+        @Override
+        public boolean filter(LoginEvent loginEvent) throws Exception {
+            return loginEvent.eventType.equals("fail");
+        }
+    })
+    .times(3);
+----
+
+这里的 `times(3)` 表示三次登录失败，这里是 *非严格紧邻* 的。在使用 `.select()` 方法获取匹配的事件时，这里的类型 `Map<String, List<LoginEvent>>` 中的 `List` 中包含了匹配到的三个登录失败事件。
+
 === Flink CEP工作原理
 
-Flink CEP底层的工作原理叫做NFA（非确定性有限状态机），我们来使用核心API重新实现一遍上面的需求，先来看看状态转移图：
+Flink CEP底层的工作原理叫做NFA（非确定性有限状态机），这里不打算展开讲解NFA的原理，因为会引入很多的数学内容。所以我们这里用一个例子来说明一下状态机的工作方式，这样更方便读者朋友理解。我们来使用核心API重新实现一遍上面的需求，先来看看状态转移图：
 
 [plantuml, state-machine, png]
 ....
@@ -6309,230 +6326,9 @@ public class OrderTimeoutDetect {
 
 同样的需求我们使用核心API在之前的章节中已经实现过了，可以看到Flink CEP编写起来还是很简洁的。
 
-=== Flink CEP常用API简介
+=== 总结
 
-这里我们主要简单介绍一下模板的各种定义方式。
-
-==== 单个模式
-
-一个模式可以是一个单例或者循环模式。单例模式只接受一个事件，循环模式可以接受多个事件。 在模式匹配表达式中，模式"a b+ c? d"（或者"a"，后面跟着一个或者多个"b"，再往后可选择的跟着一个"c"，最后跟着一个"d"）， a，c?，和 d都是单例模式，b+是一个循环模式。默认情况下，模式都是单例的，你可以通过使用量词把它们转换成循环模式。 每个模式可以有一个或者多个条件来决定它接受哪些事件。
-
-===== 量词
-
-在FlinkCEP中，你可以通过这些方法指定循环模式：pattern.oneOrMore()，指定期望一个给定事件出现一次或者多次的模式（例如前面提到的b+模式）； pattern.times(#ofTimes)，指定期望一个给定事件出现特定次数的模式，例如出现4次a； pattern.times(#fromTimes, #toTimes)，指定期望一个给定事件出现次数在一个最小值和最大值中间的模式，比如出现2-4次a。
-
-你可以使用pattern.greedy()方法让循环模式变成贪心的，但现在还不能让模式组贪心。 你可以使用pattern.optional()方法让所有的模式变成可选的，不管是否是循环模式。
-
-对一个命名为start的模式，以下量词是有效的：
-
-[source,java]
-----
-// 期望出现4次
-start.times(4);
-
-// 期望出现0或者4次
-start.times(4).optional();
-
-// 期望出现2、3或者4次
-start.times(2, 4);
-
-// 期望出现2、3或者4次，并且尽可能的重复次数多
-start.times(2, 4).greedy();
-
-// 期望出现0、2、3或者4次
-start.times(2, 4).optional();
-
-// 期望出现0、2、3或者4次，并且尽可能的重复次数多
-start.times(2, 4).optional().greedy();
-
-// 期望出现1到多次
-start.oneOrMore();
-
-// 期望出现1到多次，并且尽可能的重复次数多
-start.oneOrMore().greedy();
-
-// 期望出现0到多次
-start.oneOrMore().optional();
-
-// 期望出现0到多次，并且尽可能的重复次数多
-start.oneOrMore().optional().greedy();
-
-// 期望出现2到多次
-start.timesOrMore(2);
-
-// 期望出现2到多次，并且尽可能的重复次数多
-start.timesOrMore(2).greedy();
-
-// 期望出现0、2或多次
-start.timesOrMore(2).optional();
-
-// 期望出现0、2或多次，并且尽可能的重复次数多
-start.timesOrMore(2).optional().greedy();
-----
-
-===== 条件
-
-对每个模式你可以指定一个条件来决定一个进来的事件是否被接受进入这个模式，例如，它的value字段应该大于5，或者大于前面接受的事件的平均值。 指定判断事件属性的条件可以通过pattern.where()、pattern.or()或者pattern.until()方法。 这些可以是IterativeCondition或者SimpleCondition。
-
-*迭代条件* : 这是最普遍的条件类型。使用它可以指定一个基于前面已经被接受的事件的属性或者它们的一个子集的统计数据来决定是否接受时间序列的条件。
-
-下面是一个迭代条件的代码，它接受"middle"模式下一个事件的名称开头是"foo"， 并且前面已经匹配到的事件加上这个事件的价格小于5.0。 迭代条件非常强大，尤其是跟循环模式结合使用时。
-
-[source,java]
-----
-middle.oneOrMore()
-    .subtype(SubEvent.class)
-    .where(new IterativeCondition<SubEvent>() {
-        @Override
-        public boolean filter(SubEvent value, Context<SubEvent> ctx) throws Exception {
-            if (!value.getName().startsWith("foo")) {
-                return false;
-            }
-
-            double sum = value.getPrice();
-            for (Event event : ctx.getEventsForPattern("middle")) {
-                sum += event.getPrice();
-            }
-            return Double.compare(sum, 5.0) < 0;
-        }
-    });
-----
-
-NOTE: 调用ctx.getEventsForPattern(...)可以获得所有前面已经接受作为可能匹配的事件。 调用这个操作的代价可能很小也可能很大，所以在实现你的条件时，尽量少使用它。
-
-*简单条件* ： 这种类型的条件扩展了前面提到的IterativeCondition类，它决定是否接受一个事件只取决于事件自身的属性。
-
-[source,java]
-----
-start.where(new SimpleCondition<Event>() {
-    @Override
-    public boolean filter(Event value) {
-        return value.getName().startsWith("foo");
-    }
-});
-----
-
-最后，你可以通过pattern.subtype(subClass)方法限制接受的事件类型是初始事件的子类型。
-
-[source,java]
-----
-start.subtype(SubEvent.class).where(new SimpleCondition<SubEvent>() {
-    @Override
-    public boolean filter(SubEvent value) {
-        return ... // 一些判断条件
-    }
-});
-----
-
-*组合条件* ： 如上所示，你可以把subtype条件和其他的条件结合起来使用。这适用于任何条件，你可以通过依次调用where()来组合条件。 最终的结果是每个单一条件的结果的逻辑AND。如果想使用OR来组合条件，你可以像下面这样使用or()方法。
-
-[source,java]
-----
-pattern.where(new SimpleCondition<Event>() {
-    @Override
-    public boolean filter(Event value) {
-        return ... // 一些判断条件
-    }
-}).or(new SimpleCondition<Event>() {
-    @Override
-    public boolean filter(Event value) {
-        return ... // 一些判断条件
-    }
-});
-----
-
-*停止条件* ： 如果使用循环模式（oneOrMore()和oneOrMore().optional()），你可以指定一个停止条件，例如，接受事件的值大于5直到值的和小于50。
-
-为了更好的理解它，看下面的例子。给定
-
-* 模式如"(a+ until b)" (一个或者更多的"a"直到"b")
-
-* 到来的事件序列"a1" "c" "a2" "b" "a3"
-
-* 输出结果会是： {a1 a2} {a1} {a2} {a3}.
-
-你可以看到{a1 a2 a3}和{a2 a3}由于停止条件没有被输出。
-
-==== 组合模式
-
-现在你已经看到单个的模式是什么样的了，该去看看如何把它们连接起来组成一个完整的模式序列。
-
-模式序列由一个初始模式作为开头，如下所示：
-
-[source,java]
-----
-Pattern<Event, ?> start = Pattern.<Event>begin("start");
-----
-
-接下来，你可以增加更多的模式到模式序列中并指定它们之间所需的连续条件。FlinkCEP支持事件之间如下形式的连续策略：
-
-. 严格连续: 期望所有匹配的事件严格的一个接一个出现，中间没有任何不匹配的事件。
-
-. 松散连续: 忽略匹配的事件之间的不匹配的事件。
-
-. 不确定的松散连续: 更进一步的松散连续，允许忽略掉一些匹配事件的附加匹配。
-
-可以使用下面的方法来指定模式之间的连续策略：
-
-. next()，指定严格连续，
-. followedBy()，指定松散连续，
-. followedByAny()，指定不确定的松散连续。
-
-或者
-
-. notNext()，如果不想后面直接连着一个特定事件
-. notFollowedBy()，如果不想一个特定事件发生在两个事件之间的任何地方。
-
-NOTE: 模式序列不能以notFollowedBy()结尾。
-
-NOTE: 一个NOT模式前面不能是可选的模式。
-
-[source,java]
-----
-// 严格连续
-Pattern<Event, ?> strict = start.next("middle").where(...);
-
-// 松散连续
-Pattern<Event, ?> relaxed = start.followedBy("middle").where(...);
-
-// 不确定的松散连续
-Pattern<Event, ?> nonDetermin = start.followedByAny("middle").where(...);
-
-// 严格连续的NOT模式
-Pattern<Event, ?> strictNot = start.notNext("not").where(...);
-
-// 松散连续的NOT模式
-Pattern<Event, ?> relaxedNot = start.notFollowedBy("not").where(...);
-----
-
-松散连续意味着跟着的事件中，只有第一个可匹配的事件会被匹配上，而不确定的松散连接情况下，有着同样起始的多个匹配会被输出。 举例来说，模式"a b"，给定事件序列"a"，"c"，"b1"，"b2"，会产生如下的结果：
-
-. "a"和"b"之间严格连续： {} （没有匹配），"a"之后的"c"导致"a"被丢弃。
-
-. "a"和"b"之间松散连续： {a b1}，松散连续会"跳过不匹配的事件直到匹配上的事件"。
-
-. "a"和"b"之间不确定的松散连续： {a b1}, {a b2}，这是最常见的情况。
-
-也可以为模式定义一个有效时间约束。 例如，你可以通过pattern.within()方法指定一个模式应该在10秒内发生。 这种时间模式支持处理时间和事件时间.
-
-NOTE: 一个模式序列只能有一个时间限制。如果限制了多个时间在不同的单个模式上，会使用最小的那个时间限制。
-
-[source,java]
-----
-next.within(Time.seconds(10));
-----
-
-===== 循环模式中的连续性
-
-你可以在循环模式中使用和前面章节讲过的同样的连续性。 连续性会被运用在被接受进入模式的事件之间。 用这个例子来说明上面所说的连续性，一个模式序列"a b+ c"（"a"后面跟着一个或者多个（不确定连续的）"b"，然后跟着一个"c"） 输入为"a"，"b1"，"d1"，"b2"，"d2"，"b3"，"c"，输出结果如下：
-
-. 严格连续: {a b3 c} – "b1"之后的"d1"导致"b1"被丢弃，同样"b2"因为"d2"被丢弃。
-
-. 松散连续: {a b1 c}，{a b1 b2 c}，{a b1 b2 b3 c}，{a b2 c}，{a b2 b3 c}，{a b3 c} - "d"都被忽略了。
-
-. 不确定松散连续: {a b1 c}，{a b1 b2 c}，{a b1 b3 c}，{a b1 b2 b3 c}，{a b2 c}，{a b2 b3 c}，{a b3 c} - 注意{a b1 b3 c}，这是因为"b"之间是不确定松散连续产生的。
-
-对于循环模式（例如oneOrMore()和times())），默认是松散连续。如果想使用严格连续，你需要使用consecutive()方法明确指定， 如果想使用不确定松散连续，你可以使用allowCombinations()方法。
+Flink CEP的底层实现使用的NFA。而正则表达式的底层原理同样是NFA。在上面的对CEP的使用中，可以发现，CEP模板的定义和正则表达式模板的定义是非常相似的。而Flink CEP是在事件流上匹配符合模板定义的事件，正则表达式是在字符串上匹配符合正则表达式的字符序列。读者朋友都知道，正则表达式的各种定义方式是非常繁琐的，Flink CEP的模板定义也不遑多让。所以我们在本章节就不一一列举了。上面所编写的代码基本上已经可以满足实际生产的需求了。具体模板的定义方式可以参考官方文档。
 
 == 案例集
 
