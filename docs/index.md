@@ -282,7 +282,7 @@ CoProcessFunction
   - Spark：RDD，Spark Streaming的DStream实际上也就是一组组小批数据RDD的集合。
   - Flink基本数据模型是数据流，以及事件（Event）序列（Integer、String、Long、POJO Class、Tuple）
 
-> POJO Class用来模拟Scala中的case class。
+> :memo:POJO Class用来模拟Scala中的case class。
 
 - 运行时架构
   - Spark是批计算，将DAG划分为不同的Stage，一个Stage完成后才可以计算下一个Stage。
@@ -425,7 +425,7 @@ JobMaster将ExecutionGraph部署到任务管理器执行。
 
 ### POJO CLASS
 
-> 模拟Scala中的样例类
+> :memo:模拟Scala中的样例类
 
 - 必须是公有类
 - 所有字段必须是公有字段
@@ -451,7 +451,7 @@ SourceFunction\<T>的泛型是数据源中的数据的类型。
 
 ## 基本转换算子
 
-> 代表算子：flatMap
+> :memo:代表算子：flatMap
 
 基本转换算子都是<span style="color:red">无状态算子</span>。
 
@@ -473,7 +473,7 @@ flatMap是map和filter的泛化，也就是说可以使用flatMap来实现map和
 
 ## 逻辑分区算子
 
-> 代表算子：reduce
+> :memo:代表算子：reduce
 
 - keyBy的作用：
   - 指定数据的key。
@@ -601,7 +601,7 @@ RichSinkFunction\<T>
 - 当水位线到达KeyedProcessFunction，如果这条水位线触发了onTimer的执行，则必须等待onTimer执行完以后，水位线才能向下游发送。
 - 当水位线到达ProcessWindowFunction，如果这条水位线触发了process方法的执行，则必须等待process方法执行完以后，水位线才能向下游发送。
 
-> 在KeyedProcessFunction中，可以认为维护了多张HashMap，每个状态变量的定义都会初始化一张HashMap，同时还有一张维护每个key的定时器队列的HashMap。
+> :memo:在KeyedProcessFunction中，可以认为维护了多张HashMap，每个状态变量的定义都会初始化一张HashMap，同时还有一张维护每个key的定时器队列的HashMap。
 
 ## 逻辑分区维护的状态-键控状态变量
 
@@ -660,7 +660,7 @@ RichSinkFunction\<T>
   - 属于窗口的所有事件
   - 定时器：时间戳=窗口结束时间 - 1毫秒（因为是左闭右开区间），方法是process函数
 
-> 在只使用ProcessWindowFunction的情况下，process方法的迭代器参数包含了属于窗口的所有数据，会对内存造成压力，那么应该怎么去优化呢？使用累加器的思想。
+> :warning:在只使用ProcessWindowFunction的情况下，process方法的迭代器参数包含了属于窗口的所有数据，会对内存造成压力，那么应该怎么去优化呢？使用累加器的思想。
 
 ### AggregateFunction
 
@@ -992,6 +992,8 @@ SELECT * FROM A JOIN B ON A.key=B.key;
 - 检查点分界线之前到来的数据导致的状态更改，都会被包含在当前检查点分界线所属的检查点中；而基于检查点分界线之后的数据导致的所有更改，就会被包含在之后的检查点中。
 - 检查点分界线到达哪一个并行子任务，就对哪一个并行子任务的状态做快照。
 
+> :memo:
+>
 > Flink中有两种特殊的事件：
 >
 > - 水位线
