@@ -83,10 +83,7 @@ Flink对所有的传统的流处理框架是降维打击。
 - LAMBDA架构
 - 有状态的流处理
 
-![](figure/5.svg)
-
-<p style="text-align:center">架构演进过程</p>
-
+<figure><img src="figure/5.svg" alt="架构演进过程" style="width:100%"><figcaption>图-1 架构演进过程</figcaption></figure>
 ### OLTP
 
 用一个关系型数据库完成所有需求。
@@ -97,10 +94,7 @@ Flink对所有的传统的流处理框架是降维打击。
 
 数据库管理员（DBA）负责优化数据库（分库分表，建索引）
 
-![](figure/6.svg)
-
-<p style="text-align:center">OLTP架构</p>
-
+<figure><img src="figure/6.svg" alt="OLTP架构" style="width:100%"><figcaption>图-2 OLTP架构</figcaption></figure>
 ### OLAP
 
 优点：解耦合
@@ -111,10 +105,7 @@ Flink对所有的传统的流处理框架是降维打击。
 
 统计指标的计算：Hive
 
-![](figure/7.svg)
-
-<p style="text-align:center">OLAP架构</p>
-
+<figure><img src="figure/7.svg" alt="OLAP架构" style="width:100%"><figcaption>图-3 OLAP架构</figcaption></figure>
 ### LAMBDA架构
 
 - 用两套系统，同时保证低延迟和结果准确性。
@@ -122,10 +113,7 @@ Flink对所有的传统的流处理框架是降维打击。
   - 使用流处理框架（Spark Streaming）保证结果的低延迟。但是结果可能计算的不准确。
 
 
-![](figure/3.svg)
-
-<p style="text-align:center">LAMBDA架构</p>
-
+<figure><img src="figure/3.svg" alt="LAMBDA架构" style="width:100%"><figcaption>图-4 LAMBDA架构</figcaption></figure>
 例子：
 
 > 点击事件：Mary,./Home,1970-01-01 00:00:09
@@ -140,10 +128,7 @@ Flink对所有的传统的流处理框架是降维打击。
 > 能不能使用一套框架既保证低延迟又保证结果的准确性呢？
 > 答案就是：Flink。
 
-![](figure/4.svg)
-
-<p style="text-align:center">有状态的流处理</p>
-
+<figure><img src="figure/4.svg" alt="有状态的流处理" style="width:100%"><figcaption>图-5 有状态的流处理</figcaption></figure>
 ## 有状态的流处理
 
 状态：有些算子可以维护内部状态
@@ -164,10 +149,7 @@ Flink对所有的传统的流处理框架是降维打击。
 
 sum算子中只会维护一个累加器，数据到来更新完累加器之后，数据直接被丢弃掉了。每个key对应的逻辑分区都有一个sum算子。
 
-![](figure/8.svg)
-
-<p style="text-align:center">Flink的有状态流处理</p>
-
+<figure><img src="figure/8.svg" alt="Flink的有状态流处理" style="width:100%"><figcaption>图-6 Flink的有状态流处理</figcaption></figure>
 数据流就像生产流水线
 
 - 数据是生产流水线上的产品
@@ -215,19 +197,12 @@ sum算子中只会维护一个累加器，数据到来更新完累加器之后�
 - 来一条数据就处理一次，每来一条数据就会驱动DAG（有向无环图）中算子的运行，也可以看作数据在DAG里面流动。
   
 
-![](figure/20.svg)
-
-<p style="text-align:center">事件驱动示意图</p>
-
+<figure><img src="figure/20.svg" alt="事件驱动示意图" style="width:100%"><figcaption>图-7 事件驱动示意图</figcaption></figure>
 - 事件到达之后立即驱动MAP的运行，MAP处理完事件之后，将ETL后的数据发送给FILTER算子，就会立刻驱动FILTER算子的运行，依次类推。
 - 由于Flink是有状态的流处理，所以可能会有算子会维护和操作内部状态，例如REDUCE算子。而MAP和FILTER是无状态的计算。
 - 传统批处理示意图如下：
-  
 
-![](figure/21.svg)
-
-<p style="text-align:center">传统批处理示意图</p>
-
+<figure><img src="figure/21.svg" alt="传统批处理示意图" style="width:100%"><figcaption>图-8 传统批处理示意图</figcaption></figure>
 > **流处理**
 > 来一条数据处理一条。
 > flatMap算子什么时候会被触发执行？当flatMap算子的输入到达的时候，触发执行。
@@ -245,10 +220,7 @@ sum算子中只会维护一个累加器，数据到来更新完累加器之后�
 
 ### 分层API
 
-![](figure/22.svg)
-
-<p style="text-align:center">API层级结构</p>
-
+<figure><img src="figure/22.svg" alt="API层级结构" style="width:100%"><figcaption>图-9 API层级结构</figcaption></figure>
 - 越抽象，越容易使用，但无法实现复杂的需求。
 - 越底层，越难掌握，但可以实现很复杂的需求。
 - 我们的学习重点：DataStream API和处理函数。
@@ -336,10 +308,7 @@ CoProcessFunction
 - 典型的Master-Slave（主从）架构。
   
 
-![](figure/23.svg)
-
-<p style="text-align:center">Flink的主从架构</p>
-
+<figure><img src="figure/23.svg" alt="Flink的主从架构" style="width:100%"><figcaption>图-10 Flink的主从架构</figcaption></figure>
 ## 作业管理器
 
 作业管理器是一个JVM进程。进程中包含三类线程：
@@ -349,10 +318,7 @@ CoProcessFunction
 - JobMaster（每个作业对应一个）：调度任务，将DAG部署到任务管理器
   
 
-![](figure/24.svg)
-
-<p style="text-align:center">作业管理器的三种线程</p>
-
+<figure><img src="figure/24.svg" alt="作业管理器的三种线程" style="width:100%"><figcaption>图-11 作业管理器的三种线程</figcaption></figure>
 JobMaster由于是每个作业对应一个，所以可能有多个JobMaster线程。
 
 ## 任务管理器
@@ -378,10 +344,7 @@ source.setParallelism(2)
     .sink.setParallelism(1)
 ```
 
-![](figure/tasks_slots.svg)
-
-<p style="text-align:center">每个任务插槽一个线程的情况</p>
-
+<figure><img src="figure/tasks_slots.svg" alt="每个任务插槽一个线程的情况" style="width:100%"><figcaption>图-12 每个任务插槽一个线程的情况</figcaption></figure>
 ```java
 source.setParallelism(6)
     .map.setParallelism(6)
@@ -391,14 +354,8 @@ source.setParallelism(6)
 ```
 
 
-![](figure/slot_sharing.svg)
-
-<p style="text-align:center">每个任务插槽多个线程的情况</p>
-
-![](figure/slots_parallelism.svg)
-
-<p style="text-align:center">任务槽数量和并行度数量的关系</p>
-
+<figure><img src="figure/slot_sharing.svg" alt="每个任务插槽多个线程的情况" style="width:100%"><figcaption>图-13 每个任务插槽多个线程的情况</figcaption></figure>
+<figure><img src="figure/slots_parallelism.svg" alt="任务槽数量和并行度数量的关系" style="width:100%"><figcaption>图-14 任务槽数量和并行度数量的关系</figcaption></figure>
 ## 并行度的设置
 
 并行度指的是算子的并行度。
@@ -420,19 +377,13 @@ source.setParallelism(6)
 
 ## 任务提交流程
 
-![](figure/13.svg)
-
-<p style="text-align:center">Flink任务提交流程</p>
-
+<figure><img src="figure/13.svg" alt="Flink任务提交流程" style="width:100%"><figcaption>图-15 Flink任务提交流程</figcaption></figure>
 - 在集群启动时，任务管理器会向资源管理器注册自己的任务插槽
 - 任务管理器之间存在数据的交换
 
 ## Flink中的DAG数据结构
 
-![](figure/9.svg)
-
-<p style="text-align:center">Flink中DAG数据结构的转换</p>
-
+<figure><img src="figure/9.svg" alt="Flink中DAG数据结构的转换" style="width:100%"><figcaption>图-16 Flink中DAG数据结构的转换</figcaption></figure>
 - StreamGraph：是根据用户通过Stream API编写的代码生成的最初的有向无环图。用来表示程序的拓扑结构。
 - JobGraph：StreamGraph在编译的阶段经过优化后生成了JobGraph，JobGraph就是提交给作业管理器的数据结构。主要的优化为，将多个符合条件（没有shuffle，并行度相同）的算子串在一起作为一个任务链节点。保证同一个任务链节点里面的所有算子都在同一个任务插槽的同一个线程中执行。这样算子之间的数据就是本地转发（无需序列化反序列化和网络IO）两个条件：
   - 两个算子之间没有shuffle存在
@@ -452,10 +403,7 @@ source.setParallelism(1)
 
 首先生成的是StreamGraph。
 
-![](figure/10.svg)
-
-<p style="text-align:center">StreamGraph</p>
-
+<figure><img src="figure/10.svg" alt="StreamGraph" style="width:100%"><figcaption>图-17 StreamGraph</figcaption></figure>
 StreamGraph在客户端编译时生成了JobGraph。
 
 - source和flatMap由于并行度不同，所以无法合并成一个任务链。
@@ -463,18 +411,12 @@ StreamGraph在客户端编译时生成了JobGraph。
 - reduce和sink并行度相同，且不存在shuffle，所以可以合成一个任务链。
   
 
-![](figure/11.svg)
-
-<p style="text-align:center">JobGraph</p>
-
+<figure><img src="figure/11.svg" alt="JobGraph" style="width:100%"><figcaption>图-18 JobGraph</figcaption></figure>
 将JobGraph提交到作业管理器，会生成ExecutionGraph，也就是将算子按照并行度拆分成多个并行子任务。
 
 ExecutionGraph中的每个顶点都要占用一个线程。所以下图中共有5个顶点，需要5个线程来执行。每个顶点对应了源码中的一个`Task.java`的实例。
 
-![](figure/12.svg)
-
-<p style="text-align:center">ExecutionGraph</p>
-
+<figure><img src="figure/12.svg" alt="ExecutionGraph" style="width:100%"><figcaption>图-19 ExecutionGraph</figcaption></figure>
 JobMaster将ExecutionGraph部署到任务管理器执行。
 
 # DataStream API
@@ -520,6 +462,7 @@ int add(int n) {
   return n + 1;
 }
 ```
+
 在输入相同的情况下，输出一定相同。
 
 - MapFunction<IN, OUT>的语义：针对流或者列表中的每一个元素，输出一个元素
@@ -565,10 +508,7 @@ add(1); // => 3
 
 ### reduce算子如何维护逻辑分区
 
-![](figure/15.svg)
-
-<p style="text-align:center">reduce算子的并行子任务如何维护逻辑分区</p>
-
+<figure><img src="figure/15.svg" alt="reduce算子的并行子任务如何维护逻辑分区" style="width:100%"><figcaption>图-20 reduce算子的并行子任务如何维护逻辑分区</figcaption></figure>
 假设我们有如下Flink代码：
 
 ```java
@@ -593,10 +533,7 @@ env
 - 3,6路由到reduce的第三个并行子任务
 - 2,5,8路由到reduce的第四个并行子任务
 
-![](figure/14.svg)
-
-<p style="text-align:center">keyBy可能的一种路由方式</p>
-
+<figure><img src="figure/14.svg" alt="keyBy可能的一种路由方式" style="width:100%"><figcaption>图-21 keyBy可能的一种路由方式</figcaption></figure>
 ## 物理分区算子
 
 将数据分发到不同的并行子任务。
@@ -653,10 +590,7 @@ RichSinkFunction\<T>
 - onTimer：定时器。时间到达某一个时间戳触发调用。
   
 
-![](figure/16.svg)
-
-<p style="text-align:center">KeyedProcessFunction的并行子任务如何维护定时器</p>
-
+<figure><img src="figure/16.svg" alt="KeyedProcessFunction的并行子任务如何维护定时器" style="width:100%"><figcaption>图-22 KeyedProcessFunction的并行子任务如何维护定时器</figcaption></figure>
 - 每个key都会维护自己的定时器，每个key都只能访问自己的定时器。就好像每个key都只能访问自己的累加器一样。
 - 针对每个key，在某个时间戳只能注册一个定时器，定时器不能重复注册，如果某个时间戳已经注册了定时器，那么再对这个时间戳注册定时器就不起作用了。
 - .registerProcessingTimeTimer(ts)：在机器时间戳ts注册了一个定时器（onTimer）。
@@ -688,10 +622,7 @@ RichSinkFunction\<T>
 - 将值写入状态变量：.update()方法
 - 如何清空状态变量：.clear()方法
 
-![](figure/17.svg)
-
-<p style="text-align:center">KeyedProcessFunction的并行子任务如何维护ValueState</p>
-
+<figure><img src="figure/17.svg" alt="KeyedProcessFunction的并行子任务如何维护ValueState" style="width:100%"><figcaption>图-23 KeyedProcessFunction的并行子任务如何维护ValueState</figcaption></figure>
 ### ListState-列表状态变量
 
 - .get()方法：返回包含列表状态变量中所有元素的迭代器
@@ -699,10 +630,7 @@ RichSinkFunction\<T>
 - .add()方法：添加元素
   
 
-![](figure/19.svg)
-
-<p style="text-align:center">KeyedProcessFunction的并行子任务如何维护ListState</p>
-
+<figure><img src="figure/19.svg" alt="KeyedProcessFunction的并行子任务如何维护ListState" style="width:100%"><figcaption>图-24 KeyedProcessFunction的并行子任务如何维护ListState</figcaption></figure>
 ### MapState-字典状态变量
 
 - .put(KEY, VALUE)方法：添加KEY $\rightarrow$ VALUE键值对
@@ -711,10 +639,7 @@ RichSinkFunction\<T>
 - .keys()：返回所有KEY组成的集合
   
 
-![](figure/18.svg)
-
-<p style="text-align:center">KeyedProcessFunction的并行子任务如何维护MapState</p>
-
+<figure><img src="figure/18.svg" alt="KeyedProcessFunction的并行子任务如何维护MapState" style="width:100%"><figcaption>图-25 KeyedProcessFunction的并行子任务如何维护MapState</figcaption></figure>
 ## 窗口API
 
 ### ProcessWindowFunction
@@ -751,26 +676,17 @@ RichSinkFunction\<T>
 
 当窗口闭合时：AggregateFunction将getResult()方法的返回值，发送给了ProcessWindowFunction。
 
-![](figure/25.svg)
-
-<p style="text-align:center">AggregateFunction将getResult的结果发送给ProcessWindowFunction</p>
-
+<figure><img src="figure/25.svg" alt="AggregateFunction将getResult的结果发送给ProcessWindowFunction" style="width:100%"><figcaption>图-26 AggregateFunction将getResult的结果发送给ProcessWindowFunction</figcaption></figure>
 ProcessWindowFunction的process方法的迭代器参数中只有一个元素。
 
 ### 窗口的底层实现
 
 **AggregateFunction和ProcessWindowFunction结合使用的底层实现**
 
-![](figure/26.svg)
-
-<p style="text-align:center">AggregateFunction和ProcessWindowFunction结合使用</p>
-
+<figure><img src="figure/26.svg" alt="AggregateFunction和ProcessWindowFunction" style="width:100%"><figcaption>图-27 AggregateFunction和ProcessWindowFunction</figcaption></figure>
 **只使用ProcessWindowFunction的底层实现**
 
-![](figure/27.svg)
-
-<p style="text-align:center">只使用ProcessWindowFunction</p>
-
+<figure><img src="figure/27.svg" alt="只使用ProcessWindowFunction" style="width:100%"><figcaption>图-28 只使用ProcessWindowFunction</figcaption></figure>
 窗口中的所有元素都保存在List中。
 
 ### ProcessAllWindowFunction
@@ -852,18 +768,11 @@ Flink窗口是左闭右开的区间，例如[0, 5)的窗口最后一个时间戳
 
 - 将数据依据固定的窗口长度对数据进行切分
 - 时间对齐，窗口长度固定，没有重叠
-  
 
-![](figure/28.svg)
-
-<p style="text-align:center">滚动窗口</p>
-
+<figure><img src="figure/28.svg" alt="滚动窗口" style="width:100%"><figcaption>图-29 滚动窗口</figcaption></figure>
 ## 滑动窗口
 
-![](figure/29.svg)
-
-<p style="text-align:center">滑动窗口</p>
-
+<figure><img src="figure/29.svg" alt="滑动窗口" style="width:100%"><figcaption>图-30 滑动窗口</figcaption></figure>
 - 滑动窗口是固定窗口的更广义的一种形式，滑动窗口由固定的窗口长度和滑动间隔组成
 - 窗口长度固定，可以有重叠
 - 如果一个元素同时属于两个窗口，那么会将元素复制两份，每个窗口分配一个元素。这样就可以保证所有的窗口从逻辑上分开处理。
@@ -894,31 +803,19 @@ Flink窗口是左闭右开的区间，例如[0, 5)的窗口最后一个时间戳
 - 会话窗口开始时间：窗口中第一个元素的时间戳
 - 会话窗口结束时间：窗口中最后一个元素的时间戳+超时时间
 
-![](figure/30.svg)
-
-<p style="text-align:center">会话窗口</p>
-
+<figure><img src="figure/30.svg" alt="会话窗口" style="width:100%"><figcaption>图-31 会话窗口</figcaption></figure>
 # 逻辑时钟-水位线
 
 两种时间语义
 
-![](figure/event_processing_time.svg)
-
-<p style="text-align:center">两种时间语义</p>
-
+<figure><img src="figure/event_processing_time.svg" alt="两种时间语义" style="width:100%"><figcaption>图-32 两种时间语义</figcaption></figure>
 - 处理时间：事件进入process算子的机器时间。调用`ctx.timerService().currentProcessingTime()`时的机器时间。
 - 事件时间：事件中包含的时间戳，事件真实发生的时间。
 
 举两个例子：
 
-![](figure/31.svg)
-
-<p style="text-align:center">星球大战</p>
-
-![](figure/34.svg)
-
-<p style="text-align:center">打游戏</p>
-
+<figure><img src="figure/31.svg" alt="星球大战" style="width:100%"><figcaption>图-33 星球大战</figcaption></figure>
+<figure><img src="figure/34.svg" alt="打游戏" style="width:100%"><figcaption>图-34 打游戏</figcaption></figure>
 <span style="color:red">由于事件时间的世界里面没有时钟</span>，所以我们需要为事件时间的世界提供时钟，叫做水位线（逻辑时钟）。
 
 时钟的定义：单调递增的序列。
@@ -954,10 +851,7 @@ Flink窗口是左闭右开的区间，例如[0, 5)的窗口最后一个时间戳
 
 ## 多流转换时水位线的传播机制
 
-![](figure/32.svg)
-
-<p style="text-align:center">多流转换水位线传播机制</p>
-
+<figure><img src="figure/32.svg" alt="多流转换水位线传播机制" style="width:100%"><figcaption>图-35 多流转换水位线传播机制</figcaption></figure>
 - 分流：水位线复制然后广播到下游的所有并行子任务中去。
 - 合流：
   - 第一步：到达的水位线覆盖数组中对应的水位线。
@@ -1038,10 +932,7 @@ SELECT * FROM A JOIN B ON A.key=B.key;
   - 键控状态的底层维护方式是在并行子任务中维护一张HashMap。
 - 窗口状态（Windowed State）：作用域是每个窗口。
 
-![](figure/33.svg)
-
-<p style="text-align:center">各种状态变量的作用域示意图</p>
-
+<figure><img src="figure/33.svg" alt="各种状态变量的作用域示意图" style="width:100%"><figcaption>图-36 各种状态变量的作用域示意图</figcaption></figure>
 ## Flink中的状态管理
 
 ### 状态后端
@@ -1052,7 +943,6 @@ SELECT * FROM A JOIN B ON A.key=B.key;
 - 状态后端主要负责两件事
   - 本地的状态管理
   - 将状态写入远程存储（HDFS、RocksDB、文件系统之类的）的检查点文件中。
-
 
 ### 选择一个状态后端
 
@@ -1070,31 +960,16 @@ SELECT * FROM A JOIN B ON A.key=B.key;
 
 ## Flink程序如何从检查点恢复程序
 
-![](figure/35.svg)
-
-<p style="text-align:center">快照</p>
-
+<figure><img src="figure/35.svg" alt="快照" style="width:100%"><figcaption>图-37 快照</figcaption></figure>
 - Flink故障恢复机制的核心，就是应用状态的一致性检查点。
 - 有状态流应用的一致检查点，其实就是所有并行子任务的状态，在某个时间点的一份拷贝（一份快照）。
 - 上游是一个可重置读取位置的持久化设备（例如Kafka）。
   
 
-![](figure/36.svg)
-
-<p style="text-align:center">故障</p>
-
-![](figure/37.svg)
-
-<p style="text-align:center">第一步：重启</p>
-
-![](figure/38.svg)
-
-<p style="text-align:center">第二步：从检查点文件恢复状态</p>
-
-![](figure/39.svg)
-
-<p style="text-align:center">第三步：继续处理数据</p>
-
+<figure><img src="figure/36.svg" alt="" style="width:100%"><figcaption>图-38 </figcaption></figure>
+<figure><img src="figure/37.svg" alt="第一步：重启" style="width:100%"><figcaption>图-39 第一步：重启</figcaption></figure>
+<figure><img src="figure/38.svg" alt="第二步：从检查点文件恢复状态" style="width:100%"><figcaption>图-40 第二步：从检查点文件恢复状态</figcaption></figure>
+<figure><img src="figure/39.svg" alt="第三步：继续处理数据" style="width:100%"><figcaption>图-41 第三步：继续处理数据</figcaption></figure>
 无论重启多少次程序，某个数值只会在累加器中被累加一次，这个就叫做<span style="color:red">精准一次消费（Exactly-Once）</span>——既不会丢失数据，也不会重复累加某个数据。
 
 ## Flink如何保存检查点
@@ -1122,52 +997,27 @@ SELECT * FROM A JOIN B ON A.key=B.key;
 > - 水位线
 > - 检查点分界线
 
-![](figure/40.svg)
-
-<p style="text-align:center">示例程序</p>
-
-![](figure/41.svg)
-
-<p style="text-align:center">启动检查点</p>
-
+<figure><img src="figure/40.svg" alt="示例程序" style="width:100%"><figcaption>图-42 示例程序</figcaption></figure>
+<figure><img src="figure/41.svg" alt="启动检查点" style="width:100%"><figcaption>图-43 启动检查点</figcaption></figure>
 作业管理器会向每个Source的并行子任务发送一条带有新检查点ID的消息，通过这种方式来启动检查点的保存工作。
 
-![](figure/42.svg)
-
-<p style="text-align:center">向下游发送检查点分界线</p>
-
+<figure><img src="figure/42.svg" alt="向下游发送检查点分界线" style="width:100%"><figcaption>图-44 向下游发送检查点分界线</figcaption></figure>
 在分流时，检查点分界线是广播出去的。和水位线在分流时的传递机制相同。
 
-![](figure/43.svg)
-
-<p style="text-align:center">分界线对齐</p>
-
+<figure><img src="figure/43.svg" alt="分界线对齐" style="width:100%"><figcaption>图-45 分界线对齐</figcaption></figure>
 - 分界线对齐：检查点分界线向下游传递，sum任务会等待所有输入分区的检查点分界线到达
 - 对于检查点分界线已经到达的分区，继续到达的数据会被缓存
 - 而检查点分界线尚未到达的分区，数据会被正常处理
 
 sum_even什么时候做快照？必须接收到来自source1和source2的所有检查点分界线时，才会做快照。这个机制叫做<span style="color:red">检查点分界线对齐</span>。检查点分界线在合流时的传递机制和水位线不一样。
 
-![](figure/44.svg)
-
-<p style="text-align:center">继续向下游发送检查点分界线</p>
-
+<figure><img src="figure/44.svg" alt="继续向下游发送检查点分界线" style="width:100%"><figcaption>图-46 继续向下游发送检查点分界线</figcaption></figure>
 Source并行子任务将它们的状态写入检查点文件，并发出一个检查点分界线。
 
 状态后端在状态存入检查点文件之后，会返回通知给Source的并行子任务，Source的并行子任务就会向作业管理器确认Source的并行子任务的检查点保存完成。
 
-![](figure/45.svg)
-
-<p style="text-align:center">任务正常处理数据</p>
-
-![](figure/46.svg)
-
-<p style="text-align:center">检查点保存完成</p>
-
-
-
-
-
+<figure><img src="figure/45.svg" alt="任务正常处理数据" style="width:100%"><figcaption>图-47 任务正常处理数据</figcaption></figure>
+<figure><img src="figure/46.svg" alt="检查点保存完成" style="width:100%"><figcaption>图-48 检查点保存完成</figcaption></figure>
 # 端到端一致性
 
 ## 状态一致性分类
@@ -1273,10 +1123,5 @@ Flink实现了一个基于信用度的流量控制机制，其工作原理如下
 
 # 有限状态机
 
-![](figure/47.svg)
-
-<p style="text-align:center">判断字符串中的0是否为偶数个</p>
-
-flink cep官网链接
-
-https://nightlies.apache.org/flink/flink-docs-master/zh/docs/libs/cep/
+<figure><img src="figure/47.svg" alt="判断字符串中的0是否为偶数个" style="width:100%"><figcaption>图-49 判断字符串中的0是否为偶数个</figcaption></figure>
+flink cep官网链接[https://nightlies.apache.org/flink/flink-docs-master/zh/docs/libs/cep/]
