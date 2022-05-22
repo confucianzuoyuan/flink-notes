@@ -1218,3 +1218,16 @@ Flink实现了一个基于信用度的流量控制机制，其工作原理如下
 <figure><img src="figure/47.svg" alt="判断字符串中的0是否为偶数个" style="width:100%"><figcaption>图-49 判断字符串中的0是否为偶数个</figcaption></figure>
 
 [flink cep官网链接](https://nightlies.apache.org/flink/flink-docs-master/zh/docs/libs/cep/)
+
+<style>
+figure figcaption {
+  text-align: center;
+  color: brown;
+}
+
+figure img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
