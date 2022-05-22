@@ -12,16 +12,20 @@
 
 Apache Flink是一个框架和<span style="color:red">分布式</span>处理引擎，用于对无界和有界数据<span style="color:red">流</span>进行<span style="color:red">状态</span>计算。
 
-有界数据流
+**有界数据流**
 
-Flink会将文件看成一条流，一条一条的处理文件中的数据，例如下面包含两条数据的文本文件，将会一条一条处理，而不会整个文件进行处理。
+Flink会将文件看成一条流，一条一条的处理文件中的数据，例如下面包含两条数据的csv文件，将会一条一条处理，而不会整个文件进行处理。
 
 ```csv
 Mary,./home,1970-01-01 00:00:01
 Bob,./cart,1970-01-01 00:00:02
 ```
 
-Flink Kafka Consumer，无界数据流，来一条处理一条。
+**无界数据流**
+
+Flink Kafka Consumer，来一条处理一条。
+
+**流批统一**
 
 Flink底层引擎对于文件和Kafka消息队列的处理逻辑是一致的。
 
@@ -33,7 +37,7 @@ Flink底层引擎对于文件和Kafka消息队列的处理逻辑是一致的。
 
 快手：Flink集群有1500台机器
 
-字节跳动：Apache Storm $\rightarrow$ Apache Flink
+字节跳动：Apache Storm :arrow_right: Apache Flink
 
 Flink对所有的传统的流处理框架是降维打击。
 
@@ -42,7 +46,7 @@ Flink对所有的传统的流处理框架是降维打击。
 - 流数据更真实地反映了我们的生活方式（点击流）
 - 传统的数据架构是基于有限数据集的，将数据流人为的变成了离线数据来处理
 - 我们的目标
-  - 低延迟（Spark Streaming 的延迟是秒级（需要攒批然后计算），Flink延迟是毫秒级（Spark Streaming的千分之一，Flink是来一条数据就处理一条数据，没有攒批的过程），由于操作系统的软件时钟的精度是毫秒级，所以可以认为Flink是没有延迟的）
+  - 低延迟（Spark Streaming 的延迟是<span style="color:red">秒级</span>（需要攒批然后计算），Flink延迟是<span style="color:red">毫秒级</span>（Spark Streaming的千分之一，Flink是来一条数据就处理一条数据，没有攒批的过程），由于操作系统的软件时钟的精度是毫秒级，所以可以认为Flink是没有延迟的）
   - 高吞吐（加机器）
   - 结果的准确性和良好的容错性（EXACTLY-ONCE，恰好处理一次，精准一次消费）
 
@@ -56,7 +60,7 @@ Flink对所有的传统的流处理框架是降维打击。
 >  窗口一：2020-01-01 00:00:00 $\sim$ 2020-01-01 00:00:10
 >  窗口二：2020-01-01 00:00:10 $\sim$ 2020-01-01 00:00:20
 >  事件由于网络延迟，到达Spark Streaming服务器的时间是：
->  2020-01-01 00:00:11，被分配到了窗口二中，导致计算结果的不准确。Flink是没有这个问题的，Flink可以按照事件真正发生的时间处理事件。
+>  2020-01-01 00:00:11，被分配到了窗口二中，导致计算结果的不准确。Flink是没有这个问题的，<span style="color:red">Flink可以按照事件真正发生的时间处理事件</span>。
 
 ## 哪些行业需要处理流数据
 
@@ -73,10 +77,10 @@ Flink对所有的传统的流处理框架是降维打击。
   - 连续三次登录失败的检测（爬虫行为，暴力破解用户名和密码）
   - 信用卡欺诈检测（连续两笔消费，第一笔消费小于1元，第二笔消费大于500元）
   - 超时未支付订单的检测（美团下订单，15 分钟未支付，将关闭订单）
-  - 刷单行为（连续三个事件：登录 $\rightarrow$ 下订单 $\rightarrow$ 支付）
+  - 刷单行为（连续三个事件：登录 :arrow_right: 下订单 :arrow_right: 支付）
 
 
-## 传统数据处理架构
+## 数据处理架构
 
 - OLTP（在线事务处理）
 - OLAP（在线分析处理）
@@ -86,7 +90,7 @@ Flink对所有的传统的流处理框架是降维打击。
 <figure><img src="figure/5.svg" alt="架构演进过程" style="width:100%"><figcaption>图-1 架构演进过程</figcaption></figure>
 ### OLTP
 
-用一个关系型数据库完成所有需求。
+用一个关系型数据库（Oracle，IBM DB2，MySQL）完成所有需求。
 
 优点：架构很简单，适合初创公司。
 
@@ -108,7 +112,9 @@ Flink对所有的传统的流处理框架是降维打击。
 <figure><img src="figure/7.svg" alt="OLAP架构" style="width:100%"><figcaption>图-3 OLAP架构</figcaption></figure>
 ### LAMBDA架构
 
-- 用两套系统，同时保证低延迟和结果准确性。
+> :memo:这里的LAMBDA和lambda表达式没有关系。
+
+- 用<span style="color:red">两套</span>系统，同时保证低延迟和结果准确性。
   - 使用批处理框架（Hive）保证结果的准确性。但是结果可能会有较大的延迟。
   - 使用流处理框架（Spark Streaming）保证结果的低延迟。但是结果可能计算的不准确。
 
@@ -123,7 +129,7 @@ Flink对所有的传统的流处理框架是降维打击。
 >
 > - Spark Streaming：保证结果的低延迟，但结果可能不准确
 > - Hive：保证结果的准确性，但结果的延迟比较高
-> 两套系统计算的指标是同一个指标，所以写的代码也很类似。带来了维护的困难，因为一套代码要写两遍。
+> 两套系统计算的指标是同一个指标（都是0～10的页面访问量），所以写的代码也很类似。带来了维护的困难，因为一套代码要写两遍。
 > 能不能写一份代码就搞定低延迟和结果准确性呢？
 > 能不能使用一套框架既保证低延迟又保证结果的准确性呢？
 > 答案就是：Flink。
@@ -146,8 +152,6 @@ Flink对所有的传统的流处理框架是降维打击。
 从图中可以看出，Flink处理数据是没有落盘操作的。
 
 只在保存检查点（本地状态）的时候落盘。
-
-sum算子中只会维护一个累加器，数据到来更新完累加器之后，数据直接被丢弃掉了。每个key对应的逻辑分区都有一个sum算子。
 
 <figure><img src="figure/8.svg" alt="Flink的有状态流处理" style="width:100%"><figcaption>图-6 Flink的有状态流处理</figcaption></figure>
 数据流就像生产流水线
@@ -175,9 +179,9 @@ sum算子中只会维护一个累加器，数据到来更新完累加器之后�
 
 ## 大数据理论的发展
 
-- 谷歌三篇论文（2003年）：GFS $\rightarrow$ HDFS，MapReduce $\rightarrow$ Hadoop，Big Table $\rightarrow$ HBase
+- 谷歌三篇论文（2003年）：GFS :arrow_right: HDFS，MapReduce :arrow_right: Hadoop，Big Table :arrow_right: HBase
 - Spark（2008年）、Spark Streaming（将计算场景从磁盘转移到了内存，百倍提升）
-- 谷歌（2015年）：Dataflow Model $\rightarrow$ Apache Flink（2015年底）
+- 谷歌（2015年）：Dataflow Model :arrow_right: Apache Flink（2015年底）
 
 ## Flink的主要特点
 
@@ -185,7 +189,7 @@ sum算子中只会维护一个累加器，数据到来更新完累加器之后�
 - 基于流的世界观
 - 分层API
 - 支持事件时间（EventTime）和处理时间（ProcessingTime）语义
-  - 事件时间（逻辑时钟）：事件发生的时间，时间戳包含在事件里
+  - 事件时间（逻辑时钟）：事件真正发生的时间，时间戳包含在事件里
   - 处理时间（物理时钟）：事件到达服务器的机器时间
 - 精确一次（EXACTLY-ONCE）的状态一致性保证
 - 低延迟，每秒处理数百万个事件，毫秒级延迟
@@ -207,25 +211,29 @@ sum算子中只会维护一个累加器，数据到来更新完累加器之后�
 > 来一条数据处理一条。
 > flatMap算子什么时候会被触发执行？当flatMap算子的输入到达的时候，触发执行。
 > sum算子什么时候触发执行呢？当输入数据到达的时候，触发执行。来一条输入数据就要触发一次sum算子的执行。
-> 算子都是被动执行的，数据不来不执行。
+> 算子都是<span style="color:red">被动</span>执行的，数据不来不执行。
 > 这个特性叫做事件驱动，算子的输入事件驱动算子的执行。
-> 生产流水线上的工人，上游的产品到达，触发工人的操作。
+> 生产流水线上的工人（算子），上游的产品到达，触发工人的操作。
 
 ### 基于流的世界观
 
 - 在Flink的世界观中，一切都是由流组成的，离线数据是有界的流；实时数据是一个没有界限的流：这就是所谓的有界流和无界流。
 - 在Spark Streaming的世界观中，一切都是由批组成的，离线数据是一批数据；实时数据是无数个微小批次组成的数据。
+
+### 时间维度
+
 - 流的世界观最重要的一点其实是在静态的离线数据上面加了一个维度：时间。
 - 这个观点来自爱因斯坦的狭义相对论，批处理类似牛顿力学（坐标系：x，y，z），流处理类似狭义相对论力学（坐标系：x，y，z，t）。
 
 ### 分层API
 
-<figure><img src="figure/22.svg" alt="API层级结构" style="width:100%"><figcaption>图-9 API层级结构</figcaption></figure>
+<figure><img src="figure/22.svg" alt="API层级结构" style="width:50%"><figcaption>图-9 API层级结构</figcaption></figure>
+
 - 越抽象，越容易使用，但无法实现复杂的需求。
 - 越底层，越难掌握，但可以实现很复杂的需求。
 - 我们的学习重点：DataStream API和处理函数。
 
-## Flink中最重要的两个API
+## Flink中最重要的两个底层API
 
 **对于单条流的处理**
 
@@ -258,26 +266,27 @@ CoProcessFunction
 
 - 分区：物理分区和逻辑分区的区别是什么
   - hadoop的物理分区：机器节点/容器
-  - hadoop的逻辑分区：每个key对应的分组/分区数据
-  - flink的物理分区：任务插槽
-  - flink的逻辑分区：每个key所对应的逻辑分区
+  - hadoop的逻辑分区：每个key对应的分组数据
+  - flink的物理分区：算子的并行子任务所占用的线程
+  - flink的逻辑分区：每个key所对应的数据/累加器
   - 同一个逻辑分区的数据，一定在同一个物理分区
-  - 相同key的数据一定在一个节点上
+  - 相同key的数据一定在一个节点上处理
   - 数据倾斜的本质：某个key所对应的逻辑分区中的数据量过大，导致所在物理分区的资源（CPU、内存、磁盘空间）不够用。
 - 时钟：物理时钟和逻辑时钟的区别是什么
-  - flink中的物理时钟：机器时间
-  - flink中的逻辑时钟：水位线
+  - flink中的物理时钟：机器时间（真实存在的，CPU产生的时钟信号）
+  - flink中的逻辑时钟：水位线（程序员编程产生的时钟）
 - 同步执行和异步执行的区别
   - 同步：执行顺序是确定的
+    - 可以通过互斥锁或者事务的方式来保证同步执行。
   - 异步：执行顺序是不确定的
     - 多进程
     - 多线程
-    - 单线程异步IO（事件驱动）
+    - 单线程异步IO（多路复用IO）
 
 ## Flink vs Spark Streaming
 
-- 流 vs 微批
-- 事件驱动 vs 非事件驱动
+- 流 :vs: 微批
+- 事件驱动 :vs: 非事件驱动
 - 数据模型
   - Spark：RDD，Spark Streaming的DStream实际上也就是一组组小批数据RDD的集合。
   - Flink基本数据模型是数据流，以及事件（Event）序列（Integer、String、Long、POJO Class、Tuple）
@@ -288,7 +297,7 @@ CoProcessFunction
   - Spark是批计算，将DAG划分为不同的Stage，一个Stage完成后才可以计算下一个Stage。
   - Flink是标准的流执行模式，一个事件在一个节点处理完后可以直接发往下一个节点进行处理。
 - Spark Streaming的延迟是Flink的1000倍。
-- Flink支持事件时间和处理时间，Spark Streaming只支持处理时间
+- Flink支持事件时间和处理时间，Spark Streaming只支持处理时间。
 - Flink支持会话窗口
 
 ## Flink程序的典型结构
@@ -298,24 +307,28 @@ CoProcessFunction
 3. 读取数据源
 4. 进行计算
 5. 输出
-6. 执行程序
+6. 提交并执行程序
 
 # Flink运行时架构
 
 ## Flink主从架构
 
-- Flink 运行时由两种类型的进程组成：一个JobManager（作业管理器，Master进程）和一个或者多个TaskManager（任务管理器，Slave进程）。
+- Flink运行时由两种类型的进程组成
+  - 一个JobManager（作业管理器，Master进程）
+  - 一个或者多个TaskManager（任务管理器，Slave进程）。
+
 - 典型的Master-Slave（主从）架构。
-  
+
 
 <figure><img src="figure/23.svg" alt="Flink的主从架构" style="width:100%"><figcaption>图-10 Flink的主从架构</figcaption></figure>
+
 ## 作业管理器
 
 作业管理器是一个JVM进程。进程中包含三类线程：
 
-- Flink的资源管理器（ResourceManager）：资源是任务插槽（Task Slot）
+- Flink的资源管理器（ResourceManager）：资源是任务管理器中的任务插槽（Task Slot）
 - 分发器（WebUI）：提交任务和监控集群和任务
-- JobMaster（每个作业对应一个）：调度任务，将DAG部署到任务管理器
+- JobMaster（作业主线程，每个作业对应一个）：调度任务，将DAG部署到任务管理器
   
 
 <figure><img src="figure/24.svg" alt="作业管理器的三种线程" style="width:100%"><figcaption>图-11 作业管理器的三种线程</figcaption></figure>
@@ -325,7 +338,6 @@ JobMaster由于是每个作业对应一个，所以可能有多个JobMaster线�
 
 - 任务管理器也是一个JVM进程。包含至少一个任务插槽。
 - 任务插槽是Flink的最小计算单元。
-- 任务插槽（Task Slot）是一个物理分区。
 - 每个任务插槽是一个内存分片，每个任务插槽占用一段内存。
 - 一个任务插槽中至少运行一个线程。
 - 任务插槽内存大小 = 任务管理器的JVM堆内存 $\div$ 任务插槽数量
@@ -336,21 +348,25 @@ JobMaster由于是每个作业对应一个，所以可能有多个JobMaster线�
 - 相同算子的不同并行子任务不能共享同一个任务插槽。
 - 算子的并行度是N，那么算子就有N个并行子任务，并且必须占用N个任务插槽。
 
+给定以下程序以及6个任务插槽，那么可能的任务调度情形如下图：
+
 ```java
 source.setParallelism(2)
-    .map.setParallelism(2)
-    .keyBy.window
-    .reduce.setParallelism(2)
-    .sink.setParallelism(1)
+  .map.setParallelism(2)
+  .keyBy.window
+  .reduce.setParallelism(2)
+  .sink.setParallelism(1)
 ```
 
 <figure><img src="figure/tasks_slots.svg" alt="每个任务插槽一个线程的情况" style="width:100%"><figcaption>图-12 每个任务插槽一个线程的情况</figcaption></figure>
+给定以下程序以及6个任务插槽，可能的调度情形如下图：
+
 ```java
 source.setParallelism(6)
-    .map.setParallelism(6)
-    .keyBy.window
-    .reduce.setParallelism(6)
-    .sink.setParallelism(1)
+  .map.setParallelism(6)
+  .keyBy.window
+  .reduce.setParallelism(6)
+  .sink.setParallelism(1)
 ```
 
 
@@ -373,7 +389,31 @@ source.setParallelism(6)
 
 1. 不要设置全局并行度，因为没办法在命令行做动态扩容。
 2. 针对某些算子设置并行度，例如数据源，为了不改变数据的顺序，设置数据源的并行度为1。
-3. 在命令行设置，可以动态扩容
+3. 在提交任务时设置，可以动态扩容。
+
+```java
+env
+  .source.setParallelism(1)
+  .keyBy
+  .sum
+  .print.setParallelism(1)
+```
+
+第一次提交任务
+
+```bash
+$ flink run jar包 -p 8
+```
+
+那么`sum`算子的并行度是8，`source`和`print`的并行度是1。
+
+动态扩容
+
+```bash
+$ flink run jar包 -p 16
+```
+
+那么`sum`算子的并行度是16，`source`和`print`的并行度是1。
 
 ## 任务提交流程
 
@@ -384,21 +424,21 @@ source.setParallelism(6)
 ## Flink中的DAG数据结构
 
 <figure><img src="figure/9.svg" alt="Flink中DAG数据结构的转换" style="width:100%"><figcaption>图-16 Flink中DAG数据结构的转换</figcaption></figure>
-- StreamGraph：是根据用户通过Stream API编写的代码生成的最初的有向无环图。用来表示程序的拓扑结构。
-- JobGraph：StreamGraph在编译的阶段经过优化后生成了JobGraph，JobGraph就是提交给作业管理器的数据结构。主要的优化为，将多个符合条件（没有shuffle，并行度相同）的算子串在一起作为一个任务链节点。保证同一个任务链节点里面的所有算子都在同一个任务插槽的同一个线程中执行。这样算子之间的数据就是本地转发（无需序列化反序列化和网络IO）两个条件：
+- StreamGraph：是根据用户通过Stream API编写的代码生成的最初的有向无环图。用来表示程序的拓扑结构。源码：`StreamGraph.java`
+- JobGraph：StreamGraph在编译的阶段经过优化后生成了JobGraph（源码：`JobGraph.java`），JobGraph就是提交给作业管理器的数据结构。主要的优化为，将多个符合条件（没有shuffle，并行度相同）的算子串在一起作为一个<span style="color:red">任务链节点</span>。保证同一个任务链节点里面的所有算子都在同一个任务插槽的同一个线程中执行。这样算子之间的数据就是本地转发（无需序列化反序列化和网络IO）。两个条件：
   - 两个算子之间没有shuffle存在
   - 两个算子的并行度必须相同
-- ExecutionGraph：作业管理器根据JobGraph生成ExecutionGraph。ExecutionGraph是JobGraph的并行化版本，是调度层最核心的数据结构。
-- 物理执行图：Job Master线程根据ExecutionGraph对作业进行调度后，在各个任务管理器上部署Task后形成的“图”，并不是一个具体的数据结构。
+- ExecutionGraph：作业管理器根据JobGraph生成ExecutionGraph（源码：`ExecutionGraph.java`）。ExecutionGraph是JobGraph的并行化版本，是调度层最核心的数据结构。
+- 物理执行图：JobMaster线程根据ExecutionGraph对作业进行调度后，在各个任务管理器上部署Task后形成的“图”，并不是一个具体的数据结构。
 
 我们看一下如下伪代码的DAG是如何进行转换的。
 
 ```java
 source.setParallelism(1)
-    .flatMap().setParallelism(2)
-    .keyBy()
-    .reduce().setParallelism(2)
-    .sink().setParallelism(2)
+  .flatMap().setParallelism(2)
+  .keyBy()
+  .reduce().setParallelism(2)
+  .sink().setParallelism(2)
 ```
 
 首先生成的是StreamGraph。
@@ -417,6 +457,15 @@ StreamGraph在客户端编译时生成了JobGraph。
 ExecutionGraph中的每个顶点都要占用一个线程。所以下图中共有5个顶点，需要5个线程来执行。每个顶点对应了源码中的一个`Task.java`的实例。
 
 <figure><img src="figure/12.svg" alt="ExecutionGraph" style="width:100%"><figcaption>图-19 ExecutionGraph</figcaption></figure>
+上图会占用几个任务插槽？
+
+最少需要占用2个任务插槽。
+
+- 第一个任务插槽：`source[1]`，`flatMap[1/2]`，`reduce->sink[1/2]`
+- 第二个任务插槽：`flatMap[2/2]`，`reduce->sink[2/2]`
+
+最多占用5个任务插槽。也就是5个顶点的线程分别占用一个任务插槽。
+
 JobMaster将ExecutionGraph部署到任务管理器执行。
 
 # DataStream API
@@ -442,7 +491,7 @@ SourceFunction\<T>的泛型是数据源中的数据的类型。
 
 - cancel方法在取消任务时执行，由“取消任务”事件触发执行。
 
-> 编写Flink程序时，要注意泛型和方法的参数类型！
+> :memo:编写Flink程序时，要注意泛型和方法的参数类型！
 
 其他自定义数据源API
 - ParallelSourceFunction\<T>：并行数据源
@@ -557,12 +606,12 @@ env
 
 举一些例子
 
-- MapFunction $\rightarrow$ RichMapFunction
-- FilterFunction $\rightarrow$ RichFilterFunction
-- FlatMapFunction $\rightarrow$ RichFlatMapFunction
-- ReduceFunction $\rightarrow$ RichReduceFunction
-- SourceFunction $\rightarrow$ RichSourceFunction
-- SinkFunction $\rightarrow$ RichSinkFunction
+- MapFunction :arrow_right: RichMapFunction
+- FilterFunction :arrow_right: RichFilterFunction
+- FlatMapFunction :arrow_right: RichFlatMapFunction
+- ReduceFunction :arrow_right: RichReduceFunction
+- SourceFunction :arrow_right: RichSourceFunction
+- SinkFunction :arrow_right: RichSinkFunction
 
 ## 自定义输出
 
@@ -633,7 +682,7 @@ RichSinkFunction\<T>
 <figure><img src="figure/19.svg" alt="KeyedProcessFunction的并行子任务如何维护ListState" style="width:100%"><figcaption>图-24 KeyedProcessFunction的并行子任务如何维护ListState</figcaption></figure>
 ### MapState-字典状态变量
 
-- .put(KEY, VALUE)方法：添加KEY $\rightarrow$ VALUE键值对
+- .put(KEY, VALUE)方法：添加KEY :arrow_right: VALUE键值对
 - .get(KEY)方法：获取KEY的VALUE
 - .contains(KEY)方法：检测KEY是否存在
 - .keys()：返回所有KEY组成的集合
@@ -882,7 +931,7 @@ Flink窗口是左闭右开的区间，例如[0, 5)的窗口最后一个时间戳
   - `new OutputTag<T>("output-tag"){}`：单例
 
 - 使用迟到元素更新窗口计算结果。也就是当水位线到达窗口结束时间的时候，触发窗口计算，但不销毁窗口，而是选择再等待迟到元素一段时间。
-  - .allowedLateness(Time.seconds(5))：窗口会等待5秒钟的迟到事件
+  - `.allowedLateness(Time.seconds(5))`：窗口会等待5秒钟的迟到事件
   - 窗口真正销毁：水位线 $\ge$ 窗口结束时间 + allowedLateness
   - 窗口的第一次触发计算：水位线 $\ge$ 窗口结束时间，触发计算完以后窗口不会被销毁
 
@@ -1060,7 +1109,7 @@ Source并行子任务将它们的状态写入检查点文件，并发出一个�
 
 ## 预写式日志
 
-- 把结果数据（也就是要输出的数据）先缓存到状态后端，然后在收到检查点完成的通知时，一次性写入Sink系统（状态后端 $\rightarrow$ 下游设备）（万一写到中间的时候挂掉了呢？WAL只能保障at-least-once）
+- 把结果数据（也就是要输出的数据）先缓存到状态后端，然后在收到检查点完成的通知时，一次性写入Sink系统（状态后端 :arrow_right: 下游设备）（万一写到中间的时候挂掉了呢？WAL只能保障at-least-once）
 - 简单易于实现，由于数据提前在状态后端中做了存储，所以无论什么样的下游设备，都能用这种方式一批搞定
 - DataStream API提供了一个模板类：GenericWriteAheadSink，来实现这种预写式日志的Sink。
 
@@ -1081,7 +1130,7 @@ Source并行子任务将它们的状态写入检查点文件，并发出一个�
 | 预写式日志sink                            | at-most-once | at-least-once |
 | <span style="color:red">两阶段提交</span> | at-most-once | exactly-once  |
 
-## Kafka $\rightarrow$ Flink $\rightarrow$ Kafka端到端一致性
+## Kafka :arrow_right: Flink :arrow_right: Kafka端到端一致性
 
 - 内部—利用检查点机制，把状态存盘（HDFS），发生故障的时候可以恢复，保证内部的状态一致性。
 - source—FlinkKafkaConsumer作为source，可以将偏移量保存下来，如果后续任务出现了故障，恢复的时候可以由连接器重置偏移量，重新消费数据，保证一致性。
